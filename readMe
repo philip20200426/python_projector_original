@@ -1,0 +1,8 @@
+pyinstaller --noconsole -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
+pyinstaller --noconsole -p package -F .\projector_lcos_main.py .\projector_pdu.py .\serial_utils.py .\log_utils.py
+
+线程的释放需要再研究下，尤其是camera的线程
+设置按钮时没有按照面向对象的思路去设计
+
+print(bytes.fromhex('6162636465'))
+bytes.fromhex 输入是16进制字符串，输出是转化成的ASCII码，串口发送时发送ASCII码是可以的
