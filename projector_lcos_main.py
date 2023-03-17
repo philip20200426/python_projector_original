@@ -181,7 +181,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # print(red_current_value)
 
     def initialize_ui(self):
+        self.ui.frame1.setEnabled(False)
         self.ui.send_data.setEnabled(False)
+        self.ui.input_data.setEnabled(False)
         self.ui.close_port.setEnabled(False)
         available_ports = get_ports()
         self.ui.serial_selection.addItems(available_ports)
@@ -222,13 +224,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.update_data_timer = QTimer()
             self.update_data_timer.timeout.connect(self.update_data)
 
-            self.ui.getSwVerButton.setEnabled(True)
-            self.ui.redSpinBox.setEnabled(True)
-            self.ui.redHorizontalSlider.setEnabled(True)
-            self.ui.greenSpinBox.setEnabled(True)
-            self.ui.greenHorizontalSlider.setEnabled(True)
-            self.ui.blueSpinBox.setEnabled(True)
-            self.ui.blueHorizontalSlider.setEnabled(True)
+            self.ui.frame1.setEnabled(True)
+            # self.ui.getSwVerButton.setEnabled(True)
+            # self.ui.redSpinBox.setEnabled(True)
+            # self.ui.redHorizontalSlider.setEnabled(True)
+            # self.ui.greenSpinBox.setEnabled(True)
+            # self.ui.greenHorizontalSlider.setEnabled(True)
+            # self.ui.blueSpinBox.setEnabled(True)
+            # self.ui.blueHorizontalSlider.setEnabled(True)
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
 
@@ -247,7 +250,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.refresh_port.setEnabled(True)
             self.current_port = None
             self.update_data_timer.stop()
-
+            self.ui.frame1.setEnabled(False)
             # self.ui.getSwVerButton.setEnabled(False)
             # self.ui.redSpinBox.setEnabled(False)
             # self.ui.redHorizontalSlider.setEnabled(False)
