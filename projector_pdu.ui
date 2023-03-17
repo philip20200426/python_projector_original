@@ -778,7 +778,7 @@
      <widget class="QSpinBox" name="fan3SpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>110</y>
         <width>71</width>
         <height>41</height>
@@ -794,7 +794,7 @@
      <widget class="QSlider" name="fan1HorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>20</y>
         <width>141</width>
         <height>21</height>
@@ -828,7 +828,7 @@
      <widget class="QSpinBox" name="fan2SpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>60</y>
         <width>71</width>
         <height>41</height>
@@ -844,7 +844,7 @@
      <widget class="QLabel" name="label_29">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>110</y>
         <width>81</width>
         <height>41</height>
@@ -863,7 +863,7 @@
      <widget class="QLabel" name="label_20">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>60</y>
         <width>81</width>
         <height>41</height>
@@ -882,7 +882,7 @@
      <widget class="QSlider" name="fan2HorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>70</y>
         <width>141</width>
         <height>21</height>
@@ -901,7 +901,7 @@
      <widget class="QLabel" name="label_19">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>10</y>
         <width>81</width>
         <height>41</height>
@@ -920,7 +920,7 @@
      <widget class="QSlider" name="fan3HorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>120</y>
         <width>141</width>
         <height>21</height>
@@ -939,7 +939,7 @@
      <widget class="QSpinBox" name="fan1SpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>10</y>
         <width>71</width>
         <height>41</height>
@@ -952,12 +952,69 @@
        <number>30</number>
       </property>
      </widget>
+     <widget class="QLabel" name="fan1Detectlabel_2">
+      <property name="geometry">
+       <rect>
+        <x>300</x>
+        <y>20</y>
+        <width>41</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>9</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>正常</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="fan2Detectlabel">
+      <property name="geometry">
+       <rect>
+        <x>300</x>
+        <y>70</y>
+        <width>41</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>9</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>正常</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="fan3Detectlabel">
+      <property name="geometry">
+       <rect>
+        <x>300</x>
+        <y>120</y>
+        <width>41</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>9</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>正常</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QFrame" name="frame_5">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>180</y>
+       <y>210</y>
        <width>351</width>
        <height>161</height>
       </rect>
@@ -977,7 +1034,7 @@
      <widget class="QSpinBox" name="redSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>10</y>
         <width>71</width>
         <height>41</height>
@@ -993,7 +1050,7 @@
      <widget class="QLabel" name="label_14">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>60</y>
         <width>81</width>
         <height>41</height>
@@ -1006,13 +1063,13 @@
        </font>
       </property>
       <property name="text">
-       <string>电流 G</string>
+       <string>电流G</string>
       </property>
      </widget>
      <widget class="QSlider" name="blueHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>120</y>
         <width>141</width>
         <height>21</height>
@@ -1034,7 +1091,7 @@
      <widget class="QSpinBox" name="blueSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>110</y>
         <width>71</width>
         <height>41</height>
@@ -1050,7 +1107,7 @@
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>10</y>
         <width>81</width>
         <height>41</height>
@@ -1063,13 +1120,13 @@
        </font>
       </property>
       <property name="text">
-       <string>电流 R</string>
+       <string>电流R</string>
       </property>
      </widget>
      <widget class="QSlider" name="greenHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>70</y>
         <width>141</width>
         <height>21</height>
@@ -1088,7 +1145,7 @@
      <widget class="QSlider" name="redHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>20</y>
         <width>141</width>
         <height>21</height>
@@ -1122,7 +1179,7 @@
      <widget class="QLabel" name="label_15">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>110</y>
         <width>81</width>
         <height>41</height>
@@ -1135,13 +1192,13 @@
        </font>
       </property>
       <property name="text">
-       <string>电流 B</string>
+       <string>电流B</string>
       </property>
      </widget>
      <widget class="QSpinBox" name="greenSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>60</y>
         <width>71</width>
         <height>41</height>
@@ -1159,7 +1216,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>360</y>
+       <y>390</y>
        <width>351</width>
        <height>161</height>
       </rect>
@@ -1179,7 +1236,7 @@
      <widget class="QSpinBox" name="blueMaxSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>110</y>
         <width>71</width>
         <height>41</height>
@@ -1195,7 +1252,7 @@
      <widget class="QSlider" name="greenMaxHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>70</y>
         <width>141</width>
         <height>21</height>
@@ -1214,7 +1271,7 @@
      <widget class="QSpinBox" name="redMaxSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>10</y>
         <width>71</width>
         <height>41</height>
@@ -1230,7 +1287,7 @@
      <widget class="QSpinBox" name="greenMaxSpinBox">
       <property name="geometry">
        <rect>
-        <x>270</x>
+        <x>220</x>
         <y>60</y>
         <width>71</width>
         <height>41</height>
@@ -1246,7 +1303,7 @@
      <widget class="QLabel" name="label_18">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>60</y>
         <width>81</width>
         <height>41</height>
@@ -1259,13 +1316,13 @@
        </font>
       </property>
       <property name="text">
-       <string>Max G</string>
+       <string>MaxG</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_17">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>110</y>
         <width>81</width>
         <height>41</height>
@@ -1278,13 +1335,13 @@
        </font>
       </property>
       <property name="text">
-       <string>Max B</string>
+       <string>MaxB</string>
       </property>
      </widget>
      <widget class="QSlider" name="redMaxHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>20</y>
         <width>141</width>
         <height>21</height>
@@ -1318,7 +1375,7 @@
      <widget class="QSlider" name="blueMaxHorizontalSlider">
       <property name="geometry">
        <rect>
-        <x>110</x>
+        <x>70</x>
         <y>120</y>
         <width>141</width>
         <height>21</height>
@@ -1340,7 +1397,7 @@
      <widget class="QLabel" name="label_16">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>10</y>
         <width>81</width>
         <height>41</height>
@@ -1353,7 +1410,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Max R</string>
+       <string>MaxR</string>
       </property>
      </widget>
     </widget>
@@ -1379,6 +1436,25 @@
     </property>
     <property name="text">
      <string>光机外设控制：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fan1Detectlabel">
+    <property name="geometry">
+     <rect>
+      <x>1150</x>
+      <y>480</y>
+      <width>81</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
     </property>
    </widget>
   </widget>
