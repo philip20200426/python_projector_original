@@ -44,8 +44,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle('调试工具')
         self.initialize_ui()
-        # self.redSpinBox.valueChanged['int'].connect(self.set_red_current(int))
-        # self.ui.redHorizontalSlider.valueChanged(self.set_red_current)
+
+        self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
+        self.ui.savePduDataButton.clicked.connect(self.save_pdu_data)
         self.ui.fan1HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan2HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan3HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
@@ -64,7 +65,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.close_port.clicked.connect(self.close_port)
         self.ui.refresh_port.clicked.connect(self.refresh_port)
         self.ui.send_data.clicked.connect(self.send_data)
-        self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
 
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
@@ -97,6 +97,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data[2] = int(self.ui.motorStepsEdit.text()) >> 8
         print(data)
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
+        self.current_port.write(strHex)
+
+    def save_pdu_data(self):
+        #PARA_CURRENT 0
+        # typedef
+        # enum
+        # {
+        #     PARA_CURRENT = 0,
+        #                    PARA_FLIP,
+        #                    PARA_KST,
+        #                    PARA_COLOR_TEMP,
+        #                    PARA_WP,
+        #                    PARA_241,
+        #                    PARA_LED,
+        #                    PARA_FRC,
+        #                    PARA_MISC,
+        #                    PARA_BCHSCE,
+        #                    PARA_BCHS,
+        #                    PARA_CE1D,
+        #                    PARA_CEBC,
+        #                    PARA_CEACC,
+        #                    PARA_MAX
+        # }PARA_Type;
+        data = [0]
+        strHex = asu_pdu_build_one_frame('CMD_SAVE_PARAMRTER', len(data), data)
         self.current_port.write(strHex)
 
     def update_temperature(self):

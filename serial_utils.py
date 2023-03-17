@@ -10,6 +10,7 @@ mPduCmdDictSend = {'CMD_SET_CURRENTS': 30,
                    'CMD_SET_FANS': 31,
                    'CMD_SET_FOCUSMOTOR': 32,
                    'CMD_SET_MAX_CURRENTS': 37,
+                   'CMD_SAVE_PARAMRTER': 40,
                    'CMD_GET_VERSION': 22,
                    'CMD_GET_TEMPS': 23,
                    'CMD_GET_FANS': 21}
