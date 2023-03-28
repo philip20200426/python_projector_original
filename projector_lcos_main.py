@@ -30,13 +30,54 @@ class SerialThread(QThread):
     def run(self):
         time.sleep(1)  # 防止直接进循环, 阻塞主ui
         while True:
-            if self.ser is not None and self.ser.inWaiting():
-                self.current_data = self.ser.read(self.ser.inWaiting())
-                self.data_arrive_signal.emit()
+            try:
+                if self.ser is not None and self.ser.inWaiting():
+                    self.current_data = self.ser.read(self.ser.inWaiting())
+                    self.data_arrive_signal.emit()
+            except:
+                return
+
+
+class AutoTestThread(QThread):
+    update_motor_signal = pyqtSignal(name='update_motor_info')
+
+    def __init__(self, ser=None, roundSteps=2900):
+        super().__init__()
+        self.ser = ser
+        self.count = 0
+        self.roundSteps = roundSteps
+        self.exitFlag = False
+
+    def run(self):
+        time.sleep(1)  # 防止直接进循环, 阻塞主ui
+        data = [1, 0, 0]
+        while True:
+            self.count += 1
+            if self.exitFlag:
+                self.exitFlag = False
+                print(">>>>>>>>>> AutoTestThread Exit ", self.count)
+                break
+            try:
+                if self.ser is not None:
+                    self.update_motor_signal.emit()
+                    # 步数用两个字节表示，低字节在前，高字节在后
+                    data[1] = int(self.roundSteps) & 0x00FF
+                    data[2] = int(self.roundSteps) >> 8
+                    print('AutoTestThread', data, self.count)
+                    strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
+                    self.ser.write(strHex)
+                    time.sleep(6)
+                    if data[0] == 1:
+                        data[0] = 0
+                    else:
+                        data[0] = 1
+            except:
+                return
 
 
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
     update_temp_flag = False
+    mPguLedFlag = False
 
     def __init__(self):
         super().__init__()
@@ -56,10 +97,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.redMaxHorizontalSlider.valueChanged['int'].connect(self.set_max_current)
         self.ui.greenMaxHorizontalSlider.valueChanged['int'].connect(self.set_max_current)
         self.ui.blueMaxHorizontalSlider.valueChanged['int'].connect(self.set_max_current)
+        self.ui.panelPwmHorizontalSlider.valueChanged['int'].connect(self.set_panel_brightness)
 
+        self.ui.autoTestMotorOpenButton.clicked.connect(self.auto_test_motor_open)
+        self.ui.autoTestMotorCloseButton.clicked.connect(self.auto_test_motor_close)
         self.ui.motorBackButton.clicked.connect(self.motor_back)
         self.ui.motorForwardButton.clicked.connect(self.motor_forward)
         self.ui.updateTempButton.clicked.connect(self.update_temperature)
+        self.ui.openLedButton.clicked.connect(self.open_pgu_led)
 
         self.ui.open_port.clicked.connect(self.open_port)
         self.ui.close_port.clicked.connect(self.close_port)
@@ -70,6 +115,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_thread = SerialThread(self.current_port)
         self.serial_thread.start()
         self.serial_thread.data_arrive_signal.connect(self.receive_data)
+        self.autoTestThread = None
+
 
         # self.ui.getSwVerButton.setEnabled(False)
         # self.ui.redSpinBox.setEnabled(False)
@@ -78,6 +125,35 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.greenHorizontalSlider.setEnabled(False)
         # self.ui.blueSpinBox.setEnabled(False)
         # self.ui.blueHorizontalSlider.setEnabled(False)
+
+    def open_pgu_led(self):
+        if self.mPguLedFlag:
+            data = [0]
+            self.mPguLedFlag = False
+            self.ui.openLedButton.setText('打开光机')
+        else:
+            data = [1]
+            self.mPguLedFlag = True
+            self.ui.openLedButton.setText('关闭光机')
+        print("PGU LED ", self.mPguLedFlag)
+        # 步数用两个字节表示，低字节在前，高字节在后
+        strHex = asu_pdu_build_one_frame('CMD_SET_DISPLAY', len(data), data)
+        self.current_port.write(strHex)
+
+    def auto_test_motor_open(self):
+        self.autoTestThread = AutoTestThread(self.current_port, self.ui.motorStepsRoundEdit.text())
+        self.autoTestThread.start()
+        self.autoTestThread.update_motor_signal.connect(self.update_motor_info)
+
+    def auto_test_motor_close(self):
+        self.autoTestThread.exitFlag = True
+        self.autoTestThread.exit(0)
+
+    def update_motor_info(self):
+        self.ui.motorStatuslabel.setStyleSheet("color:black")
+        self.ui.motorStatuslabel.setText("马达运行中")
+        self.ui.totalRoundLabel.setText(str(self.autoTestThread.count))
+
 
     def motor_back(self):
         data = [1, 0, 0]
@@ -100,7 +176,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.current_port.write(strHex)
 
     def save_pdu_data(self):
-        #PARA_CURRENT 0
+        # PARA_CURRENT 0
         # typedef
         # enum
         # {
@@ -141,12 +217,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print('请先打开串口！！！')
 
     def set_fan_speed(self):
-        #data = list()
+        # data = list()
         data = [0, 0, 0, 1]
         print(len(data))
-        data[0] = int(self.ui.fan1HorizontalSlider.value())
-        data[1] = int(self.ui.fan2HorizontalSlider.value())
-        data[2] = int(self.ui.fan3HorizontalSlider.value())
+        data[0] = 100 - int(self.ui.fan1HorizontalSlider.value())
+        data[1] = 100 - int(self.ui.fan2HorizontalSlider.value())
+        data[2] = 100 - int(self.ui.fan3HorizontalSlider.value())
         strHex = asu_pdu_build_one_frame('CMD_SET_FANS', len(data), data)
         self.current_port.write(strHex)
         time.sleep(0.05)
@@ -157,6 +233,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data[1] = int(self.ui.greenHorizontalSlider.value())
         data[2] = int(self.ui.blueHorizontalSlider.value())
         strHex = asu_pdu_build_one_frame('CMD_SET_CURRENTS', len(data), data)
+        self.current_port.write(strHex)
+        time.sleep(0.05)
+
+    def set_panel_brightness(self):
+        data = [0]
+        data[0] = int(self.ui.panelPwmHorizontalSlider.value())
+        strHex = asu_pdu_build_one_frame('CMD_SET_PANEL_PWM', len(data), data)
         self.current_port.write(strHex)
         time.sleep(0.05)
 
@@ -191,7 +274,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.baud_rate.setCurrentText("921600")
 
     def open_port(self):
-        print("88888888")
         # print(self.mPduCmdDict)
         # print(self.mPduCmdDict['CMD_SET_CURRENTS'])
         #
@@ -272,12 +354,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def receive_data(self):
         # receive_ascii_format = self.ui.receive_ascii_format.isChecked()
+        reverseCount = 0
+        limitCount = 0
+        actualSteps = 0
         self.ui.receive_data_area.clear()
         receive_ascii_format = False
         raw_data_list = self.serial_thread.current_data
         # cmd_data = ()  # 如果下面不分开，通过元祖接收
         cmd, length, dataList = asu_pdu_parse_one_frame(raw_data_list)
-        print("parse data : ", cmd, length, dataList)
+        print("uart receive data : ", cmd, length, dataList)
         if cmd in mPduCmdDict2Rev.keys():
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
                 sw_version = str(dataList[0]) + "." \
@@ -285,11 +370,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                              + str(dataList[2])
                 self.ui.label_sw_version.setText(sw_version)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
-                self.ui.temp1Label.setText(str(dataList[0]))    # 背光
-                self.ui.temp2Label.setText(str(dataList[1]))    # 显示屏
+                self.ui.temp1Label.setText(str(dataList[0]))  # 背光
+                self.ui.temp2Label.setText(str(dataList[1]))  # 显示屏
+                self.ui.temp3Label.setText(str(dataList[2]))
+                self.ui.temp1VoltageLabel.setText(str((int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16))/1000))
+                self.ui.temp2VoltageLabel.setText(str((int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16))/1000))
+                self.ui.temp3VoltageLabel.setText(str((int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16))/1000))
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print("motor callback data : ", cmd, dataList)
-                self.ui.motorStatuslabel.setText(str(dataList[0]))
+                if dataList[0] == 1:
+                    self.ui.motorStatuslabel.setStyleSheet("color:red")
+                    self.ui.motorStatuslabel.setText("马达限位")
+                    limitCount = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+                elif dataList[0] == 2:
+                    self.ui.motorStatuslabel.setStyleSheet("color:red")
+                    self.ui.motorStatuslabel.setText("马达回转结束")
+                    reverseCount = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+                    actualSteps = limitCount - reverseCount
+                elif dataList[0] == 0:
+                    self.ui.motorStatuslabel.setStyleSheet("color:black")
+                    self.ui.motorStatuslabel.setText("马达步进结束")
+                    actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+
+                else:
+                    print("返回错误")
+                print('actualSteps', actualSteps)
             self.ui.port_status.setText('数据设置状态: 成功')
         else:
             print('cmd %d is not found' % cmd)
@@ -322,10 +427,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             #     self.ui.receive_data_area.verticalScrollBar().setValue(
             #         self.ui.receive_data_area.verticalScrollBar().maximum())
             # self.ui.receive_data_status.setText('数据接收状态: 成功')
-            #self.ui.port_status.setText('数据接收状态: 成功')
+            # self.ui.port_status.setText('数据接收状态: 成功')
         except:
             pass
-            #self.ui.port_status.setText('数据接收状态: 失败')
+            # self.ui.port_status.setText('数据接收状态: 失败')
 
     def send_data(self):
         """
