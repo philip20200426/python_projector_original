@@ -1,11 +1,15 @@
 import re
 import string
 import threading
+
+import cv2
+from PyQt5.QtGui import QPixmap
+
 from log_utils import Logger
 
 # import serial
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QTextEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QTextEdit, QMessageBox, QLabel, QInputDialog, QWidget
 import os, sys
 
 from utils import check_hex
@@ -88,6 +92,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
         self.ui.savePduDataButton.clicked.connect(self.save_pdu_data)
+        self.ui.autoTestButton.clicked.connect(self.auto_test_pdu)
         self.ui.fan1HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan2HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan3HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
@@ -117,14 +122,73 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_thread.data_arrive_signal.connect(self.receive_data)
         self.autoTestThread = None
 
+        pix = QPixmap('op01_char.jpg')
+        self.ui.imageCharLabel.setStyleSheet("border: 3px solid red")
+        self.ui.imageCharLabel.setScaledContents(True)
+        self.ui.imageCharLabel.setPixmap(pix)
+        self.ui.imageCharLabel.mousePressEvent = self.show_char_img
 
-        # self.ui.getSwVerButton.setEnabled(False)
+        pix_white = QPixmap('op02_white.png')
+        self.ui.imageWhiteLabel.setStyleSheet("border: 3px solid red")
+        self.ui.imageWhiteLabel.setScaledContents(True)
+        self.ui.imageWhiteLabel.setPixmap(pix_white)
+        self.ui.imageWhiteLabel.mousePressEvent = self.show_white_img
+
+        pix_black = QPixmap('op03_black.png')
+        self.ui.imageBlackLabel.setStyleSheet("border: 3px solid red")
+        self.ui.imageBlackLabel.setScaledContents(True)
+        self.ui.imageBlackLabel.setPixmap(pix_black)
+        self.ui.imageBlackLabel.mousePressEvent = self.show_black_img
+
+        # self.ui.g.etSwVerButton.setEnabled(False)
         # self.ui.redSpinBox.setEnabled(False)
         # self.ui.redHorizontalSlider.setEnabled(False)
         # self.ui.greenSpinBox.setEnabled(False)
         # self.ui.greenHorizontalSlider.setEnabled(False)
         # self.ui.blueSpinBox.setEnabled(False)
         # self.ui.blueHorizontalSlider.setEnabled(False)
+
+    def mouseDoubleClickEvent(self, event):
+        print(event.button)
+
+    def show_char_img(self, v):
+        img_bgr = cv2.imread("op01_char.jpg")
+        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        cv2.moveWindow("myImage", 0, 0)
+        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("myImage", img_bgr)
+        val = cv2.waitKey(0)
+        print(v, val)
+        cv2.destroyAllWindows()
+
+    def show_white_img(self, v):
+        img_bgr = cv2.imread("op02_white_test.png")
+        val = img_bgr.shape
+
+        print(img_bgr.shape)
+        print(img_bgr[0, 0])
+        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        cv2.moveWindow("myImage", 0, 0)
+        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("myImage", img_bgr)
+        val = cv2.waitKey(0)
+        print(v, val)
+        cv2.destroyAllWindows()
+
+    def show_black_img(self, v):
+        img_bgr = cv2.imread("op03_black.png")
+        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        cv2.moveWindow("myImage", 0, 0)
+        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("myImage", img_bgr)
+        val = cv2.waitKey(0)
+        print(v, val)
+        cv2.destroyAllWindows()
+
+    def auto_test_pdu(self):
+        text, ok = QInputDialog().getInt(QWidget(), '光机序列号', '输入光机序列号:')
+        if ok and text:
+            print(text)
 
     def open_pgu_led(self):
         if self.mPguLedFlag:
@@ -153,7 +217,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.motorStatuslabel.setStyleSheet("color:black")
         self.ui.motorStatuslabel.setText("马达运行中")
         self.ui.totalRoundLabel.setText(str(self.autoTestThread.count))
-
 
     def motor_back(self):
         data = [1, 0, 0]
@@ -244,13 +307,17 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         time.sleep(0.05)
 
     def set_max_current(self):
-        data = [0, 0, 0]
-        data[0] = int(self.ui.redMaxHorizontalSlider.value())
-        data[1] = int(self.ui.greenMaxHorizontalSlider.value())
-        data[2] = int(self.ui.blueMaxHorizontalSlider.value())
-        strHex = asu_pdu_build_one_frame('CMD_SET_MAX_CURRENTS', len(data), data)
-        self.current_port.write(strHex)
-        time.sleep(0.05)
+        data = [0, 0, 0, 0, 0, 0]
+        data[0] = int(self.ui.redMaxHorizontalSlider.value()) & 0x00FF
+        data[1] = (int(self.ui.redMaxHorizontalSlider.value()) & 0xFF00) >> 8
+        data[2] = int(self.ui.greenMaxHorizontalSlider.value()) & 0x00FF
+        data[3] = (int(self.ui.greenMaxHorizontalSlider.value()) & 0xFF00) >> 8
+        data[4] = int(self.ui.blueMaxHorizontalSlider.value()) & 0x00FF
+        data[5] = (int(self.ui.blueMaxHorizontalSlider.value()) & 0xFF00) >> 8
+        print(data)
+        # strHex = asu_pdu_build_one_frame('CMD_SET_MAX_CURRENTS', len(data), data)
+        # self.current_port.write(strHex)
+        # time.sleep(0.05)
 
     def update_data(self):
         data = [0, 0]
@@ -280,7 +347,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # mPduCmdDict2 = dict(zip(self.mPduCmdDict.values(), self.mPduCmdDict.keys()))
         # print(mPduCmdDict2)
         # print(mPduCmdDict2[30])
-
         current_port_name = self.ui.serial_selection.currentText()
         baud_rate = int(self.ui.baud_rate.currentText())
         bytesize = 8
@@ -373,9 +439,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.temp1Label.setText(str(dataList[0]))  # 背光
                 self.ui.temp2Label.setText(str(dataList[1]))  # 显示屏
                 self.ui.temp3Label.setText(str(dataList[2]))
-                self.ui.temp1VoltageLabel.setText(str((int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16))/1000))
-                self.ui.temp2VoltageLabel.setText(str((int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16))/1000))
-                self.ui.temp3VoltageLabel.setText(str((int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16))/1000))
+                self.ui.temp1VoltageLabel.setText(
+                    str((int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)) / 1000))
+                self.ui.temp2VoltageLabel.setText(
+                    str((int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)) / 1000))
+                self.ui.temp3VoltageLabel.setText(
+                    str((int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)) / 1000))
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print("motor callback data : ", cmd, dataList)
                 if dataList[0] == 1:
@@ -391,7 +460,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setStyleSheet("color:black")
                     self.ui.motorStatuslabel.setText("马达步进结束")
                     actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-
+                elif dataList[0] == 4:
+                    self.ui.motorStatuslabel.setStyleSheet("color:red")
+                    self.ui.motorStatuslabel.setText("马达异常")
                 else:
                     print("返回错误")
                 print('actualSteps', actualSteps)

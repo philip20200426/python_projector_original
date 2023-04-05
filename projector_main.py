@@ -68,6 +68,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
 
+        self.ui.kstResetButton.clicked.connect(self.kst_reset)
         self.ui.visionAfButton.clicked.connect(self.auto_focus_vision)
         self.ui.tofAfButton.clicked.connect(self.auto_focus_tof)
         self.ui.autoKsdButton.clicked.connect(self.auto_keystone)
@@ -229,6 +230,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(coordinate)
         # 运行算法
         self.pull_data()
+
+    def kst_reset(self):
+        cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
+        os.system(cmd)
+        os.system("adb shell service call SurfaceFlinger 1006")
 
     def ksd_calibrate(self):
         os.system("adb shell am broadcast -a asu.intent.action.SaveData")

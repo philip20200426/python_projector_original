@@ -980,6 +980,19 @@
       <string>自动全向梯形标定</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="kstResetButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>梯形复位</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_7">
     <property name="geometry">
