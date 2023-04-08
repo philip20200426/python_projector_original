@@ -206,17 +206,24 @@ def asu_pdu_parse_one_frame(message):
         if message[0] != 254 or message[1] != 254:
             print("HEAD ERROR !!!")
         sum_crc = 0
+        total = 0
         dataList = []
         for ele in range(6, len(message)):
             sum_crc += message[ele]
             dataList.append(message[ele])
-        if sum_crc != message[4]:
-            print("CRC Check ERROR !!!")
+        total = int(hex(message[5] << 8), 16) + 0 + int(hex(message[4]), 16)
+        # print(test)
+        # val1 = int(hex(message[5] << 8), 16)
+        # val2 = int(hex(message[4]), 16)
+        # total = val1 + val2
+        # print(total, sum_crc)
+        if sum_crc != total:
+            print("receive CRC Check ERROR !!! ", sum_crc, total)
         else:
-            print("CRC Check PASS !!!")
+            pass
         command = message[2]
         length = message[3]
-        print("parse : ", command, dataList)
+        #print("parse : ", command, dataList)
         # assert len(message) == total_length * 2
         return command, length, dataList
 
@@ -226,13 +233,16 @@ def asu_pdu_build_one_frame(cmd, length, data_list):
     total = 0
     strData = ''
     cmd = str('{:02X}'.format(mPduCmdDictSend[cmd]))
-    length = str('{:02X}'.format(length))
-    for data in data_list:
-        total += data
-        strData += str('{:02X}'.format(data))
+    lengthStrHex = str('{:02X}'.format(length))
+    if length > 0:
+        for data in data_list:
+            total += data
+            strData += str('{:02X}'.format(data))
+    else:
+        total = 0
     crc = str('{:04X}'.format(total))
     crc = crc[2:] + crc[0:2]  # 校验码发送时，低字节在前，高字节在后
-    data = head + cmd + length + crc + strData
+    data = head + cmd + lengthStrHex + crc + strData
     print("send data : ", data)
     strHex = bytes.fromhex(data)
     print("strHex : ", strHex)

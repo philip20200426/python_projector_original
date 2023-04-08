@@ -1,9 +1,10 @@
+import csv
 import re
 import string
 import threading
 
 import cv2
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QTextCharFormat
 
 from log_utils import Logger
 
@@ -45,18 +46,20 @@ class SerialThread(QThread):
 class AutoTestThread(QThread):
     update_motor_signal = pyqtSignal(name='update_motor_info')
 
-    def __init__(self, ser=None, roundSteps=2900):
+    def __init__(self, win=None, ser=None, roundSteps=2900, circle=6):
         super().__init__()
+        self.win = win
         self.ser = ser
         self.count = 0
         self.roundSteps = roundSteps
+        self.circle = circle
         self.exitFlag = False
 
     def run(self):
-        time.sleep(1)  # 防止直接进循环, 阻塞主ui
+        # time.sleep(1)  # 防止直接进循环, 阻塞主ui
+        print('AutoTestThread init circle', self.circle)
         data = [1, 0, 0]
-        while True:
-            self.count += 1
+        while self.count < int(self.circle):
             if self.exitFlag:
                 self.exitFlag = False
                 print(">>>>>>>>>> AutoTestThread Exit ", self.count)
@@ -64,19 +67,40 @@ class AutoTestThread(QThread):
             try:
                 if self.ser is not None:
                     self.update_motor_signal.emit()
-                    # 步数用两个字节表示，低字节在前，高字节在后
+                    # set fan speed
+                    self.win.ui.fan1SpinBox.setValue(100)
+                    self.win.ui.fan2SpinBox.setValue(100)
+                    self.win.ui.fan3SpinBox.setValue(100)
+                    time.sleep(2)
+                    # get ntc
+                    self.win.update_data()
+                    time.sleep(2)
+                    # get fan statue
+                    strHex = asu_pdu_build_one_frame('CMD_GET_FANS', 0, None)
+                    self.ser.write(strHex)
+                    time.sleep(2)
+                    # set motor
+                    # # 步数用两个字节表示，低字节在前，高字节在后
                     data[1] = int(self.roundSteps) & 0x00FF
                     data[2] = int(self.roundSteps) >> 8
                     print('AutoTestThread', data, self.count)
                     strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
                     self.ser.write(strHex)
                     time.sleep(6)
+
                     if data[0] == 1:
                         data[0] = 0
                     else:
                         data[0] = 1
+                    print('>>>>>>>>>> 自动化测试结束 ', self.count)
+                    self.count += 1
             except:
-                return
+                print('串口错误')
+        self.win.ui.autoTestFinishLabel.setStyleSheet("color:green")
+        self.win.ui.autoTestFinishLabel.setText('测试完成')
+        print(self.count, self.circle)
+        if self.count != self.circle:
+            print('测试完成')
 
 
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
@@ -89,7 +113,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle('调试工具')
         self.initialize_ui()
+        self.sn = ''
 
+        self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
         self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
         self.ui.savePduDataButton.clicked.connect(self.save_pdu_data)
         self.ui.autoTestButton.clicked.connect(self.auto_test_pdu)
@@ -188,7 +214,65 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_test_pdu(self):
         text, ok = QInputDialog().getInt(QWidget(), '光机序列号', '输入光机序列号:')
         if ok and text:
-            print(text)
+            self.auto_test_ui_switch(False)
+            self.ui.autoTestFinishLabel.setText('测试中...')
+            self.sn = str(text)
+            # self.ui.motorTestCycleEdit.setText(str(2))
+            self.ui.snLabel.setText("SN: " + str(text))
+            data = ['', '']
+            data[0] = 'SN'
+            data[1] = str(text)
+            if self.write_result_csv('w', data):
+                self.auto_test_motor_open()
+            else:
+                return
+            # self.ui.receive_data_area.clear()
+            # self.ui.testResultTextEdit.insertPlainText("SN: " + str(text) + "\r\n")
+
+    def write_result_csv(self, mode='w', data=[]):
+
+        file_name = self.sn + '.csv'
+        dir_name = 'result'
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        else:
+            print("目录已经存在")
+        file_name = dir_name + "/" + file_name
+        try:
+            with open(file_name, mode=mode, newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(data)
+                csvfile.close()
+            return True
+        except:
+            print('文件打开异常')
+            res = QMessageBox.warning(self, "警告", "必须先关闭已打开的文件！",
+                                      QMessageBox.Yes | QMessageBox.No)
+            if QMessageBox.Yes == res:
+                print("[warn] you clicked yes button!")
+            elif QMessageBox.No == res:
+                print("[warn] you clicked no button!")
+            return False
+
+
+    def auto_test_ui_switch(self, switch=False):
+        if switch is False:
+            failPix = QPixmap('pic/fail.png')
+            self.ui.testTemp3Label.setPixmap(failPix)
+            self.ui.testTemp2Label.setPixmap(failPix)
+            self.ui.testTemp1Label.setPixmap(failPix)
+            self.ui.testFan3Label.setPixmap(failPix)
+            self.ui.testFan2Label.setPixmap(failPix)
+            self.ui.testFan1Label.setPixmap(failPix)
+            self.ui.testMotorLabel.setPixmap(failPix)
+        else:
+            passPix = QPixmap('pic/pass.png')
+            self.ui.testTemp3Label.setPixmap(passPix)
+            self.ui.testTemp2Label.setPixmap(passPix)
+            self.ui.testTemp1Label.setPixmap(passPix)
+            self.ui.testFan3Label.setPixmap(passPix)
+            self.ui.testFan2Label.setPixmap(passPix)
+            self.ui.testFan1Label.setPixmap(passPix)
 
     def open_pgu_led(self):
         if self.mPguLedFlag:
@@ -205,7 +289,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.current_port.write(strHex)
 
     def auto_test_motor_open(self):
-        self.autoTestThread = AutoTestThread(self.current_port, self.ui.motorStepsRoundEdit.text())
+        print('auto test motor open')
+        self.autoTestThread = AutoTestThread(self, self.current_port,
+                                             self.ui.motorStepsRoundEdit.text(),
+                                             self.ui.motorTestCycleEdit.text())
         self.autoTestThread.start()
         self.autoTestThread.update_motor_signal.connect(self.update_motor_info)
 
@@ -224,7 +311,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(hex(int(self.ui.motorStepsEdit.text())))
         data[1] = int(self.ui.motorStepsEdit.text()) & 0x00FF
         data[2] = int(self.ui.motorStepsEdit.text()) >> 8
-        print(data)
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.current_port.write(strHex)
 
@@ -234,7 +320,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(hex(int(self.ui.motorStepsEdit.text())))
         data[1] = int(self.ui.motorStepsEdit.text()) & 0x00FF
         data[2] = int(self.ui.motorStepsEdit.text()) >> 8
-        print(data)
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.current_port.write(strHex)
 
@@ -282,7 +367,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def set_fan_speed(self):
         # data = list()
         data = [0, 0, 0, 1]
-        print(len(data))
         data[0] = 100 - int(self.ui.fan1HorizontalSlider.value())
         data[1] = 100 - int(self.ui.fan2HorizontalSlider.value())
         data[2] = 100 - int(self.ui.fan3HorizontalSlider.value())
@@ -320,6 +404,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # time.sleep(0.05)
 
     def update_data(self):
+        print('update ntc data')
         data = [0, 0]
         strHex = asu_pdu_build_one_frame('CMD_GET_TEMPS', 2, data)
         self.current_port.write(strHex)
@@ -339,6 +424,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.serial_selection.addItems(available_ports)
         self.ui.baud_rate.setEditable(True)
         self.ui.baud_rate.setCurrentText("921600")
+        self.auto_test_ui_switch(False)
+        self.ui.panelPwmHorizontalSlider.setEnabled(False)
+        self.ui.panelPwmSpinBox.setEnabled(False)
 
     def open_port(self):
         # print(self.mPduCmdDict)
@@ -421,6 +509,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def receive_data(self):
         # receive_ascii_format = self.ui.receive_ascii_format.isChecked()
         reverseCount = 0
+        passPix = QPixmap('pic/pass.png')
+        failPix = QPixmap('pic/fail.png')
+        data = ['', '']
         limitCount = 0
         actualSteps = 0
         self.ui.receive_data_area.clear()
@@ -436,20 +527,49 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                              + str(dataList[2])
                 self.ui.label_sw_version.setText(sw_version)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
-                self.ui.temp1Label.setText(str(dataList[0]))  # 背光
-                self.ui.temp2Label.setText(str(dataList[1]))  # 显示屏
-                self.ui.temp3Label.setText(str(dataList[2]))
-                self.ui.temp1VoltageLabel.setText(
-                    str((int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)) / 1000))
-                self.ui.temp2VoltageLabel.setText(
-                    str((int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)) / 1000))
-                self.ui.temp3VoltageLabel.setText(
-                    str((int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)) / 1000))
+                self.ui.temp1Label.setText(str(dataList[0]))  # EVR
+                self.ui.temp2Label.setText(str(dataList[1]))  # LED
+                self.ui.temp3Label.setText(str(dataList[2]))  # LCD
+                temp1 = int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)
+                temp2 = int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)
+                temp3 = int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)
+                data[0] = 'NTC-LCD'
+                if temp3 < 2000:
+                    data[1] = 'pass'
+                    self.ui.testTemp3Label.setPixmap(passPix)
+                else:
+                    data[1] = 'fail'
+                    self.ui.testTemp3Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                data[0] = 'NTC-LED'
+                if temp2 < 2000:
+                    self.ui.testTemp2Label.setPixmap(passPix)
+                    data[1] = 'pass'
+                else:
+                    data[1] = 'fail'
+                    self.ui.testTemp2Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                data[0] = 'NTC-EVR'
+                if temp1 < 2000:
+                    self.ui.testTemp1Label.setPixmap(passPix)
+                    data[1] = 'pass'
+                    self.write_result_csv('a', data)
+                else:
+                    data[1] = 'fail'
+                    self.ui.testTemp1Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
+                self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
+                self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print("motor callback data : ", cmd, dataList)
+                data[0] = 'MOTOR'
                 if dataList[0] == 1:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
                     self.ui.motorStatuslabel.setText("马达限位")
+                    data[1] = 'pass'
+                    self.write_result_csv('a', data)
+                    self.ui.testMotorLabel.setPixmap(passPix)
                     limitCount = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
                 elif dataList[0] == 2:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
@@ -457,15 +577,44 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     reverseCount = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
                     actualSteps = limitCount - reverseCount
                 elif dataList[0] == 0:
+                    data[1] = 'fail'
                     self.ui.motorStatuslabel.setStyleSheet("color:black")
                     self.ui.motorStatuslabel.setText("马达步进结束")
                     actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-                elif dataList[0] == 4:
-                    self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达异常")
                 else:
+                    data[1] = 'fail'
+                    self.ui.testMotorLabel.setPixmap(failPix)
+                    self.ui.motorStatuslabel.setStyleSheet("color:red")
+                    self.ui.motorStatuslabel.setText("马达异常", dataList[0])
                     print("返回错误")
+                self.write_result_csv('a', data)
                 print('actualSteps', actualSteps)
+            if mPduCmdDict2Rev[cmd] == 'CMD_GET_FANS':
+                data[0] = 'FAN1'
+                if dataList[0] == 1:
+                    data[1] = 'pass'
+                    self.ui.testFan1Label.setPixmap(passPix)
+                else:
+                    data[1] = 'fail'
+                    self.ui.testFan1Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                data[0] = 'FAN2'
+                if dataList[1] == 1:
+                    data[1] = 'pass'
+                    self.ui.testFan2Label.setPixmap(passPix)
+                else:
+                    data[1] = 'fail'
+                    self.ui.testFan2Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                data[0] = 'FAN3'
+                if dataList[2] == 1:
+                    data[1] = 'pass'
+                    self.ui.testFan3Label.setPixmap(passPix)
+                else:
+                    data[1] = 'fail'
+                    self.ui.testFan3Label.setPixmap(failPix)
+                self.write_result_csv('a', data)
+                print('CMD_GET_FANS')
             self.ui.port_status.setText('数据设置状态: 成功')
         else:
             print('cmd %d is not found' % cmd)
@@ -477,18 +626,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             else:
                 current_data = self.serial_thread.current_data.hex()
                 # print("receive data hex : ", self.serial_thread.current_data)
-                print("receive data hex ", current_data[2])
+                # print("receive data hex ", current_data[2])
 
                 # asu_parse_one_frame(current_data)
                 data_list = re.findall('.{2}', current_data)
-                print("receive data data_list len : ", str2hex(data_list[2]))
+                # print("receive data data_list len : ", str2hex(data_list[2]))
                 # result = map(hex(), data_list)
                 # print("receive data len ", result[2])
                 # print("receive data data_list ", int(data_list[2]) + int(data_list[3]) + int(data_list[4]))
-                print("receive data data_list : ", int(data_list[3]))
+                # print("receive data data_list : ", int(data_list[3]))
                 # print(len(data_list), data_list[0], data_list[1], data_list[2])
                 current_data = ' '.join(data_list) + ' '
-                print("receive data X : ", current_data)
+                # print("receive data X : ", current_data)
             # if self.ui.auto_new_line.checkState() == Qt.Checked and self.ui.show_time.checkState() == Qt.Checked:
             #     current_data = datetime.datetime.now().strftime('%H:%M:%S') + ' ' + current_data
             # if self.ui.auto_new_line.checkState() == Qt.Checked:
@@ -535,6 +684,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.port_status.setText('数据发送状态: 成功')
         except:
             self.ui.port_status.setText('数据发送状态: 失败')
+
+    def admin_password_logon(self):
+        if self.ui.adminPasswordEdit.text() == '123qwe':
+            print('check ok')
+            self.ui.panelPwmHorizontalSlider.setEnabled(True)
+            self.ui.panelPwmSpinBox.setEnabled(True)
 
     def get_sw_version(self):
         data = []
