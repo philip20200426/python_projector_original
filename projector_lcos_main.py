@@ -60,6 +60,7 @@ class AutoTestThread(QThread):
         print('AutoTestThread init circle', self.circle)
         data = [1, 0, 0]
         while self.count < int(self.circle):
+            preTime = time.time()
             if self.exitFlag:
                 self.exitFlag = False
                 print(">>>>>>>>>> AutoTestThread Exit ", self.count)
@@ -98,9 +99,12 @@ class AutoTestThread(QThread):
                 print('串口错误')
         self.win.ui.autoTestFinishLabel.setStyleSheet("color:green")
         self.win.ui.autoTestFinishLabel.setText('测试完成')
+        nowTime = time.time()
+        totalTime = nowTime - preTime
+        print('累计时间：', totalTime)
         print(self.count, self.circle)
         if self.count != self.circle:
-            print('测试完成')
+            print('测试完成!!!')
 
 
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
@@ -113,7 +117,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle('调试工具')
         self.initialize_ui()
-        self.sn = ''
 
         self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
         self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
@@ -165,6 +168,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.imageBlackLabel.setScaledContents(True)
         self.ui.imageBlackLabel.setPixmap(pix_black)
         self.ui.imageBlackLabel.mousePressEvent = self.show_black_img
+
+        self.sn = '1234567890'
 
         # self.ui.g.etSwVerButton.setEnabled(False)
         # self.ui.redSpinBox.setEnabled(False)
@@ -563,6 +568,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print("motor callback data : ", cmd, dataList)
+                limitCount = 0
                 data[0] = 'MOTOR'
                 if dataList[0] == 1:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
@@ -588,6 +594,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setText("马达异常", dataList[0])
                     print("返回错误")
                 self.write_result_csv('a', data)
+                self.ui.actualStepsLabel.setText(str(actualSteps))
                 print('actualSteps', actualSteps)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_FANS':
                 data[0] = 'FAN1'
