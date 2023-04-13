@@ -1332,7 +1332,7 @@
        <widget class="QLabel" name="testFan2Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>290</y>
           <width>41</width>
           <height>41</height>
@@ -1351,7 +1351,7 @@
        <widget class="QLabel" name="testMotorLabel">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>170</y>
           <width>41</width>
           <height>41</height>
@@ -1373,7 +1373,7 @@
        <widget class="QLabel" name="testTemp1Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>530</y>
           <width>41</width>
           <height>41</height>
@@ -1392,7 +1392,7 @@
        <widget class="QLabel" name="testFan1Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>230</y>
           <width>41</width>
           <height>41</height>
@@ -1411,7 +1411,7 @@
        <widget class="QLabel" name="testTemp2Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>470</y>
           <width>41</width>
           <height>41</height>
@@ -1432,7 +1432,7 @@
          <rect>
           <x>26</x>
           <y>470</y>
-          <width>71</width>
+          <width>80</width>
           <height>40</height>
          </rect>
         </property>
@@ -1452,7 +1452,7 @@
          <rect>
           <x>26</x>
           <y>230</y>
-          <width>71</width>
+          <width>80</width>
           <height>40</height>
          </rect>
         </property>
@@ -1472,7 +1472,7 @@
          <rect>
           <x>26</x>
           <y>290</y>
-          <width>71</width>
+          <width>80</width>
           <height>40</height>
          </rect>
         </property>
@@ -1492,7 +1492,7 @@
          <rect>
           <x>26</x>
           <y>530</y>
-          <width>71</width>
+          <width>80</width>
           <height>40</height>
          </rect>
         </property>
@@ -1553,7 +1553,7 @@
        <widget class="QLabel" name="testTemp3Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>410</y>
           <width>41</width>
           <height>41</height>
@@ -1574,7 +1574,7 @@
          <rect>
           <x>26</x>
           <y>410</y>
-          <width>71</width>
+          <width>80</width>
           <height>40</height>
          </rect>
         </property>
@@ -1594,7 +1594,7 @@
          <rect>
           <x>26</x>
           <y>350</y>
-          <width>71</width>
+          <width>80</width>
           <height>41</height>
          </rect>
         </property>
@@ -1612,7 +1612,7 @@
        <widget class="QLabel" name="testFan3Label">
         <property name="geometry">
          <rect>
-          <x>110</x>
+          <x>130</x>
           <y>350</y>
           <width>41</width>
           <height>41</height>

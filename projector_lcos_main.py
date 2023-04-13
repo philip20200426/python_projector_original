@@ -3,7 +3,7 @@ import re
 import string
 import threading
 import traceback
-
+import xlrd
 import cv2
 import qdarkstyle
 from PyQt5.QtGui import QPixmap, QTextCharFormat
@@ -26,6 +26,8 @@ from serial_utils import get_ports, open_port, parse_one_frame, str2hex, asu_pdu
     asu_pdu_build_one_frame, mPduCmdDict2Rev
 import shutil
 
+cols_temp = []  # 获取第三列内容
+cols_voltage = []  # 获取第三列内容
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -79,11 +81,17 @@ class AutoTestThread(QThread):
 
                     # get ntc
                     self.win.update_data()
+                    # print('>>>>>>>>>> get ntc data')
+                    # data = [0, 0]
+                    # strHex = asu_pdu_build_one_frame('CMD_GET_TEMPS', 2, data)
+                    # if not self.win.serial_write(strHex):
+                    #     print('000000000000000000000000000000000000000000')
+                    #     break
                     lastTime = time.time()
                     while not self.win.mNtcFinished:
                         nowTime = time.time()
-                        #print(nowTime-lastTime, self.win.mNtcFinished)
-                        if (nowTime - lastTime) > 3:
+                        # print(nowTime-lastTime)
+                        if (nowTime - lastTime) > 2:
                             break
                     self.win.mNtcFinished = False
 
@@ -96,7 +104,7 @@ class AutoTestThread(QThread):
                         if (nowTime - lastTime) > 3:
                             break
                     self.win.mFanFinished = False
-
+                    time.sleep(1)
                     # set motor
                     self.win.ui.motorStatuslabel.setStyleSheet("color:white")
                     self.win.ui.motorStatuslabel.setText("马达运行中")
@@ -109,12 +117,12 @@ class AutoTestThread(QThread):
                     lastTime = time.time()
                     while not self.win.mMotorFinished:
                         nowTime = time.time()
+                        # print(nowTime-lastTime)
                         time.sleep(1)
-                        if (nowTime - lastTime) > 8:
+                        if (nowTime - lastTime) > 6:
                             break
                     self.win.mMotorFinished = False
-                    time.sleep(2)
-
+                    #time.sleep(2)
                     if data[0] == 1:
                         data[0] = 0
                     else:
@@ -128,7 +136,7 @@ class AutoTestThread(QThread):
         nowTime = time.time()
         totalTime = nowTime - preTime
         print('>>>>>>>>>> 测试完成，耗时：', totalTime)
-        if self.count != int(self.circle):
+        if self.count == int(self.circle):
             print('测试完成!!!')
 
 
@@ -204,15 +212,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
 
-        self.ui.statusbar.showMessage('Version  2023041301')
+        self.ui.statusbar.showMessage('Version  2023041303')
+        self.cols_temp = []
+        self.cols_voltage = []
+        self.read_excel()
 
-        # self.ui.g.etSwVerButton.setEnabled(False)
-        # self.ui.redSpinBox.setEnabled(False)
-        # self.ui.redHorizontalSlider.setEnabled(False)
-        # self.ui.greenSpinBox.setEnabled(False)
-        # self.ui.greenHorizontalSlider.setEnabled(False)
-        # self.ui.blueSpinBox.setEnabled(False)
-        # self.ui.blueHorizontalSlider.setEnabled(False)
+        self.totalRounds = 0
 
     def slot_lcd_mirror(self, index):
         print("lcd mirror ", index)
@@ -264,6 +269,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_test_pdu(self):
         text, ok = QInputDialog().getText(QWidget(), '光机序列号', '输入光机序列号:')
         if ok and text:
+            self.totalRounds = 0
             self.auto_test_ui_switch(False)
             self.ui.autoTestFinishLabel.setText('测试中...')
             self.sn = str(text)
@@ -438,7 +444,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data = [0, 0]
         strHex = asu_pdu_build_one_frame('CMD_GET_TEMPS', 2, data)
         self.serial_write(strHex)
-
         # self.ui.posValueLabel.setText(position)
         # self.ui.stepsValueLabel.setText(steps)
         # self.ui.redSpinBox.setValue(20)
@@ -452,7 +457,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.send_data.setEnabled(switch)
         self.ui.input_data.setEnabled(switch)
         self.ui.close_port.setEnabled(switch)
-        #self.ui.baud_rate.setEditable(switch)
+        # self.ui.baud_rate.setEditable(switch)
         self.ui.panelPwmHorizontalSlider.setEnabled(switch)
         self.ui.panelPwmSpinBox.setEnabled(switch)
         self.ui.openLedButton.setEnabled(switch)
@@ -463,8 +468,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             print(switch)
             self.ui.lcdGroupBox.setEnabled(switch)
-
-
 
     def open_port(self):
         # print(self.mPduCmdDict)
@@ -505,9 +508,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def close_port(self):
         if self.current_port is not None:
-            #self.serial_thread.quit()
-            #self.serial_thread.wait()
-            self.serial_thread.ser = None #没有正常退出，不可以，后面继续研究
+            # self.serial_thread.quit()
+            # self.serial_thread.wait()
+            self.serial_thread.ser = None  # 没有正常退出，不可以，后面继续研究
             # self.repeat_send_timer.stop()
             self.current_port.close()
             self.ui.port_status.setText(self.current_port.port + ' 关闭成功')
@@ -550,14 +553,25 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.label_sw_version.setText(sw_version)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
                 print('>>>>>>>>>> Uart receive CMD_GET_TEMPS')
-                self.ui.temp1Label.setText(str(dataList[0]))  # EVR
-                self.ui.temp2Label.setText(str(dataList[1]))  # LED
-                self.ui.temp3Label.setText(str(dataList[2]))  # LCD
+                # self.ui.temp1Label.setText(str(dataList[0]))  # EVR
+                # self.ui.temp2Label.setText(str(dataList[1]))  # LED
+                # self.ui.temp3Label.setText(str(dataList[2]))  # LCD
                 temp1 = int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)
                 temp2 = int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)
                 temp3 = int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)
+                val1 = 0
+                val2 = 0
+                val3 = 0
+                for i in range(1, 82):
+                    #print(i, temp2, int(self.cols_voltage[i]*1000))
+                    if temp1 < int(self.cols_voltage[i]*1000):
+                        val1 = i
+                    if temp2 < int(self.cols_voltage[i]*1000):
+                        val2 = i
+                    if temp3 < int(self.cols_voltage[i] * 1000):
+                        val3 = i
                 data[0] = 'NTC-LCD'
-                if temp3 < 2000:
+                if 6 < val3 < 60:
                     data[1] = 'pass'
                     self.ui.testTemp3Label.setPixmap(passPix)
                 else:
@@ -565,7 +579,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.testTemp3Label.setPixmap(failPix)
                 self.write_result_csv('a', data)
                 data[0] = 'NTC-LED'
-                if temp2 < 2000:
+                if 6 < val2 < 60:
                     self.ui.testTemp2Label.setPixmap(passPix)
                     data[1] = 'pass'
                 else:
@@ -573,7 +587,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.testTemp2Label.setPixmap(failPix)
                 self.write_result_csv('a', data)
                 data[0] = 'NTC-EVR'
-                if temp1 < 2000:
+                if 6 < val1 < 60:
                     self.ui.testTemp1Label.setPixmap(passPix)
                     data[1] = 'pass'
                     self.write_result_csv('a', data)
@@ -584,6 +598,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
                 self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
                 self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
+                self.ui.temp1Label.setText(str(int(val1-1)))  # EVR
+                self.ui.temp2Label.setText(str(int(val2-1)))  # LED
+                self.ui.temp3Label.setText(str(int(val3-1)))  # LCD
                 self.mNtcFinished = True
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print('>>>>>>>>>> Uart receive CMD_SET_FOCUSMOTOR')
@@ -595,7 +612,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setText("马达限位")
                     data[1] = 'pass'
                     self.write_result_csv('a', data)
-                    self.ui.testMotorLabel.setPixmap(passPix)
+                    self.totalRounds += 1
+                    print('9999999999999999999999999',self.totalRounds, self.ui.motorTestCycleEdit.text())
+                    if self.totalRounds == int(self.ui.motorTestCycleEdit.text()):
+                        self.totalRounds = 0
+                        print('88888888888888888888888888888888888888888888')
+                        self.ui.testMotorLabel.setPixmap(passPix)
                     limitCount = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
                 elif dataList[0] == 2:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
@@ -608,7 +630,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setStyleSheet("color:black")
                     self.ui.motorStatuslabel.setText("马达步进结束")
                     actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-                    #self.mMotorFinished = True
+                    # self.mMotorFinished = True
                 else:
                     data[1] = 'fail'
                     self.ui.testMotorLabel.setPixmap(failPix)
@@ -617,7 +639,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     print("返回错误")
                 self.write_result_csv('a', data)
                 self.ui.actualStepsLabel.setText(str(actualSteps))
-                self.mMotorFinished = True
                 print('actualSteps', actualSteps)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_FANS':
                 print('>>>>>>>>>> Uart receive CMD_GET_FANS')
@@ -730,17 +751,62 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def serial_write(self, strHex):
         try:
             self.current_port.write(strHex)
+            return True
         except Exception as result:
             if str(result).find('PermissionError') >= 0 and str(result).find('WriteFile failed') >= 0:
                 QMessageBox.warning(self, "串口异常", "请先确定硬件串口是否连接，关闭串口后重新打开串口")
-                #print(traceback.format_exc())
+                # print(traceback.format_exc())
             else:
                 print('不存在')
+            return False
 
     def get_sw_version(self):
         data = []
         strHex = asu_pdu_build_one_frame('CMD_GET_VERSION', 0, data)
         self.serial_write(strHex)
+
+    def read_excel(self):
+        # 打开文件，xlrd.open_workbook()，函数中参数为文件路径，分为相对路径和绝对路径
+        workBook = xlrd.open_workbook(r'pic/ntc_vol_temp_list.xls')
+
+        # 获取所有sheet的名字(list类型)
+        allSheetNames = workBook.sheet_names()
+        print(allSheetNames)
+        # 按索引号获取单个sheet的名字（string类型）
+        sheet1Name = workBook.sheet_names()[0]
+        print(sheet1Name)
+
+        # 获取sheet内容
+        ## 按索引号获取sheet内容
+        #sheet1_content1 = workBook.sheet_by_index(0);  # sheet索引从0开始
+        ## 按sheet名字获取sheet内容，workBook.sheet_by_name()括号内的参数是sheet的真实名字
+        sheet1_content1 = workBook.sheet_by_name('Table2')
+
+        # 获取sheet的名称，行数，列数
+        print(sheet1_content1.name, sheet1_content1.nrows, sheet1_content1.ncols)
+
+        # 获取整行和整列的值（数组）
+        #rows = sheet1_content1.row_values(3)  # 获取第四行内容
+        self.cols_temp = sheet1_content1.col_values(2)  # 获取第三列内容
+        self.cols_voltage = sheet1_content1.col_values(5)  # 获取第三列内容
+        # print(type(cols_temp), cols_temp)
+        # print('\n\r')
+        # print(cols_voltage)
+        # 使用循环获得多行的数据并保存到table中，获得多列数据是同样的方法
+        table = []  # 定义一个空列表，将读取的每一行数据保存到该列表中
+        for i in range(sheet1_content1.nrows):
+            rows = sheet1_content1.row_values(i)
+            table.append(rows)
+        print(rows)
+
+        # 获取单元格内容(三种方式)
+        print(sheet1_content1.cell(1, 0).value)
+        print(sheet1_content1.cell_value(2, 2))
+        print(sheet1_content1.row(2)[2].value)
+
+        # 获取单元格内容的数据类型
+        # Tips: python读取excel中单元格的内容返回的有5种类型 [0 empty,1 string, 2 number, 3 date, 4 boolean, 5 error]
+        print(sheet1_content1.cell(1, 0).ctype)
 
 
 if __name__ == '__main__':
@@ -749,6 +815,5 @@ if __name__ == '__main__':
     w = ProjectorWindow()
     w.resize(1239, 900)
     w.show()
-    mylog = Logger('motor.log', level='debug')
-    mylog.logger.debug("-------------重新启动应用-------------")
+
     sys.exit(app.exec_())
