@@ -227,23 +227,36 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_thread = SerialThread(self.current_port)
         self.autoTestThread = None
 
-        pix = QPixmap('pic/op01_char.jpg')
+        pix = QPixmap(imageList[0])
         self.ui.imageCharLabel.setStyleSheet("border: 3px solid gray")
         self.ui.imageCharLabel.setScaledContents(True)
         self.ui.imageCharLabel.setPixmap(pix)
         self.ui.imageCharLabel.mousePressEvent = self.show_char_img
 
-        pix_white = QPixmap('pic/op02_white.png')
+        pix_white = QPixmap(imageList[1])
         self.ui.imageWhiteLabel.setStyleSheet("border: 3px solid gray")
         self.ui.imageWhiteLabel.setScaledContents(True)
         self.ui.imageWhiteLabel.setPixmap(pix_white)
         self.ui.imageWhiteLabel.mousePressEvent = self.show_white_img
 
-        pix_black = QPixmap('pic/op03_black.png')
+        pix_black = QPixmap(imageList[2])
         self.ui.imageBlackLabel.setStyleSheet("border: 3px solid gray")
         self.ui.imageBlackLabel.setScaledContents(True)
         self.ui.imageBlackLabel.setPixmap(pix_black)
         self.ui.imageBlackLabel.mousePressEvent = self.show_black_img
+        # for i in range(len(imageList)):
+        #     pix = QPixmap(imageList[i])
+        #     self.ui.imageBlackLabel.setStyleSheet("border: 3px solid gray")
+        #     self.ui.imageBlackLabel.setScaledContents(True)
+        #     if i == 0:
+        #         self.ui.imageCharLabel.setPixmap(pix)
+        #     elif i == 1:
+        #         self.ui.imageWhiteLabel.setPixmap(pix)
+        #     elif i == 2:
+        #         self.ui.imageBlackLabel.setPixmap(pix)
+        # self.ui.imageBlackLabel.mousePressEvent = self.show_black_img
+        # self.ui.imageWhiteLabel.mousePressEvent = self.show_white_img
+        # self.ui.imageCharLabel.mousePressEvent = self.show_char_img
 
         self.sn = '1234567890'
         lcd_items = ["正常", "上下", "左右", "上下左右"]
@@ -256,19 +269,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.statusbar.addPermanentWidget(self.ui.swLabel, stretch=0)
         self.ui.hwLabel = QLabel()
 
+        # 温度补偿
         self.cols_temp = []
         self.cols_voltage = []
+        # 温度标定数据
         self.read_excel()
+        # 阈值参数
+        self.read_para()
 
         self.totalRounds = 0
-
+        # 限定文本框输入的数据类型
         reg = QRegExp('[0-9]+$')
         # reg = QRegExp('[a-zA-Z0-9]+$') #数字和字母
         validator = QRegExpValidator()
         validator.setRegExp(reg)
         self.ui.ntcThresholdUpperEdit.setValidator(validator)
         self.ui.ntcThresholdLowerEdit.setValidator(validator)
-        self.read_para()
 
     def read_para(self):
         if os.path.exists(FILE_PARA):
@@ -592,6 +608,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
             self.ui.refresh_port.setEnabled(False)
+            self.slot_lcd_mirror(2)
+            self.ui.hwLabel.setText('')
+            self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
+            time.sleep(1)
             self.get_hw_version()
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
@@ -609,6 +629,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.switch_windows_ui(False)
             self.ui.open_port.setEnabled(True)
             self.ui.refresh_port.setEnabled(True)
+            self.ui.hwLabel.setText('')
+            self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
         else:
             self.ui.port_status.setText('无串口可关闭')
 
