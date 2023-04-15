@@ -322,11 +322,14 @@
          <x>10</x>
          <y>190</y>
          <width>421</width>
-         <height>161</height>
+         <height>221</height>
         </rect>
        </property>
        <property name="contextMenuPolicy">
         <enum>Qt::DefaultContextMenu</enum>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhDigitsOnly</set>
        </property>
        <property name="frameShape">
         <enum>QFrame::Box</enum>
@@ -344,7 +347,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>90</y>
+          <y>140</y>
           <width>81</width>
           <height>41</height>
          </rect>
@@ -363,7 +366,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>120</y>
+          <y>170</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -382,7 +385,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>60</y>
+          <y>110</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -401,7 +404,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>60</y>
+          <y>110</y>
           <width>81</width>
           <height>41</height>
          </rect>
@@ -420,7 +423,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>90</y>
+          <y>140</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -439,7 +442,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>90</y>
+          <y>140</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -470,13 +473,13 @@
          </font>
         </property>
         <property name="text">
-         <string>采集频率：</string>
+         <string>采集频率</string>
         </property>
        </widget>
        <widget class="QLabel" name="label_37">
         <property name="geometry">
          <rect>
-          <x>340</x>
+          <x>330</x>
           <y>20</y>
           <width>41</width>
           <height>31</height>
@@ -495,9 +498,9 @@
        <widget class="QLabel" name="tempFlagLabel">
         <property name="geometry">
          <rect>
-          <x>380</x>
+          <x>370</x>
           <y>20</y>
-          <width>31</width>
+          <width>40</width>
           <height>31</height>
          </rect>
         </property>
@@ -534,7 +537,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>120</y>
+          <y>170</y>
           <width>81</width>
           <height>41</height>
          </rect>
@@ -553,7 +556,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>60</y>
+          <y>110</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -572,7 +575,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>120</y>
+          <y>170</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -590,8 +593,8 @@
        <widget class="QLabel" name="label_39">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>60</y>
+          <x>210</x>
+          <y>110</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -609,8 +612,8 @@
        <widget class="QLabel" name="label_40">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>90</y>
+          <x>210</x>
+          <y>140</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -628,8 +631,8 @@
        <widget class="QLabel" name="label_41">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>120</y>
+          <x>210</x>
+          <y>170</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -647,8 +650,8 @@
        <widget class="QLabel" name="temp1VoltageLabel">
         <property name="geometry">
          <rect>
-          <x>250</x>
-          <y>120</y>
+          <x>280</x>
+          <y>170</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -666,8 +669,8 @@
        <widget class="QLabel" name="temp2VoltageLabel">
         <property name="geometry">
          <rect>
-          <x>250</x>
-          <y>90</y>
+          <x>280</x>
+          <y>140</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -685,8 +688,8 @@
        <widget class="QLabel" name="temp3VoltageLabel">
         <property name="geometry">
          <rect>
-          <x>250</x>
-          <y>60</y>
+          <x>280</x>
+          <y>110</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -704,8 +707,8 @@
        <widget class="QLabel" name="label_42">
         <property name="geometry">
          <rect>
-          <x>320</x>
-          <y>60</y>
+          <x>360</x>
+          <y>110</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -723,8 +726,8 @@
        <widget class="QLabel" name="label_43">
         <property name="geometry">
          <rect>
-          <x>320</x>
-          <y>90</y>
+          <x>360</x>
+          <y>140</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -742,8 +745,8 @@
        <widget class="QLabel" name="label_44">
         <property name="geometry">
          <rect>
-          <x>320</x>
-          <y>120</y>
+          <x>360</x>
+          <y>170</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -763,7 +766,7 @@
          <rect>
           <x>210</x>
           <y>20</y>
-          <width>121</width>
+          <width>110</width>
           <height>31</height>
          </rect>
         </property>
@@ -778,6 +781,107 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_45">
+        <property name="geometry">
+         <rect>
+          <x>170</x>
+          <y>70</y>
+          <width>71</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>阈值高</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_46">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>70</y>
+          <width>71</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>阈值低</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="ntcThresholdUpperEdit">
+        <property name="geometry">
+         <rect>
+          <x>230</x>
+          <y>70</y>
+          <width>71</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>121</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhDigitsOnly</set>
+        </property>
+        <property name="text">
+         <string>60</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="ntcThresholdLowerEdit">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>70</y>
+          <width>61</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>121</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhDigitsOnly</set>
+        </property>
+        <property name="text">
+         <string>6</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="saveThresholdButton">
+        <property name="geometry">
+         <rect>
+          <x>330</x>
+          <y>70</y>
+          <width>71</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>保存</string>
         </property>
        </widget>
       </widget>
@@ -993,9 +1097,9 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>370</y>
+         <y>440</y>
          <width>421</width>
-         <height>231</height>
+         <height>161</height>
         </rect>
        </property>
        <property name="frameShape">
@@ -1236,72 +1340,6 @@
         </property>
         <property name="text">
          <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="getSwVerButton">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>181</y>
-          <width>121</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>获取软件版本：</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_sw_version">
-        <property name="geometry">
-         <rect>
-          <x>140</x>
-          <y>180</y>
-          <width>72</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="layoutDirection">
-         <enum>Qt::RightToLeft</enum>
-        </property>
-        <property name="text">
-         <string>0.0.1</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QComboBox" name="mirrorComboBox">
-        <property name="geometry">
-         <rect>
-          <x>310</x>
-          <y>181</y>
-          <width>90</width>
-          <height>31</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="motorStatuslabel_2">
-        <property name="geometry">
-         <rect>
-          <x>220</x>
-          <y>180</y>
-          <width>81</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <pointsize>9</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>LCD镜像</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -1681,6 +1719,9 @@
         <height>331</height>
        </rect>
       </property>
+      <property name="inputMethodHints">
+       <set>Qt::ImhDigitsOnly</set>
+      </property>
       <property name="frameShape">
        <enum>QFrame::Box</enum>
       </property>
@@ -1688,9 +1729,9 @@
      <widget class="QFrame" name="frame_11">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>160</x>
         <y>660</y>
-        <width>1211</width>
+        <width>1061</width>
         <height>111</height>
        </rect>
       </property>
@@ -1709,7 +1750,7 @@
       <widget class="QLabel" name="imageCharLabel">
        <property name="geometry">
         <rect>
-         <x>160</x>
+         <x>10</x>
          <y>10</y>
          <width>160</width>
          <height>90</height>
@@ -1731,7 +1772,7 @@
       <widget class="QLabel" name="imageWhiteLabel">
        <property name="geometry">
         <rect>
-         <x>340</x>
+         <x>190</x>
          <y>10</y>
          <width>160</width>
          <height>90</height>
@@ -1751,6 +1792,50 @@
        </property>
       </widget>
       <widget class="QLabel" name="imageBlackLabel">
+       <property name="geometry">
+        <rect>
+         <x>370</x>
+         <y>10</y>
+         <width>160</width>
+         <height>90</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <property name="text">
+        <string>黑图</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QFrame" name="frame_12">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>660</y>
+        <width>131</width>
+        <height>111</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Panel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
+      <property name="midLineWidth">
+       <number>1</number>
+      </property>
+      <widget class="QLabel" name="imageBlackLabel_2">
        <property name="geometry">
         <rect>
          <x>520</x>
@@ -1777,13 +1862,13 @@
         <rect>
          <x>10</x>
          <y>10</y>
-         <width>121</width>
-         <height>91</height>
+         <width>100</width>
+         <height>39</height>
         </rect>
        </property>
        <property name="maximumSize">
         <size>
-         <width>121</width>
+         <width>200</width>
          <height>16777215</height>
         </size>
        </property>
@@ -1797,6 +1882,16 @@
        </property>
        <property name="text">
         <string>打开光机</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="mirrorComboBox">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>60</y>
+         <width>100</width>
+         <height>31</height>
+        </rect>
        </property>
       </widget>
      </widget>

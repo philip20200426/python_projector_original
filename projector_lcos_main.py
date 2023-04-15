@@ -6,13 +6,13 @@ import traceback
 import xlrd
 import cv2
 import qdarkstyle
-from PyQt5.QtGui import QPixmap, QTextCharFormat
+from PyQt5.QtGui import QPixmap, QTextCharFormat, QRegExpValidator
 from qdarkstyle import DarkPalette
 
 from log_utils import Logger
 
 # import serial
-from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QRegExp
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QTextEdit, QMessageBox, QLabel, QInputDialog, QWidget
 import os, sys
 
@@ -24,10 +24,13 @@ import threading  # 导入threading模块
 import time
 from serial_utils import get_ports, open_port, parse_one_frame, str2hex, asu_pdu_parse_one_frame, \
     asu_pdu_build_one_frame, mPduCmdDict2Rev
+import csv
 import shutil
 
 cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
+
+FILE_PARA = 'pic/param.csv'
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -122,7 +125,7 @@ class AutoTestThread(QThread):
                         if (nowTime - lastTime) > 6:
                             break
                     self.win.mMotorFinished = False
-                    #time.sleep(2)
+                    # time.sleep(2)
                     if data[0] == 1:
                         data[0] = 0
                     else:
@@ -159,7 +162,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.baud_rate.setCurrentText("921600")
 
         self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
-        self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
+        self.ui.saveThresholdButton.clicked.connect(self.save_para)
         self.ui.savePduDataButton.clicked.connect(self.save_pdu_data)
         self.ui.autoTestButton.clicked.connect(self.auto_test_pdu)
         self.ui.fan1HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
@@ -212,12 +215,60 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
 
-        self.ui.statusbar.showMessage('Version  2023041303')
+        self.ui.statusbar.showMessage('SW: 2023041303')
+        self.ui.swLabel = QLabel()
+        self.ui.swLabel.setText('SW: 2023041303')
+        self.ui.statusbar.addPermanentWidget(self.ui.swLabel, stretch=0)
+        self.ui.hwLabel = QLabel()
+
         self.cols_temp = []
         self.cols_voltage = []
         self.read_excel()
 
         self.totalRounds = 0
+
+        reg = QRegExp('[0-9]+$')
+        #reg = QRegExp('[a-zA-Z0-9]+$') #数字和字母
+        validator = QRegExpValidator()
+        validator.setRegExp(reg)
+        self.ui.ntcThresholdUpperEdit.setValidator(validator)
+        self.ui.ntcThresholdLowerEdit.setValidator(validator)
+        self.read_para()
+
+    def read_para(self):
+        if os.path.exists(FILE_PARA):
+            with open(FILE_PARA, mode='r', encoding='utf-8-sig', newline='') as file:
+                # 使用csv.reader()将文件中的每行数据读入到一个列表中
+                reader = csv.reader(file, delimiter=',', quotechar=',', quoting=csv.QUOTE_MINIMAL)
+                # csv.DictWriter() #以字典的形式读写数据
+                # 遍历列表将数据按行输出
+                result = list(reader)
+                if len(result[0]) > 0:
+                    self.ui.ntcThresholdLowerEdit.setText(str(result[0][0]))
+                    self.ui.ntcThresholdUpperEdit.setText(str(result[0][1]))
+            file.close()
+            return result
+
+    def save_para(self):
+        data = [[0, 0]]
+        error = True
+        data[0][0] = int(self.ui.ntcThresholdLowerEdit.text())
+        data[0][1] = int(self.ui.ntcThresholdUpperEdit.text())
+
+        with open(FILE_PARA, 'w') as file:
+            writer = csv.writer(file)
+            for i in range(len(data)):
+                writer.writerow(data[i])
+        file.close()
+        result = self.read_para()
+        for i in range(0, len(data)):
+            for j in range(0, len(data[0])):
+                if int(result[i][j]) != data[i][j]:
+                    error = False
+        if error:
+            QMessageBox.warning(self, "提示", "保存成功")
+        else:
+            QMessageBox.warning(self, "提示", "保存失败")
 
     def slot_lcd_mirror(self, index):
         print("lcd mirror ", index)
@@ -503,6 +554,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
             self.ui.refresh_port.setEnabled(False)
+            self.get_hw_version()
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
 
@@ -549,8 +601,17 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
                 sw_version = str(dataList[0]) + "." \
                              + str(dataList[1]) + "." \
-                             + str(dataList[2])
-                self.ui.label_sw_version.setText(sw_version)
+                             + str(dataList[2]) + " "
+                del dataList[0:3]
+                dataList.insert(12, 32)
+                dataList.insert(12, 32)
+                for i in range(0, len(dataList)):
+                    sw_version = sw_version + chr(dataList[i])
+                sw_version = 'HW: ' + sw_version
+                # sw_version = ''.join(charDataList)
+                self.ui.hwLabel.setText(sw_version)
+                self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
+
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
                 print('>>>>>>>>>> Uart receive CMD_GET_TEMPS')
                 # self.ui.temp1Label.setText(str(dataList[0]))  # EVR
@@ -563,15 +624,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 val2 = 0
                 val3 = 0
                 for i in range(1, 82):
-                    #print(i, temp2, int(self.cols_voltage[i]*1000))
-                    if temp1 < int(self.cols_voltage[i]*1000):
+                    # print(i, temp2, int(self.cols_voltage[i]*1000))
+                    if temp1 < int(self.cols_voltage[i] * 1000):
                         val1 = i
-                    if temp2 < int(self.cols_voltage[i]*1000):
+                    if temp2 < int(self.cols_voltage[i] * 1000):
                         val2 = i
                     if temp3 < int(self.cols_voltage[i] * 1000):
                         val3 = i
                 data[0] = 'NTC-LCD'
-                if 6 < val3 < 60:
+                if int(self.ui.ntcThresholdLowerEdit.text()) < val3 < int(self.ui.ntcThresholdUpperEdit.text()):
                     data[1] = 'pass'
                     self.ui.testTemp3Label.setPixmap(passPix)
                 else:
@@ -579,7 +640,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.testTemp3Label.setPixmap(failPix)
                 self.write_result_csv('a', data)
                 data[0] = 'NTC-LED'
-                if 6 < val2 < 60:
+                if int(self.ui.ntcThresholdLowerEdit.text()) < val2 < int(self.ui.ntcThresholdUpperEdit.text()):
                     self.ui.testTemp2Label.setPixmap(passPix)
                     data[1] = 'pass'
                 else:
@@ -587,7 +648,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.testTemp2Label.setPixmap(failPix)
                 self.write_result_csv('a', data)
                 data[0] = 'NTC-EVR'
-                if 6 < val1 < 60:
+                if int(self.ui.ntcThresholdLowerEdit.text()) < val1 < int(self.ui.ntcThresholdUpperEdit.text()):
                     self.ui.testTemp1Label.setPixmap(passPix)
                     data[1] = 'pass'
                     self.write_result_csv('a', data)
@@ -598,9 +659,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
                 self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
                 self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
-                self.ui.temp1Label.setText(str(int(val1-1)))  # EVR
-                self.ui.temp2Label.setText(str(int(val2-1)))  # LED
-                self.ui.temp3Label.setText(str(int(val3-1)))  # LCD
+                self.ui.temp1Label.setText(str(int(val1 + 1)))  # EVR
+                self.ui.temp2Label.setText(str(int(val2 + 1)))  # LED
+                self.ui.temp3Label.setText(str(int(val3 + 1)))  # LCD
                 self.mNtcFinished = True
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print('>>>>>>>>>> Uart receive CMD_SET_FOCUSMOTOR')
@@ -613,7 +674,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     data[1] = 'pass'
                     self.write_result_csv('a', data)
                     self.totalRounds += 1
-                    print('9999999999999999999999999',self.totalRounds, self.ui.motorTestCycleEdit.text())
+                    print('9999999999999999999999999', self.totalRounds, self.ui.motorTestCycleEdit.text())
                     if self.totalRounds == int(self.ui.motorTestCycleEdit.text()):
                         self.totalRounds = 0
                         print('88888888888888888888888888888888888888888888')
@@ -760,9 +821,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print('不存在')
             return False
 
-    def get_sw_version(self):
-        data = []
-        strHex = asu_pdu_build_one_frame('CMD_GET_VERSION', 0, data)
+    def get_hw_version(self):
+        strHex = asu_pdu_build_one_frame('CMD_GET_VERSION', 0, None)
         self.serial_write(strHex)
 
     def read_excel(self):
@@ -778,7 +838,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         # 获取sheet内容
         ## 按索引号获取sheet内容
-        #sheet1_content1 = workBook.sheet_by_index(0);  # sheet索引从0开始
+        # sheet1_content1 = workBook.sheet_by_index(0);  # sheet索引从0开始
         ## 按sheet名字获取sheet内容，workBook.sheet_by_name()括号内的参数是sheet的真实名字
         sheet1_content1 = workBook.sheet_by_name('Table2')
 
@@ -786,7 +846,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(sheet1_content1.name, sheet1_content1.nrows, sheet1_content1.ncols)
 
         # 获取整行和整列的值（数组）
-        #rows = sheet1_content1.row_values(3)  # 获取第四行内容
+        # rows = sheet1_content1.row_values(3)  # 获取第四行内容
         self.cols_temp = sheet1_content1.col_values(2)  # 获取第三列内容
         self.cols_voltage = sheet1_content1.col_values(5)  # 获取第三列内容
         # print(type(cols_temp), cols_temp)
