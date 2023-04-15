@@ -3,12 +3,14 @@ import re
 import string
 import threading
 import traceback
+
+import numpy as np
 import xlrd
 import cv2
 import qdarkstyle
 from PyQt5.QtGui import QPixmap, QTextCharFormat, QRegExpValidator
 from qdarkstyle import DarkPalette
-
+from PyQt5 import QtCore
 from log_utils import Logger
 
 # import serial
@@ -31,6 +33,39 @@ cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
 
 FILE_PARA = 'pic/param.csv'
+imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
+g_img_num = -1
+
+def cvCallBack(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print('left button down')
+    elif event == cv2.EVENT_LBUTTONUP:
+        print('left button up', x, y, flags)
+        global g_img_num
+        g_img_num += 1
+        if g_img_num > 2:
+            g_img_num = 0
+        show_img(g_img_num)
+    elif event == cv2.EVENT_RBUTTONDOWN:
+        print('right button down')
+    elif event == cv2.EVENT_RBUTTONUP:
+        cv2.destroyAllWindows()
+        print('right button up')
+    if event == cv2.EVENT_MOUSEMOVE:
+        pass
+        #cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
+
+
+def show_img(num):
+    global g_img_num
+    g_img_num = num
+    img_bgr = cv2.imread(imageList[g_img_num])
+    cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+    cv2.moveWindow("myImage", 0, 0)
+    cv2.setMouseCallback('myImage', cvCallBack, img_bgr)
+    cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv2.imshow("myImage", img_bgr)
+
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -228,7 +263,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.totalRounds = 0
 
         reg = QRegExp('[0-9]+$')
-        #reg = QRegExp('[a-zA-Z0-9]+$') #数字和字母
+        # reg = QRegExp('[a-zA-Z0-9]+$') #数字和字母
         validator = QRegExpValidator()
         validator.setRegExp(reg)
         self.ui.ntcThresholdUpperEdit.setValidator(validator)
@@ -288,34 +323,37 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(event.button)
 
     def show_char_img(self, v):
-        img_bgr = cv2.imread("pic/op01_char.jpg")
-        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
-        cv2.moveWindow("myImage", 0, 0)
-        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        cv2.imshow("myImage", img_bgr)
-        val = cv2.waitKey(0)
-        print(v, val)
-        cv2.destroyAllWindows()
+        show_img(0)
+        # img_bgr = cv2.imread("pic/op01_char.jpg")
+        # cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        # cv2.moveWindow("myImage", 0, 0)
+        # cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.imshow("myImage", img_bgr)
+        # val = cv2.waitKey(0)
+        # print(v, val)
+        # cv2.destroyAllWindows()
 
     def show_white_img(self, v):
-        img_bgr = cv2.imread("pic/op02_white.png")
-        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
-        cv2.moveWindow("myImage", 0, 0)
-        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        cv2.imshow("myImage", img_bgr)
-        val = cv2.waitKey(0)
-        print(v, val)
-        cv2.destroyAllWindows()
+        show_img(1)
+        # img_bgr = cv2.imread("pic/op02_white.png")
+        # cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        # cv2.moveWindow("myImage", 0, 0)
+        # cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.imshow("myImage", img_bgr)
+        # val = cv2.waitKey(0)
+        # print(v, val)
+        # cv2.destroyAllWindows()
 
     def show_black_img(self, v):
-        img_bgr = cv2.imread("pic/op03_black.png")
-        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
-        cv2.moveWindow("myImage", 0, 0)
-        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        cv2.imshow("myImage", img_bgr)
-        val = cv2.waitKey(0)
-        print(v, val)
-        cv2.destroyAllWindows()
+        show_img(2)
+        # img_bgr = cv2.imread("pic/op03_black.png")
+        # cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        # cv2.moveWindow("myImage", 0, 0)
+        # cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.imshow("myImage", img_bgr)
+        # val = cv2.waitKey(0)
+        # print(v, val)
+        # cv2.destroyAllWindows()
 
     def auto_test_pdu(self):
         text, ok = QInputDialog().getText(QWidget(), '光机序列号', '输入光机序列号:')
@@ -868,6 +906,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # Tips: python读取excel中单元格的内容返回的有5种类型 [0 empty,1 string, 2 number, 3 date, 4 boolean, 5 error]
         print(sheet1_content1.cell(1, 0).ctype)
 
+    def mousePressEvent(self, event):
+        if event.buttons() == QtCore.Qt.LeftButton:  # 左键按下
+            # self.setText("单击鼠标左键的事件: 自己定义")
+            print("单击鼠标左键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.RightButton:  # 右键按下
+            # self.setText("单击鼠标右键的事件: 自己定义")
+            cv2.destroyAllWindows
+            print("单击鼠标右键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.MidButton:  # 中键按下
+            # self.setText("单击鼠标中键的事件: 自己定义")
+            print("单击鼠标中键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.LeftButton | QtCore.Qt.RightButton:  # 左右键同时按下
+            # self.setText("同时单击鼠标左右键的事件: 自己定义")
+            print("单击鼠标左右键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.LeftButton | QtCore.Qt.MidButton:  # 左中键同时按下
+            # self.setText("同时单击鼠标左中键的事件: 自己定义")
+            print("单击鼠标左中键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.MidButton | QtCore.Qt.RightButton:  # 右中键同时按下
+            # self.setText("同时单击鼠标右中键的事件: 自己定义")
+            print("单击鼠标右中键")  # 响应测试语句
+        elif event.buttons() == QtCore.Qt.LeftButton | QtCore.Qt.MidButton \
+                | QtCore.Qt.RightButton:  # 左中右键同时按下
+            # self.setText("同时单击鼠标左中右键的事件: 自己定义")
+            print("单击鼠标左中右键")  # 响应测试语句
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -875,5 +938,4 @@ if __name__ == '__main__':
     w = ProjectorWindow()
     w.resize(1239, 900)
     w.show()
-
     sys.exit(app.exec_())
