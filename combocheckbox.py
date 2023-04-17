@@ -51,7 +51,6 @@ class ComboCheckBox(QComboBox):
         decide whether to check all
         :return:
         """
-        print('all selected')
         # change state
         if self.state == 0:
             self.state = 1
@@ -68,7 +67,6 @@ class ComboCheckBox(QComboBox):
         get selected items
         :return:
         """
-        print('get selected')
         ret = []
         for i in range(1, len(self.items)):
             if self.box_list[i].isChecked():
@@ -80,7 +78,6 @@ class ComboCheckBox(QComboBox):
         show selected items
         :return:
         """
-        print('show selected')
         self.text.clear()
         ret = '; '.join(self.get_selected())
         self.text.setText(ret)

@@ -36,6 +36,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
 
+SW_VERSION = 'SW: 2023041701'
 FILE_PARA = 'pic/param.csv'
 NTC_VOLTAGE_TEMP = 'pic/ntc_vol_temp_list.xls'
 imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
@@ -61,6 +62,19 @@ def cvCallBack(event, x, y, flags, param):
         pass
         # cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
 
+def testResult(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print('left button down')
+    elif event == cv2.EVENT_LBUTTONUP:
+        pass
+    elif event == cv2.EVENT_RBUTTONDOWN:
+        print('right button down')
+    elif event == cv2.EVENT_RBUTTONUP:
+        cv2.destroyAllWindows()
+        print('right button up')
+    if event == cv2.EVENT_MOUSEMOVE:
+        pass
+        # cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
 
 def show_img(num):
     global g_img_num
@@ -80,6 +94,8 @@ class SerialThread(QThread):
         super().__init__()
         self.ser = ser
         self.current_data = b''
+        self.exitFlag = False
+        self.num = 0
 
     def run(self):
         time.sleep(1)  # 防止直接进循环, 阻塞主ui
@@ -87,6 +103,7 @@ class SerialThread(QThread):
             try:
                 if self.ser is not None and self.ser.inWaiting():
                     self.current_data = self.ser.read(self.ser.inWaiting())
+                    self.num += 1
                     self.data_arrive_signal.emit()
             except:
                 return
@@ -107,7 +124,6 @@ class AutoTestThread(QThread):
     def run(self):
         for key in self.win.dictAutoTestResult:
             self.win.dictAutoTestResult[key] = 0
-        print('hhhhhhhhhhhhhhhhhhhhhhhhh ', self.win.dictAutoTestResult)
         if self.win.dictAutoTest['FAN1-LED'] or self.win.dictAutoTest['FAN2-LCD'] or self.win.dictAutoTest['FAN3-EVR']:
             # set fan speed
             self.win.ui.fan1SpinBox.setValue(100)
@@ -124,8 +140,7 @@ class AutoTestThread(QThread):
                 break
             try:
                 if self.ser is not None:
-                    self.update_motor_signal.emit()
-
+                    #self.update_motor_signal.emit()
                     # get ntc
                     if self.win.dictAutoTest['NTC-LED'] or self.win.dictAutoTest['NTC-LCD'] or self.win.dictAutoTest[
                         'NTC-EVR']:
@@ -192,7 +207,7 @@ class AutoTestThread(QThread):
             if self.win.dictAutoTestResult[key] == 0:
                 continue
             result[0] = key
-            if self.win.dictAutoTestResult[key] == self.circle:
+            if self.win.dictAutoTestResult[key] > 0 and self.win.dictAutoTestResult[key] % self.circle == 0:
                 result[1] = 'pass'
                 if key == 'MOTOR':
                     self.win.ui.testMotorLabel.setPixmap(passPix)
@@ -219,10 +234,16 @@ class AutoTestThread(QThread):
             img_bgr = cv2.imread('pic/pass.png')
         else:
             img_bgr = cv2.imread('pic/fail.png')
-        cv2.namedWindow("Test Result")
-        cv2.moveWindow("Test Result", 1300, 260)
-        #cv2.resizeWindow("Test Result", 480, 320)  # 设置图片显示窗口大小
-        cv2.imshow("Test Result", img_bgr)
+        # cv2.namedWindow("Test Result")
+        # cv2.moveWindow("Test Result", 1600, 260)
+        # cv2.resizeWindow("Test Result", 1000, 1000)  # 设置图片显示窗口大小
+        # cv2.imshow("Test Result", img_bgr)
+
+        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        cv2.moveWindow("myImage", 0, 0)
+        cv2.setMouseCallback('myImage', testResult, img_bgr)
+        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("myImage", img_bgr)
         cv2.waitKey(0)
         print('全部通过')
 
@@ -280,6 +301,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
+        self.serial_thread.data_arrive_signal.connect(self.receive_data)    # 不要每次打开时都关联signal，会导致每次接收数据时signal多次
         self.autoTestThread = None
 
         pix = QPixmap(imageList[0])
@@ -317,8 +339,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         lcd_items = ["正常", "上下", "左右", "上下左右"]
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
-
-        self.ui.statusbar.showMessage('SW: 2023041303')
+        self.ui.statusbar.showMessage(SW_VERSION)
         self.ui.swLabel = QLabel()
         self.ui.swLabel.setText('SW: 2023041303')
         self.ui.statusbar.addPermanentWidget(self.ui.swLabel, stretch=0)
@@ -363,7 +384,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
-        print('>>>>>>>>>>>>>>>>>', select_items)
+        #print('>>>>>>>>>>>>>>>>>', select_items)
         for i in range(0, len(self.autoTestItems)):
             if self.autoTestItems[i] in select_items:
                 if i == 0:
@@ -532,7 +553,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return False
 
     def auto_test_ui_switch(self, switch=False):
-        print('------------', switch)
         if switch:
             passPix = QPixmap('pic/pass.png')
             self.ui.testTemp3Label.setPixmap(passPix)
@@ -697,6 +717,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # mPduCmdDict2 = dict(zip(self.mPduCmdDict.values(), self.mPduCmdDict.keys()))
         # print(mPduCmdDict2)
         # print(mPduCmdDict2[30])
+        print('>>>>>>>>>> >>>>>>>>>> 打开串口')
         current_port_name = self.ui.serial_selection.currentText()
         baud_rate = int(self.ui.baud_rate.currentText())
         bytesize = 8
@@ -713,13 +734,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         if self.current_port and self.current_port.isOpen():
             self.serial_thread.start()
-            self.serial_thread.data_arrive_signal.connect(self.receive_data)
-
+            #print('------------- 线程', threading.active_count())
             self.ui.port_status.setText(current_port_name + ' 打开成功')
             self.serial_thread.ser = self.current_port
 
             self.update_data_timer = QTimer()
             self.update_data_timer.timeout.connect(self.update_data)
+
             self.switch_windows_ui(True)
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
@@ -738,15 +759,17 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # self.serial_thread.wait()
             self.serial_thread.ser = None  # 没有正常退出，不可以，后面继续研究
             # self.repeat_send_timer.stop()
+            self.current_port.flushInput()
+            self.current_port.flushOutput()
             self.current_port.close()
             self.ui.port_status.setText(self.current_port.port + ' 关闭成功')
-            self.current_port = None
             self.update_data_timer.stop()
             self.switch_windows_ui(False)
             self.ui.open_port.setEnabled(True)
             self.ui.refresh_port.setEnabled(True)
             self.ui.hwLabel.setText('')
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
+            self.current_port = None
         else:
             self.ui.port_status.setText('无串口可关闭')
 
@@ -762,14 +785,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def receive_data(self):
         # receive_ascii_format = self.ui.receive_ascii_format.isChecked()
         reverseSteps = 0
-        select_items = self.ui.testItemsComboBox.get_selected()
-        print('uart receive ', select_items)
 
         data = ['', '']
         actualSteps = 0
         self.ui.receive_data_area.clear()
         receive_ascii_format = False
         raw_data_list = self.serial_thread.current_data
+        self.current_port.flushInput()
         # cmd_data = ()  # 如果下面不分开，通过元祖接收
         cmd, length, dataList = asu_pdu_parse_one_frame(raw_data_list)
         print("uart receive data : ", cmd, length, dataList)
@@ -879,8 +901,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 if dataList[0] == 1:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
                     self.ui.motorStatuslabel.setText("马达限位")
-                    data[1] = 'pass'
-                    print('UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU ', self.dictAutoTestResult['MOTOR'])
                     self.dictAutoTestResult['MOTOR'] += 1
                     self.limitSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
                     print('马达限位 limitSteps ', self.limitSteps)
@@ -901,7 +921,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setText("马达异常", dataList[0])
                     print("返回错误")
                 self.ui.actualStepsLabel.setText(str(actualSteps))
-                print('actualSteps', actualSteps)
             self.ui.port_status.setText('数据设置状态: 成功')
         else:
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! cmd %d is not found' % cmd)
@@ -1065,22 +1084,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 | QtCore.Qt.RightButton:  # 左中右键同时按下
             # self.setText("同时单击鼠标左中右键的事件: 自己定义")
             print("单击鼠标左中右键")  # 响应测试语句
-
-
-class Ui_Form(object):
-    def setupUi(self, Form):
-        Form.setObjectName("Form")
-        Form.resize(400, 300)
-        self.comboBox = ComboCheckBox(Form)
-        self.comboBox.setGeometry(QtCore.QRect(70, 60, 281, 21))
-        self.comboBox.setObjectName("comboBox")
-
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
-
-    def retranslateUi(self, Form):
-        _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
 
 
 if __name__ == '__main__':
