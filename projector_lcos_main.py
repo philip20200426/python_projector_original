@@ -36,7 +36,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
 
-SW_VERSION = 'SW: 2023041701'
+SW_VERSION = 'SW: 2023041803'
 FILE_PARA = 'pic/param.csv'
 NTC_VOLTAGE_TEMP = 'pic/ntc_vol_temp_list.xls'
 imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
@@ -62,19 +62,20 @@ def cvCallBack(event, x, y, flags, param):
         pass
         # cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
 
-def testResult(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        print('left button down')
-    elif event == cv2.EVENT_LBUTTONUP:
-        pass
-    elif event == cv2.EVENT_RBUTTONDOWN:
-        print('right button down')
-    elif event == cv2.EVENT_RBUTTONUP:
-        cv2.destroyAllWindows()
-        print('right button up')
-    if event == cv2.EVENT_MOUSEMOVE:
-        pass
-        # cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
+
+# def testResult(event, x, y, flags, param):
+#     if event == cv2.EVENT_LBUTTONDOWN:
+#         print('left button down')
+#     elif event == cv2.EVENT_LBUTTONUP:
+#         pass
+#     elif event == cv2.EVENT_RBUTTONDOWN:
+#         print('right button down')
+#     elif event == cv2.EVENT_RBUTTONUP:
+#         cv2.destroyAllWindows()
+#         print('right button up')
+#     if event == cv2.EVENT_MOUSEMOVE:
+#         pass
+# cv2.circle(param, (x, y), 2, (255, 126, 0), -1)
 
 def show_img(num):
     global g_img_num
@@ -131,6 +132,7 @@ class AutoTestThread(QThread):
             self.win.ui.fan3SpinBox.setValue(100)
             time.sleep(1)
         motorData = [1, 0, 0]
+        self.win.totalSteps = 0
         print('>>>>>>>>>> 自动化测试开始 ', motorData[0], self.roundSteps, self.count, self.circle)
         while self.count < self.circle:
             preTime = time.time()
@@ -140,7 +142,7 @@ class AutoTestThread(QThread):
                 break
             try:
                 if self.ser is not None:
-                    #self.update_motor_signal.emit()
+                    # self.update_motor_signal.emit()
                     # get ntc
                     if self.win.dictAutoTest['NTC-LED'] or self.win.dictAutoTest['NTC-LCD'] or self.win.dictAutoTest[
                         'NTC-EVR']:
@@ -152,7 +154,7 @@ class AutoTestThread(QThread):
                             if (nowTime - lastTime) > 2:
                                 break
                         self.win.mNtcFinished = False
-                        # time.sleep(1)
+                        time.sleep(1)
 
                     # get fan
                     if self.win.dictAutoTest['FAN1-LED'] or self.win.dictAutoTest['FAN2-LCD'] or self.win.dictAutoTest[
@@ -178,17 +180,22 @@ class AutoTestThread(QThread):
                         self.win.serial_write(strHex)
                         lastTime = time.time()
                         while not self.win.mMotorFinished:
-                            nowTime = time.time()
                             # print(nowTime-lastTime)
-                            time.sleep(1)
+                            # time.sleep(1)
                             if (nowTime - lastTime) > 6:
                                 break
+                        nowTime = time.time()
+                        if (nowTime - lastTime) < 0.1:
+                            time.sleep(5)  # 这个地方有个bug，0秒就返回True
+                        else:
+                            time.sleep(2)
+                        print('motor ++++++++++++++++++++++++++++++++++++', self.win.mMotorFinished, (nowTime - lastTime))
                         self.win.mMotorFinished = False
                         if motorData[0] == 1:
                             motorData[0] = 0
                         else:
                             motorData[0] = 1
-                        # time.sleep(1)
+
             except:
                 print('串口错误')
             self.count += 1
@@ -199,6 +206,7 @@ class AutoTestThread(QThread):
         totalTime = nowTime - preTime
         print(self.win.dictAutoTestResult)
 
+        print('------------------------------------- totalSteps ', self.win.totalSteps)
         result = [0, 0]
         allRight = True
         passPix = QPixmap('pic/pass.png')
@@ -207,46 +215,51 @@ class AutoTestThread(QThread):
             if self.win.dictAutoTestResult[key] == 0:
                 continue
             result[0] = key
-            if self.win.dictAutoTestResult[key] > 0 and self.win.dictAutoTestResult[key] % self.circle == 0:
-                result[1] = 'pass'
+            result[1] = 'fail'
+            if self.win.dictAutoTestResult[key] > 0 and self.win.dictAutoTestResult[key] == self.circle:
                 if key == 'MOTOR':
-                    self.win.ui.testMotorLabel.setPixmap(passPix)
+                    if self.win.totalSteps > 2000:  # circle 必须大于1
+                        self.win.ui.testMotorLabel.setPixmap(passPix)
+                        result[1] = 'pass'
+                    else:
+                        self.win.ui.testMotorLabel.setPixmap(failPix)
                 elif key == 'NTC-LED':
                     self.win.ui.testTemp1Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 elif key == 'NTC-LCD':
                     self.win.ui.testTemp2Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 elif key == 'NTC-EVR':
                     self.win.ui.testTemp3Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 elif key == 'FAN1-LED':
                     self.win.ui.testFan1Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 elif key == 'FAN2-LCD':
                     self.win.ui.testFan2Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 elif key == 'FAN3-EVR':
                     self.win.ui.testFan3Label.setPixmap(passPix)
+                    result[1] = 'pass'
                 else:
                     pass
-            else:
-                result[1] = 'fail'
-                allRight = False
             self.win.write_result_csv('a', result)
             print(result)
-        if allRight:
-            img_bgr = cv2.imread('pic/pass.png')
-        else:
-            img_bgr = cv2.imread('pic/fail.png')
+        # if allRight:
+        #     img_bgr = cv2.imread('pic/pass.png')
+        # else:
+        #     img_bgr = cv2.imread('pic/fail.png')
         # cv2.namedWindow("Test Result")
         # cv2.moveWindow("Test Result", 1600, 260)
         # cv2.resizeWindow("Test Result", 1000, 1000)  # 设置图片显示窗口大小
         # cv2.imshow("Test Result", img_bgr)
 
-        cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
-        cv2.moveWindow("myImage", 0, 0)
-        cv2.setMouseCallback('myImage', testResult, img_bgr)
-        cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        cv2.imshow("myImage", img_bgr)
-        cv2.waitKey(0)
-        print('全部通过')
-
+        # cv2.namedWindow("myImage", cv2.WND_PROP_FULLSCREEN)
+        # cv2.moveWindow("myImage", 0, 0)
+        # cv2.setMouseCallback('myImage', testResult, img_bgr)
+        # cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.imshow("myImage", img_bgr)
+        # cv2.waitKey(0)
 
         print('>>>>>>>>>> 测试完成，耗时：', totalTime)
         self.win.ui.autoTestButton.setEnabled(True)
@@ -301,7 +314,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
-        self.serial_thread.data_arrive_signal.connect(self.receive_data)    # 不要每次打开时都关联signal，会导致每次接收数据时signal多次
+        self.serial_thread.data_arrive_signal.connect(self.receive_data)  # 不要每次打开时都关联signal，会导致每次接收数据时signal多次
         self.autoTestThread = None
 
         pix = QPixmap(imageList[0])
@@ -339,9 +352,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         lcd_items = ["正常", "上下", "左右", "上下左右"]
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
-        self.ui.statusbar.showMessage(SW_VERSION)
         self.ui.swLabel = QLabel()
-        self.ui.swLabel.setText('SW: 2023041303')
+        self.ui.swLabel.setText(SW_VERSION)
         self.ui.statusbar.addPermanentWidget(self.ui.swLabel, stretch=0)
         self.ui.hwLabel = QLabel()
 
@@ -381,10 +393,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autoTestFanFlag = False
         self.autoTestNtcFlag = False
         self.autoTestMotorFlag = False
+        self.totalSteps = 0
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
-        #print('>>>>>>>>>>>>>>>>>', select_items)
+        # print('>>>>>>>>>>>>>>>>>', select_items)
         for i in range(0, len(self.autoTestItems)):
             if self.autoTestItems[i] in select_items:
                 if i == 0:
@@ -734,7 +747,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         if self.current_port and self.current_port.isOpen():
             self.serial_thread.start()
-            #print('------------- 线程', threading.active_count())
+            # print('------------- 线程', threading.active_count())
             self.ui.port_status.setText(current_port_name + ' 打开成功')
             self.serial_thread.ser = self.current_port
 
@@ -797,17 +810,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print("uart receive data : ", cmd, length, dataList)
         if cmd in mPduCmdDict2Rev.keys():
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
-                sw_version = str(dataList[0]) + "." \
+                hw_version = str(dataList[0]) + "." \
                              + str(dataList[1]) + "." \
                              + str(dataList[2]) + " "
                 del dataList[0:3]
                 dataList.insert(12, 32)
                 dataList.insert(12, 32)
                 for i in range(0, len(dataList)):
-                    sw_version = sw_version + chr(dataList[i])
-                sw_version = 'HW: ' + sw_version
-                # sw_version = ''.join(charDataList)
-                self.ui.hwLabel.setText(sw_version)
+                    hw_version = hw_version + chr(dataList[i])
+                hw_version = 'HW: ' + hw_version
+                self.ui.hwLabel.setText(hw_version)
                 self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
                 print('>>>>>>>>>> Uart receive CMD_GET_TEMPS')
@@ -832,7 +844,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                         data[1] = 'fail'
                         self.dictAutoTestResult['NTC-LED'] -= 1
                 if self.dictAutoTest['NTC-LCD']:
-                    print('lcd')
                     data[0] = 'NTC-LCD'
                     if int(self.ui.ntcThresholdLowerEdit.text()) < val3 < int(self.ui.ntcThresholdUpperEdit.text()):
                         self.dictAutoTestResult['NTC-LCD'] += 1
@@ -840,18 +851,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     else:
                         data[1] = 'fail'
                         self.dictAutoTestResult['NTC-LCD'] -= 1
-                    #self.write_result_csv('a', data)
+                    # self.write_result_csv('a', data)
                 if self.dictAutoTest['NTC-EVR']:
                     if int(self.ui.ntcThresholdLowerEdit.text()) < val1 < int(self.ui.ntcThresholdUpperEdit.text()):
-                        #self.ui.testTemp3Label.setPixmap(passPix)
+                        # self.ui.testTemp3Label.setPixmap(passPix)
                         data[1] = 'pass'
                         self.write_result_csv('a', data)
                         self.dictAutoTestResult['NTC-EVR'] += 1
                     else:
                         data[1] = 'fail'
-                        #self.ui.testTemp3Label.setPixmap(failPix)
+                        # self.ui.testTemp3Label.setPixmap(failPix)
                         self.dictAutoTestResult['NTC-EVR'] -= 1
-                    #self.write_result_csv('a', data)
+                    # self.write_result_csv('a', data)
                 self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
                 self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
                 self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
@@ -865,35 +876,35 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     data[0] = 'FAN1-LED'
                     if dataList[1] == 1:
                         data[1] = 'pass'
-                        #self.ui.testFan1Label.setPixmap(passPix)
+                        # self.ui.testFan1Label.setPixmap(passPix)
                         self.dictAutoTestResult['FAN1-LED'] += 1
                     else:
                         data[1] = 'fail'
-                        #self.ui.testFan1Label.setPixmap(failPix)
+                        # self.ui.testFan1Label.setPixmap(failPix)
                         self.dictAutoTestResult['FAN1-LED'] -= 1
-                    #self.write_result_csv('a', data)
+                    # self.write_result_csv('a', data)
                 if self.dictAutoTest['FAN2-LCD']:
                     data[0] = 'FAN2-LCD'
                     if dataList[0] == 1:
                         data[1] = 'pass'
-                        #self.ui.testFan2Label.setPixmap(passPix)
+                        # self.ui.testFan2Label.setPixmap(passPix)
                         self.dictAutoTestResult['FAN2-LCD'] += 1
                     else:
                         data[1] = 'fail'
-                        #self.ui.testFan2Label.setPixmap(failPix)
+                        # self.ui.testFan2Label.setPixmap(failPix)
                         self.dictAutoTestResult['FAN2-LCD'] -= 1
-                    #self.write_result_csv('a', data)
+                    # self.write_result_csv('a', data)
                 if self.dictAutoTest['FAN3-EVR']:
                     data[0] = 'FAN3-EVR'
                     if dataList[2] == 1:
                         data[1] = 'pass'
-                        #self.ui.testFan3Label.setPixmap(passPix)
+                        # self.ui.testFan3Label.setPixmap(passPix)
                         self.dictAutoTestResult['FAN3-EVR'] += 1
                     else:
                         data[1] = 'fail'
-                        #self.ui.testFan3Label.setPixmap(failPix)
+                        # self.ui.testFan3Label.setPixmap(failPix)
                         self.dictAutoTestResult['FAN3-EVR'] -= 1
-                    #self.write_result_csv('a', data)
+                    # self.write_result_csv('a', data)
                 self.mFanFinished = True
             if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
                 print('>>>>>>>>>> Uart receive CMD_SET_FOCUSMOTOR')
@@ -909,6 +920,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.motorStatuslabel.setText("马达回转结束")
                     reverseSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
                     actualSteps = self.limitSteps - reverseSteps
+                    self.totalSteps = self.totalSteps + actualSteps
                     print('马达回转结束 limitSteps ', self.limitSteps, reverseSteps, actualSteps)
                     self.mMotorFinished = True
                 elif dataList[0] == 0:
