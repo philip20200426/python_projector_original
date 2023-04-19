@@ -36,7 +36,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
 
-SW_VERSION = 'SW: 2023041803'
+SW_VERSION = 'SW: 2023041900'
 FILE_PARA = 'pic/param.csv'
 NTC_VOLTAGE_TEMP = 'pic/ntc_vol_temp_list.xls'
 imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
@@ -134,8 +134,8 @@ class AutoTestThread(QThread):
         motorData = [1, 0, 0]
         self.win.totalSteps = 0
         print('>>>>>>>>>> 自动化测试开始 ', motorData[0], self.roundSteps, self.count, self.circle)
+        preTime = time.time()
         while self.count < self.circle:
-            preTime = time.time()
             if self.exitFlag:
                 self.exitFlag = False
                 print(">>>>>>>>>> AutoTestThread Exit ", self.count)
@@ -180,16 +180,20 @@ class AutoTestThread(QThread):
                         self.win.serial_write(strHex)
                         lastTime = time.time()
                         while not self.win.mMotorFinished:
-                            # print(nowTime-lastTime)
+                            currentTime = time.time()
                             # time.sleep(1)
-                            if (nowTime - lastTime) > 6:
+                            if (currentTime - lastTime) > 6:
+                                print('马达超时返回 ', currentTime - lastTime)
                                 break
                         nowTime = time.time()
                         if (nowTime - lastTime) < 0.1:
                             time.sleep(5)  # 这个地方有个bug，0秒就返回True
+                            print('>>>>>>>>>>>>>>>> 马达返回异常，做规避处理 ', nowTime - lastTime)
                         else:
+                            print('马达测试完成，延时2秒 ', nowTime - lastTime)
                             time.sleep(2)
-                        print('motor ++++++++++++++++++++++++++++++++++++', self.win.mMotorFinished, (nowTime - lastTime))
+                        print('motor ++++++++++++++++++++++++++++++++++++', self.win.mMotorFinished,
+                              (nowTime - lastTime))
                         self.win.mMotorFinished = False
                         if motorData[0] == 1:
                             motorData[0] = 0
@@ -212,8 +216,8 @@ class AutoTestThread(QThread):
         passPix = QPixmap('pic/pass.png')
         failPix = QPixmap('pic/fail.png')
         for key in self.win.dictAutoTestResult:
-            if self.win.dictAutoTestResult[key] == 0:
-                continue
+            # if self.win.dictAutoTestResult[key] == 0:
+            #     continue
             result[0] = key
             result[1] = 'fail'
             if self.win.dictAutoTestResult[key] > 0 and self.win.dictAutoTestResult[key] == self.circle:
@@ -263,8 +267,6 @@ class AutoTestThread(QThread):
 
         print('>>>>>>>>>> 测试完成，耗时：', totalTime)
         self.win.ui.autoTestButton.setEnabled(True)
-        if self.count == int(self.circle):
-            print('测试完成!!!')
 
 
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
@@ -404,60 +406,81 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.testMotorLabel.show()
                     self.ui.testMotorLabel1.show()
                     self.dictAutoTest['MOTOR'] = True
+                    self.dictAutoTestResult['MOTOR'] = 0
                 elif i == 1:
                     self.ui.testFan1Label.show()
                     self.ui.testFan1Label1.show()
                     self.dictAutoTest['FAN1-LED'] = True
+                    self.dictAutoTestResult['FAN1-LED'] = 0
                 elif i == 2:
                     self.ui.testFan2Label.show()
                     self.ui.testFan2Label1.show()
                     self.dictAutoTest['FAN2-LCD'] = True
+                    self.dictAutoTestResult['FAN2-LCD'] = 0
                 elif i == 3:
                     self.ui.testTemp1Label.show()
                     self.ui.testTemp1Label1.show()
                     self.dictAutoTest['NTC-LED'] = True
+                    self.dictAutoTestResult['NTC-LED'] = 0
                 elif i == 4:
                     self.ui.testTemp2Label.show()
                     self.ui.testTemp2Label1.show()
                     self.dictAutoTest['NTC-LCD'] = True
+                    self.dictAutoTestResult['NTC-LCD'] = 0
                 elif i == 5:
                     self.ui.testFan3Label.show()
                     self.ui.testFan3Label1.show()
                     self.dictAutoTest['FAN3-EVR'] = True
+                    self.dictAutoTestResult['FAN3-EVR'] = 0
                 elif i == 6:
                     self.ui.testTemp3Label.show()
                     self.ui.testTemp3Label1.show()
                     self.dictAutoTest['NTC-EVR'] = True
+                    self.dictAutoTestResult['NTC-EVR'] = 0
             else:
                 if i == 0:
                     self.ui.testMotorLabel.hide()
                     self.ui.testMotorLabel1.hide()
                     self.dictAutoTest['MOTOR'] = False
+                    if 'MOTOR' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['MOTOR']
                 elif i == 1:
                     self.ui.testFan1Label.hide()
                     self.ui.testFan1Label1.hide()
                     self.dictAutoTest['FAN1-LED'] = False
+                    if 'FAN1-LED' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['FAN1-LED']
                 elif i == 2:
                     self.ui.testFan2Label.hide()
                     self.ui.testFan2Label1.hide()
                     self.dictAutoTest['FAN2-LCD'] = False
+                    if 'FAN2-LCD' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['FAN2-LCD']
                 elif i == 3:
                     self.ui.testTemp1Label.hide()
                     self.ui.testTemp1Label1.hide()
                     self.dictAutoTest['NTC-LED'] = False
+                    if 'NTC-LED' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['NTC-LED']
                 elif i == 4:
                     self.ui.testTemp2Label.hide()
                     self.ui.testTemp2Label1.hide()
                     self.dictAutoTest['NTC-LCD'] = False
+                    if 'NTC-LCD' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['NTC-LCD']
                 elif i == 5:
                     self.ui.testFan3Label.hide()
                     self.ui.testFan3Label1.hide()
                     self.dictAutoTest['FAN3-EVR'] = False
+                    if 'FAN3-EVR' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['FAN3-EVR']
                 elif i == 6:
                     self.ui.testTemp3Label.hide()
                     self.ui.testTemp3Label1.hide()
                     self.dictAutoTest['NTC-EVR'] = False
-        print(self.dictAutoTest)
+                    if 'NTC-EVR' in self.dictAutoTestResult:
+                        del self.dictAutoTestResult['NTC-EVR']
+        print('selected items ', self.dictAutoTestResult)
 
     def read_para(self):
         if os.path.exists(FILE_PARA):
