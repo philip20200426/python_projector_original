@@ -1,33 +1,26 @@
+import csv
+import datetime
 import re
-import string
-import threading
 
 import cv2
-from PIL import Image
 from PyQt5.QtCore import Qt
 
-from PyQt5.uic.properties import QtWidgets, QtCore, QtGui
-
-from GxSingleCamMono import dh_take_picture
+from pro_correct_wrapper import *
+# from learn_serial.pro_correct_wrapper import keystone_correct_cam_libs
 from CameraThread import CameraThread
 
 from log_utils import Logger
 
-import serial
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QTextEdit, QMessageBox, QLabel, QStatusBar
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QStatusBar
 import os, sys
 
 from utils import check_hex
 from projector_cal import Ui_MainWindow
-import subprocess
-import datetime  # 导入datetime模块
-import threading  # 导入threading模块
 import time
-from serial_utils import get_ports, open_port, parse_one_frame, str2hex, asu_pdu_parse_one_frame
+from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame
 import shutil
-import numpy as np
-
+from ctypes import *
 
 
 class SerialThread(QThread):
@@ -48,6 +41,7 @@ class SerialThread(QThread):
 
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
     label_used_time_text = 0
+
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -97,7 +91,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.eTakePictureButton.clicked.connect(self.external_take_picture)
         self.ui.exTimesHorizontalSlider.valueChanged['int'].connect(self.set_exposure_time)
         self.close_ui()
-        #self.init_status_bar()
+        # self.init_status_bar()
 
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
@@ -121,15 +115,20 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.exposureTime = 10000
         self.cameraThread = None
         self.cal = False
+        self.ui.autoKsdButton.setEnabled(True)
+
+        self.cameraThread = CameraThread(1, "CameraThread", float(self.ui.exTimeSpinBox.text()))
+        self.cameraThread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
+        print('--------- setPixmap ')
         self.ui.previewCameraLabel.setPixmap(image)
         return None
 
     def close_ui(self):
         self.ui.visionAfButton.setEnabled(False)
         self.ui.tofAfButton.setEnabled(False)
-        self.ui.autoKsdButton.setEnabled(False)
+        self.ui.autoKsdButton.setEnabled(True)
         self.ui.refreshKsdButton.setEnabled(False)
         self.ui.motorForwardButton.setEnabled(False)
         self.ui.motorBackButton.setEnabled(False)
@@ -178,24 +177,20 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def open_external_camera(self):
         self.ui.eOpenCameraButton.setEnabled(False)
-        if self.cameraThread is None:
+        if not self.cameraThread.mRunning:
             self.ui.previewCameraLabel.show()
-            self.cameraThread = CameraThread(1, "CameraThread", float(self.ui.exTimeSpinBox.text()))
-            if self.cameraThread.start() is None:
-                self.cameraThread.quit()
-                self.cameraThread.wait()
-                self.cameraThread = None
-            else:
-                self.cameraThread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
+            self.cameraThread.start()
+            time.sleep(1.5)
+            if not self.cameraThread.mRunning:
+                QMessageBox.warning(self, "警告", "未识别到摄像头硬件")
         else:
             print("External camera already opened")
         self.ui.eOpenCameraButton.setEnabled(True)
 
     def close_external_camera(self):
-        if self.cameraThread is not None:
+        if self.cameraThread.mRunning:
             self.cameraThread.closeCamera()
             self.ui.previewCameraLabel.hide()
-            self.cameraThread = None    #you wen ti  ！！！！！！！！！！！
         else:
             print("External camera is not opened")
 
@@ -204,19 +199,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
 
     def external_take_picture(self):
-        if self.cameraThread is not None:
+        if self.cameraThread.mRunning:
             path = './asuFiles/pcFiles'
             dirExists = os.path.isdir(path)
             if not dirExists:
                 os.makedirs(path)
             if self.cal:
-                name = 'e_n0' + str(self.count)
+                name = 'ref_n0' + str(self.count)
                 filePath = path + '/' + name
                 self.count += 1
             else:
-                name = 'temp'
-                filePath = path + '/' + name
+                current_time = datetime.datetime.now()
+                # print("current_time:    " + str(current_time))
+                filePath = path + '/' + str(current_time)
             self.cameraThread.takePicture(filePath)
+        else:
+            print("External camera is not opened")
 
     def auto_focus_vision(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusVision")
@@ -227,6 +225,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_keystone(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
         coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
+        # auto_keystone_cam()
+        # keystone_correct_tof()
         print(coordinate)
         # 运行算法
         self.pull_data()
@@ -238,6 +238,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def ksd_calibrate(self):
         os.system("adb shell am broadcast -a asu.intent.action.SaveData")
+        # 拿到所有数据 n组，每组两个照片，imu，tof
+        print('---------------------------------开始运行')
+        #auto_keystone_calib()
 
     def refresh_keystone(self):
         point_left_down_x = self.ui.ksdLeftDownEdit_x.text()
@@ -321,7 +324,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         fileExists = os.path.isfile('motor.log')
         if fileExists:
-            mylog.shutdown()
+            #mylog.shutdown()
             os.remove('motor.log')
         else:
             print("No find files")
@@ -380,7 +383,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value "
         cmd2 = self.ui.motorPositionEdit.text()
-        mylog.logger.debug("-" + cmd2)
+        #mylog.logger.debug("-" + cmd2)
         cmd = cmd1 + cmd2
         print(cmd)
         os.system(cmd)
@@ -398,7 +401,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value "
         cmd2 = self.ui.motorPositionEdit.text()
-        mylog.logger.debug("+" + cmd2)
+        #mylog.logger.debug("+" + cmd2)
         cmd = cmd1 + cmd2
         print(cmd)
         os.system(cmd)
@@ -411,14 +414,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # font.setPointSize(14)
 
         info = QLabel(self)
-        #info.setFont(font)
+        # info.setFont(font)
         info.setText(
             '<html><head/><body><p><span style="font-size=24; color:#00aaff;">V1.0.1</span></p></body></html>')
         info.setAlignment(Qt.AlignLeft)
         self.ui.statusBar.addPermanentWidget(info, 1)
 
         info = QLabel(self)
-        #info.setFont(font)
+        # info.setFont(font)
         info.setText('<html><head/><body><p><span style=" color:#00aaff;">V12121</span></p></body></html>')
         self.ui.statusBar.addWidget(info, 1)
 
@@ -589,6 +592,6 @@ if __name__ == '__main__':
     w = ProjectorWindow()
     # w.resize(800,500)
     w.show()
-    mylog = Logger('motor.log', level='debug')
-    mylog.logger.debug("-------------重新启动应用-------------")
+    # mylog = Logger('motor.log', level='debug')
+    # mylog.logger.debug("-------------重新启动应用-------------")
     sys.exit(app.exec_())
