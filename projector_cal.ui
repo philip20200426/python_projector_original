@@ -586,7 +586,7 @@
       <x>290</x>
       <y>140</y>
       <width>451</width>
-      <height>421</height>
+      <height>571</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -928,20 +928,7 @@
       <string>写入数据</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="autoKsdButton">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>230</y>
-       <width>431</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>自动全向梯形校正</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="tofAfButton">
+    <widget class="QPushButton" name="autoTofKsdButton">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -951,10 +938,49 @@
       </rect>
      </property>
      <property name="text">
+      <string>TOF全向梯形校正</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="tofAfButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>430</y>
+       <width>431</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
       <string>TOF自动对焦</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="visionAfButton">
+    <widget class="QPushButton" name="camAfButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>470</y>
+       <width>431</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CAM自动对焦</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="kstCalButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>390</y>
+       <width>431</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>自动全向梯形标定</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="autoCamKstButton">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -964,10 +990,23 @@
       </rect>
      </property>
      <property name="text">
-      <string>视觉自动对焦</string>
+      <string>CAM全向梯形校正</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="ksdCalButton">
+    <widget class="QPushButton" name="kstResetButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>230</y>
+       <width>431</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>梯形复位</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="camInterCalButton">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -977,20 +1016,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>自动全向梯形标定</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="kstResetButton">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>梯形复位</string>
+      <string>CAM内参标定</string>
      </property>
     </widget>
    </widget>
@@ -1208,21 +1234,6 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
-   </widget>
-   <widget class="QStackedWidget" name="stackedWidget">
-    <property name="geometry">
-     <rect>
-      <x>950</x>
-      <y>620</y>
-      <width>120</width>
-      <height>80</height>
-     </rect>
-    </property>
-    <property name="currentIndex">
-     <number>1</number>
-    </property>
-    <widget class="QWidget" name="page"/>
-    <widget class="QWidget" name="page_2"/>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

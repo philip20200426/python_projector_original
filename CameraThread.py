@@ -59,6 +59,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
         # start data acquisition
         self.cam.stream_on()
         self.frameNum = 0
+        self.mRunning = True
+        print("Camera Init Finished")
         while True:
             # time.sleep(1)
             # img_green = np.zeros([400, 600], np.uint8)
@@ -88,8 +90,9 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # show acquired image
                 img = Image.fromarray(numpy_image, 'L')
                 img.save(self.mImageName + '.bmp')
-                print("TakePicture Frame ID: %d   Height: %d   Width: %d"
+                print("TakePicture Frame ID: %d   Height: %d   Width: %d "
                     % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
+                print(self.mImageName + '.bmp')
 
             q_img = QImage(numpy_image.data, numpy_image.shape[1], numpy_image.shape[0], QImage.Format_Grayscale8)
             pix = QPixmap(q_img).scaled(720, 540)

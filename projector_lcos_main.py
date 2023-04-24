@@ -36,7 +36,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 cols_temp = []  # 获取第三列内容
 cols_voltage = []  # 获取第三列内容
 
-SW_VERSION = 'SW: 2023041900'
+SW_VERSION = 'SW: 2023042100'
 FILE_PARA = 'pic/param.csv'
 NTC_VOLTAGE_TEMP = 'pic/ntc_vol_temp_list.xls'
 imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
@@ -101,6 +101,7 @@ class SerialThread(QThread):
     def run(self):
         time.sleep(1)  # 防止直接进循环, 阻塞主ui
         while True:
+            print('============================================')
             try:
                 if self.ser is not None and self.ser.inWaiting():
                     self.current_data = self.ser.read(self.ser.inWaiting())
@@ -953,8 +954,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     # self.mMotorFinished = True
                 else:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达异常", dataList[0])
-                    print("返回错误")
+                    self.ui.motorStatuslabel.setText("马达异常")
+                    print("返回错误", dataList[0])
                 self.ui.actualStepsLabel.setText(str(actualSteps))
             self.ui.port_status.setText('数据设置状态: 成功')
         else:
