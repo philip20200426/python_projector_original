@@ -5,6 +5,7 @@ import gxipy as gx
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
 from PIL import Image
+import time
 
 
 # 多线程类
@@ -53,7 +54,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
             return
         # set continuous acquisition
         self.cam.TriggerMode.set(gx.GxSwitchEntry.OFF)
-        #self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)
+        # self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)
         # set gain
         self.cam.Gain.set(10.0)
         # start data acquisition
@@ -61,6 +62,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.frameNum = 0
         self.mRunning = True
         print("Camera Init Finished")
+        # lastTime = time.time()
         while True:
             # time.sleep(1)
             # img_green = np.zeros([400, 600], np.uint8)
@@ -80,6 +82,9 @@ class CameraThread(QThread):  # 建立一个任务线程类
             if raw_image is None:
                 print("Get raw image failed.")
                 continue
+            # nowTime = time.time()
+            # print('Preview FPS ', nowTime - lastTime)
+            # lastTime = nowTime
             # create numpy array with data from raw image
             numpy_image = raw_image.get_numpy_array()
             if numpy_image is None:
@@ -91,10 +96,9 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 img = Image.fromarray(numpy_image, 'L')
                 img.save(self.mImageName + '.bmp')
                 print("TakePicture Frame ID: %d   Height: %d   Width: %d "
-                    % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
+                      % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
                 print(self.mImageName + '.bmp')
 
             q_img = QImage(numpy_image.data, numpy_image.shape[1], numpy_image.shape[0], QImage.Format_Grayscale8)
             pix = QPixmap(q_img).scaled(720, 540)
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程
-

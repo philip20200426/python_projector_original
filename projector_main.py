@@ -3,7 +3,9 @@ import datetime
 import re
 
 import cv2
+import qdarkstyle
 from PyQt5.QtCore import Qt
+from qdarkstyle import DarkPalette
 
 from pro_correct_wrapper import *
 # from learn_serial.pro_correct_wrapper import keystone_correct_cam_libs
@@ -63,10 +65,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.setStatusBar(self.statusBar)
 
         self.ui.kstResetButton.clicked.connect(self.kst_reset)
-        self.ui.visionAfButton.clicked.connect(self.auto_focus_vision)
+        self.ui.camInterCalButton.clicked.connect(self.cam_inter_cal)
+        self.ui.camAfButton.clicked.connect(self.auto_focus_vision)
         self.ui.tofAfButton.clicked.connect(self.auto_focus_tof)
-        self.ui.autoKsdButton.clicked.connect(self.auto_keystone)
-        self.ui.ksdCalButton.clicked.connect(self.ksd_calibrate)
+        self.ui.autoTofKsdButton.clicked.connect(self.auto_keystone_tof)
+        self.ui.autoCamKstButton.clicked.connect(self.auto_keystone_cam)
+        self.ui.kstCalButton.clicked.connect(self.kst_calibrate)
         self.ui.refreshKsdButton.clicked.connect(self.refresh_keystone)
         self.ui.motorForwardButton.clicked.connect(self.motorForward)
         self.ui.motorBackButton.clicked.connect(self.motorBack)
@@ -115,20 +119,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.exposureTime = 10000
         self.cameraThread = None
         self.cal = False
-        self.ui.autoKsdButton.setEnabled(True)
+        self.ui.autoTofKsdButton.setEnabled(True)
 
         self.cameraThread = CameraThread(1, "CameraThread", float(self.ui.exTimeSpinBox.text()))
         self.cameraThread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
-        print('--------- setPixmap ')
         self.ui.previewCameraLabel.setPixmap(image)
         return None
 
     def close_ui(self):
-        self.ui.visionAfButton.setEnabled(False)
+        self.ui.camAfButton.setEnabled(False)
         self.ui.tofAfButton.setEnabled(False)
-        self.ui.autoKsdButton.setEnabled(True)
+        self.ui.autoTofKsdButton.setEnabled(True)
         self.ui.refreshKsdButton.setEnabled(False)
         self.ui.motorForwardButton.setEnabled(False)
         self.ui.motorBackButton.setEnabled(False)
@@ -151,9 +154,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.sumStepsLabel.setEnabled(False)
 
     def open_ui(self):
-        self.ui.visionAfButton.setEnabled(True)
+        self.ui.camAfButton.setEnabled(True)
         self.ui.tofAfButton.setEnabled(True)
-        self.ui.autoKsdButton.setEnabled(True)
         self.ui.refreshKsdButton.setEnabled(True)
         self.ui.motorForwardButton.setEnabled(True)
         self.ui.motorBackButton.setEnabled(True)
@@ -180,9 +182,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.cameraThread.mRunning:
             self.ui.previewCameraLabel.show()
             self.cameraThread.start()
-            time.sleep(1.5)
-            if not self.cameraThread.mRunning:
-                QMessageBox.warning(self, "警告", "未识别到摄像头硬件")
+            # time.sleep(1.5)
+            # if not self.cameraThread.mRunning:
+            #     QMessageBox.warning(self, "警告", "未识别到摄像头硬件")
         else:
             print("External camera already opened")
         self.ui.eOpenCameraButton.setEnabled(True)
@@ -200,18 +202,21 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def external_take_picture(self):
         if self.cameraThread.mRunning:
-            path = './asuFiles/pcFiles'
+            path = DIR_NAME_REF
+            inter_path = DIR_NAME_INTER_REF
             dirExists = os.path.isdir(path)
             if not dirExists:
                 os.makedirs(path)
+            internal_dirExists = os.path.isdir(inter_path)
+            if not internal_dirExists:
+                os.makedirs(inter_path)
             if self.cal:
                 name = 'ref_n0' + str(self.count)
                 filePath = path + '/' + name
                 self.count += 1
             else:
-                current_time = datetime.datetime.now()
-                # print("current_time:    " + str(current_time))
-                filePath = path + '/' + str(current_time)
+                times = datetime.datetime.now(tz=None)
+                filePath = inter_path + '/' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
             self.cameraThread.takePicture(filePath)
         else:
             print("External camera is not opened")
@@ -222,61 +227,68 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_focus_tof(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
-    def auto_keystone(self):
+    def auto_keystone_tof(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
-        coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
-        # auto_keystone_cam()
-        # keystone_correct_tof()
-        print(coordinate)
-        # 运行算法
+        time.sleep(3)
         self.pull_data()
+        #coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
+        if  keystone_correct_tof():
+            QMessageBox.warning(self, "警告", "TOF全向校正成功")
+        else:
+            QMessageBox.warning(self, "警告", "TOF全向校正失败，校正数据错误")
+
+    def auto_keystone_cam(self):
+        self.kst_reset()
+        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
+        time.sleep(3)
+        self.pull_data()
+        if auto_keystone_cam():
+            QMessageBox.warning(self, "警告", "相机全向校正成功")
+        else:
+            QMessageBox.warning(self, "警告", "相机全向校正失败")
+
+    def cam_inter_cal(self):
+        if reference_cam_calib():
+            QMessageBox.warning(self, "警告", "相机内参标定成功")
+        else:
+            QMessageBox.warning(self, "警告", "相机内参标定失败")
+
+    def kst_calibrate(self):
+        # os.system("adb shell am broadcast -a asu.intent.action.SaveData")
+        # 拿到所有数据 n组，每组两个照片，imu，tof
+        self.kst_reset()
+        if auto_keystone_calib():
+            QMessageBox.warning(self, "警告", "全向自动标定成功")
+        else:
+            QMessageBox.warning(self, "警告", "全向自动标定失败")
 
     def kst_reset(self):
-        cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
-        os.system(cmd)
-        os.system("adb shell service call SurfaceFlinger 1006")
+        # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
+        # os.system(cmd)
+        # os.system("adb shell service call SurfaceFlinger 1006")
+        #set_point('0,0,1920,0,1920,1080,0,1080')
+        self.ui.ksdLeftDownEdit_x.setText('0')
+        self.ui.ksdLeftDownEdit_y.setText('0')
+        self.ui.ksdLeftUpEdit_x.setText('0')
+        self.ui.ksdLeftUpEdit_y.setText('1080')
+        self.ui.ksdRightUpEdit_x.setText('1920')
+        self.ui.ksdRightUpEdit_y.setText('1080')
+        self.ui.ksdRightDownEdit_x.setText('1920')
+        self.ui.ksdRightDownEdit_y.setText('0')
+        self.refresh_keystone()
 
-    def ksd_calibrate(self):
-        os.system("adb shell am broadcast -a asu.intent.action.SaveData")
-        # 拿到所有数据 n组，每组两个照片，imu，tof
-        print('---------------------------------开始运行')
-        #auto_keystone_calib()
 
     def refresh_keystone(self):
-        point_left_down_x = self.ui.ksdLeftDownEdit_x.text()
-        point_left_down_y = self.ui.ksdLeftDownEdit_y.text()
-        point_left_up_x = self.ui.ksdLeftUpEdit_x.text()
-        point_left_up_y = self.ui.ksdLeftUpEdit_y.text()
-        point_right_up_x = self.ui.ksdRightUpEdit_x.text()
-        point_right_up_y = self.ui.ksdRightUpEdit_y.text()
-        point_right_down_x = self.ui.ksdRightDownEdit_x.text()
-        point_right_down_y = self.ui.ksdRightDownEdit_y.text()
-        # if int(point_left_down_x) > 1920:
-        #     point_left_down_x = 1920
-        # if int(point_left_up_x) > 1920:
-        #     point_left_up_x = 1920
-        # if int(point_right_up_x) > 1920:
-        #     point_right_up_x = 1920
-        # if int(point_right_down_x) > 1920:
-        #     point_right_down_x = 1920
-        #
-        # if int(point_left_down_y) > 1080:
-        #     point_left_down_y = 1080
-        # if int(point_left_up_y) > 1080:
-        #     point_left_up_y = 1080
-        # if int(point_right_up_y) > 1080:
-        #     point_right_up_y = 1080
-        # if int(point_right_down_y) > 1080:
-        #     point_right_down_y = 1080
-
-        ksdPoint = point_left_down_x + "," + point_left_down_y + "," + point_right_down_x + "," + point_right_down_y + ","
-        ksdPoint = ksdPoint + point_right_up_x + "," + point_right_up_y + "," + point_left_up_x + "," + point_left_up_y
-
-        cmd0 = "adb shell setprop persist.vendor.hwc.keystone "
-        cmd1 = cmd0 + ksdPoint
-        print("keystone : " + cmd1)
-        os.system(cmd1)
-        os.system("adb shell service call SurfaceFlinger 1006")
+        ksdPoint = [0] * 8
+        ksdPoint[0] = self.ui.ksdLeftDownEdit_x.text()
+        ksdPoint[1] = self.ui.ksdLeftDownEdit_y.text()
+        ksdPoint[2] = self.ui.ksdLeftUpEdit_x.text()
+        ksdPoint[3] = self.ui.ksdLeftUpEdit_y.text()
+        ksdPoint[4] = self.ui.ksdRightUpEdit_x.text()
+        ksdPoint[5] = self.ui.ksdRightUpEdit_y.text()
+        ksdPoint[6] = self.ui.ksdRightDownEdit_x.text()
+        ksdPoint[7] = self.ui.ksdRightDownEdit_y.text()
+        set_point(ksdPoint)
 
     def update_data(self):
         position = os.popen("adb shell getprop persist.motor.position").read()
@@ -580,18 +592,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # if count > 2:
         #     count = 0
         self.current_port.write(Hex_str)
-        save_image()
-
-
-def save_image():
-    pass
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     w = ProjectorWindow()
-    # w.resize(800,500)
+    # width height
+    # w.resize(600, 820)
     w.show()
+    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     # mylog = Logger('motor.log', level='debug')
     # mylog.logger.debug("-------------重新启动应用-------------")
     sys.exit(app.exec_())
