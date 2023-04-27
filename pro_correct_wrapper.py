@@ -5,15 +5,45 @@ from ctypes import *
 import cv2
 import numpy as np
 
+DIR_NAME = 'asuFiles'
+DIR_NAME_COPY = 'asuFiles/copy'
+
+dirExists = os.path.isdir(DIR_NAME)
+if not dirExists:
+    os.makedirs(DIR_NAME)
+dirExists = os.path.isdir(DIR_NAME_COPY)
+if not dirExists:
+    os.makedirs(DIR_NAME_COPY)
+SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
+SN = SN.strip()
+print(len(SN), SN)
+if len(SN) < 3:
+    SN = 'ASU0123456789'
+
 # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
-IMG_AUTO_KEYSTONE = 'asuFiles/projectionFiles/auto_keystone_pattern.png'
-FILE_AUTO_KEYSTONE = 'asuFiles/projectionFiles/keystone.txt'
-DIR_NAME_REF = 'asuFiles/refFiles/'
-DIR_NAME_PRO = 'asuFiles/projectionFiles/'
-FILE_NAME_CSV = 'asuFiles/projectionFiles/test.csv'
-CALIB_CONFIG_PARA = "asuFiles/config_para.yml"
-CALIB_DATA_PATH = "asuFiles/calib_data.yml"
+IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
+FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
+DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
+DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
+FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
+CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
+CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
 DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
+
+dirExists = os.path.isdir(DIR_NAME_REF)
+print(DIR_NAME_REF)
+if not dirExists:
+    os.makedirs(DIR_NAME_REF)
+    print('创建目录：', DIR_NAME_REF)
+dirExists = os.path.isdir(DIR_NAME_INTER_REF)
+if not dirExists:
+    os.makedirs(DIR_NAME_INTER_REF)
+    print('创建目录：', DIR_NAME_INTER_REF)
+dirExists = os.path.isdir(DIR_NAME_PRO)
+if not dirExists:
+    os.makedirs(DIR_NAME_PRO)
+    print('创建目录：', DIR_NAME_PRO)
+
 # 对应标定的姿态数量
 NUM_POSTURE = 6
 # 投影仪生成的csv数据
@@ -27,6 +57,51 @@ try:
     print('load pro_correction.dll')
 except OSError:
     print('Cannot find pro_correction.dll.')
+
+
+def get_sn():
+    global SN
+    SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
+    SN = SN.strip()
+    if len(SN) < 3:
+        SN = 'ASU0123456789'
+    print('投影设备SN: ', len(SN), SN)
+    return SN
+
+
+def create_dir_file():
+    global SN, DIR_NAME_REF, DIR_NAME_PRO, DIR_NAME_INTER_REF,\
+        IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, FILE_NAME_CSV, CALIB_CONFIG_PARA, CALIB_DATA_PATH
+    ex = os.path.isdir(DIR_NAME)
+    if not ex:
+        os.makedirs(DIR_NAME)
+    ex = os.path.isdir(DIR_NAME_COPY)
+    if not ex:
+        os.makedirs(DIR_NAME_COPY)
+    get_sn()
+
+    # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
+    IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
+    FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
+    DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
+    DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
+    FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
+    CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
+    CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
+    DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
+
+    ex = os.path.isdir(DIR_NAME_REF)
+    if not ex:
+        os.makedirs(DIR_NAME_REF)
+        print('创建目录：', DIR_NAME_REF)
+    ex = os.path.isdir(DIR_NAME_INTER_REF)
+    if not ex:
+        os.makedirs(DIR_NAME_INTER_REF)
+        print('创建目录：', DIR_NAME_INTER_REF)
+    ex = os.path.isdir(DIR_NAME_PRO)
+    if not ex:
+        os.makedirs(DIR_NAME_PRO)
+        print('创建目录：', DIR_NAME_PRO)
 
 
 def make_charpp(arr):
@@ -446,7 +521,6 @@ def auto_keystone_calib():
             #     for key in data_list[i].keys():
             #         depth_data_list.append(data_list[i][key])
             # print(len(depth_data_list), depth_data_list)
-
 
             # csv.DictWriter() #以字典的形式读写数据
             # 遍历列表将数据按行输出

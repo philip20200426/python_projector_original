@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1730</width>
-    <height>793</height>
+    <height>871</height>
    </rect>
   </property>
   <property name="font">
@@ -415,9 +415,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>610</y>
+      <y>620</y>
       <width>271</width>
-      <height>41</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -458,9 +458,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>650</y>
+      <y>680</y>
       <width>271</width>
-      <height>41</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -669,7 +669,7 @@
       </size>
      </property>
      <property name="text">
-      <string>1080</string>
+      <string>1079</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -714,7 +714,7 @@
       </size>
      </property>
      <property name="text">
-      <string>1920</string>
+      <string>1919</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -749,7 +749,7 @@
       </size>
      </property>
      <property name="text">
-      <string>1080</string>
+      <string>1079</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -817,7 +817,7 @@
       </size>
      </property>
      <property name="text">
-      <string>1920</string>
+      <string>1919</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -1024,9 +1024,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>690</y>
+      <y>740</y>
       <width>271</width>
-      <height>41</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -1153,13 +1153,16 @@
       <number>20</number>
      </property>
      <property name="maximum">
-      <number>30000</number>
+      <number>60000</number>
      </property>
      <property name="singleStep">
       <number>10</number>
      </property>
+     <property name="value">
+      <number>9000</number>
+     </property>
      <property name="sliderPosition">
-      <number>30</number>
+      <number>9000</number>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -1193,7 +1196,7 @@
       <number>20</number>
      </property>
      <property name="maximum">
-      <number>30000</number>
+      <number>60000</number>
      </property>
      <property name="value">
       <number>9000</number>

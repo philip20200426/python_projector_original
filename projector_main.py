@@ -1,6 +1,7 @@
 import csv
 import datetime
 import re
+from pathlib import Path
 
 import cv2
 import qdarkstyle
@@ -17,13 +18,16 @@ from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QStatusBar
 import os, sys
 
-from utils import check_hex
+from utils import check_hex, move_file
 from projector_cal import Ui_MainWindow
 import time
 from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame
 import shutil
 from ctypes import *
 
+import os
+import shutil
+from glob import glob
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -108,10 +112,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.rootButton.setText("打开设备")
 
         self.count = 0
-
-        dirExists = os.path.isdir('./asuFiles')
-        if not dirExists:
-            os.makedirs('./asuFiles')
 
         # lbl = QLabel(self)
         # pixmap = QPixmap('out.jpeg')  # 按指定路径找到图片
@@ -231,8 +231,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
         time.sleep(3)
         self.pull_data()
-        #coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
-        if  keystone_correct_tof():
+        # coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
+        if keystone_correct_tof():
             QMessageBox.warning(self, "警告", "TOF全向校正成功")
         else:
             QMessageBox.warning(self, "警告", "TOF全向校正失败，校正数据错误")
@@ -266,28 +266,27 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
         # os.system(cmd)
         # os.system("adb shell service call SurfaceFlinger 1006")
-        #set_point('0,0,1920,0,1920,1080,0,1080')
+        # set_point('0,0,1920,0,1920,1080,0,1080')
         self.ui.ksdLeftDownEdit_x.setText('0')
         self.ui.ksdLeftDownEdit_y.setText('0')
         self.ui.ksdLeftUpEdit_x.setText('0')
-        self.ui.ksdLeftUpEdit_y.setText('1080')
-        self.ui.ksdRightUpEdit_x.setText('1920')
-        self.ui.ksdRightUpEdit_y.setText('1080')
-        self.ui.ksdRightDownEdit_x.setText('1920')
+        self.ui.ksdLeftUpEdit_y.setText('1079')
+        self.ui.ksdRightUpEdit_x.setText('1919')
+        self.ui.ksdRightUpEdit_y.setText('1079')
+        self.ui.ksdRightDownEdit_x.setText('1919')
         self.ui.ksdRightDownEdit_y.setText('0')
         self.refresh_keystone()
-
 
     def refresh_keystone(self):
         ksdPoint = [0] * 8
         ksdPoint[0] = self.ui.ksdLeftDownEdit_x.text()
         ksdPoint[1] = self.ui.ksdLeftDownEdit_y.text()
-        ksdPoint[2] = self.ui.ksdLeftUpEdit_x.text()
-        ksdPoint[3] = self.ui.ksdLeftUpEdit_y.text()
+        ksdPoint[6] = self.ui.ksdLeftUpEdit_x.text()
+        ksdPoint[7] = self.ui.ksdLeftUpEdit_y.text()
         ksdPoint[4] = self.ui.ksdRightUpEdit_x.text()
         ksdPoint[5] = self.ui.ksdRightUpEdit_y.text()
-        ksdPoint[6] = self.ui.ksdRightDownEdit_x.text()
-        ksdPoint[7] = self.ui.ksdRightDownEdit_y.text()
+        ksdPoint[2] = self.ui.ksdRightDownEdit_x.text()
+        ksdPoint[3] = self.ui.ksdRightDownEdit_y.text()
         set_point(ksdPoint)
 
     def update_data(self):
@@ -318,28 +317,40 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.update_data_timer.start(1000)
         else:
             self.close_ui()
+        get_sn()
 
         print("devices ", devices[::-1])
         print("len ", len(devices))
         self.ui.rootButton.setEnabled(True)
 
     def clean_data(self):
+        localSN = get_sn()
+        srcDirName = DIR_NAME + '/' + localSN
+        srcExit = os.path.isdir(srcDirName)
+        if srcExit:
+            times = datetime.datetime.now(tz=None)
+            distDirName = DIR_NAME_COPY + '/' + localSN + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+            # shutil.copytree(DIR_NAME, 'copy')
+            ret = shutil.move(srcDirName, distDirName)
+            print('备份结束', ret)
+        print('创建新目录: ', srcDirName)
+        create_dir_file()
         # os.system("rm -rf .\asuFiles")
         os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
         os.system("adb shell am broadcast -a asu.intent.action.Clear")
-
-        dirExists = os.path.isdir('asuFiles')
-        if dirExists:
-            shutil.rmtree('asuFiles')
-        else:
-            print("No find asuFiles")
-
-        fileExists = os.path.isfile('motor.log')
-        if fileExists:
-            #mylog.shutdown()
-            os.remove('motor.log')
-        else:
-            print("No find files")
+        #
+        # dirExists = os.path.isdir('asuFiles')
+        # if dirExists:
+        #     shutil.rmtree('asuFiles')
+        # else:
+        #     print("No find asuFiles")
+        #
+        # fileExists = os.path.isfile('motor.log')
+        # if fileExists:
+        #     # mylog.shutdown()
+        #     os.remove('motor.log')
+        # else:
+        #     print("No find files")
         self.count = 0
 
     def open_camera(self):
@@ -357,13 +368,50 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar_2.setText("投影内部相机状态：关闭")
 
     def save_data(self):
+        # if os.path.exists(DIR_NAME_PRO):
+        #     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
+        #     preLenFiles = len(files)
         os.system("adb shell am broadcast -a asu.intent.action.SaveData")
-        time.sleep(1)
+        time.sleep(2)
         self.cal = True
         self.external_take_picture()
         self.cal = False
-        time.sleep(3)
+        time.sleep(2)
         self.pull_data()
+        # files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
+        # nowLenFiles = len(files)
+        # preTime = time.time()
+        # while (nowLenFiles - preLenFiles) == 0:
+        #     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
+        #     nowLenFiles = len(files)
+        #     nowTime = time.time()
+        #     if (nowTime - preTime) > 6:
+        #         print('>>>>>>>>>>>>>>>>>>>> 采集数据超时，请重新抓取 ', DIR_NAME_PRO)
+        #         QMessageBox.warning(self, "警告", "标定数据保存失败")
+        #         return False
+        #
+        pro_file_list = []
+        ret = {"jpg": 0, "png": 0, "bmp": 0}
+        for root, dirs, files in os.walk(DIR_NAME_PRO):
+            for file in files:
+                ext = os.path.splitext(file)[-1].lower()
+                head = os.path.splitext(file)[0].lower()[:2]
+                if ext == '.bmp' and head == 'n0':
+                    ret["jpg"] = ret["jpg"] + 1
+                if ext == ".png" and head == 'n0':
+                    pro_file_list.append(file)
+                    ret["png"] = ret["png"] + 1
+        print('最新图片: ', pro_file_list[-1])
+        pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+        imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+        print(pro_img_size[0], pro_img_size[1], imageSize)
+        if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize > 132500:
+            # 图片的大小
+            QMessageBox.warning(self, "警告", "数据保存成功")
+        else:
+            QMessageBox.warning(self, "警告", "数据保存失败")
+
 
     def pull_data(self):
         os.system("adb pull /sdcard/DCIM/projectionFiles ./asuFiles")
@@ -395,7 +443,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value "
         cmd2 = self.ui.motorPositionEdit.text()
-        #mylog.logger.debug("-" + cmd2)
+        # mylog.logger.debug("-" + cmd2)
         cmd = cmd1 + cmd2
         print(cmd)
         os.system(cmd)
@@ -413,7 +461,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value "
         cmd2 = self.ui.motorPositionEdit.text()
-        #mylog.logger.debug("+" + cmd2)
+        # mylog.logger.debug("+" + cmd2)
         cmd = cmd1 + cmd2
         print(cmd)
         os.system(cmd)
