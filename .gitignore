@@ -1,0 +1,12 @@
+dist
+asuFiles
+build
+result
+package
+*.dll
+**pycache
+ProjCalLib*
+pro_correct*
+\_\_pycha*
+__pycache__
+

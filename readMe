@@ -1,8 +1,33 @@
 pyinstaller --noconsole -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
 pyinstaller --noconsole -p package -F .\projector_lcos_main.py .\projector_pdu.py .\serial_utils.py .\log_utils.py
 
+
+
+2023年4月27日统一整理代码，保存当前状态，后面创建两个分支，分别跟踪下面两个程序：
+
+
+全向梯形算法标定开发总结：
 线程的释放需要再研究下，尤其是camera的线程
 设置按钮时没有按照面向对象的思路去设计
+
+
+
+
+
+
+
+
+LCD光机测试板开发总结：
+2023.4.9
+打开串口时，启动串口数据接收线程serial_thread。
+关闭串口时，并没有彻底关闭线程，这里后面需要再研究。
+导致每次打开，都会重新启动一个线程！！！！！！！！！！！！！！！！！
+结论：每次打开串口时，只做start，关联信号和创建对象都在初始化里做；运行start相当于调用run，原来的线程还是继续存在的。
+
+
+风扇占空比取反了
+
+
 
 2023年3月17日以后总结实时更新到CSDN
 
