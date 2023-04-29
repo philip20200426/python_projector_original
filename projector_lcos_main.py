@@ -101,7 +101,6 @@ class SerialThread(QThread):
     def run(self):
         time.sleep(1)  # 防止直接进循环, 阻塞主ui
         while True:
-            print('============================================')
             try:
                 if self.ser is not None and self.ser.inWaiting():
                     self.current_data = self.ser.read(self.ser.inWaiting())
@@ -250,6 +249,20 @@ class AutoTestThread(QThread):
                     pass
             self.win.write_result_csv('a', result)
             print(result)
+
+        all_pass = True
+        result[0] = 'Result'
+        result[1] = 'pass'
+        for k in self.win.dictAutoTestResult:
+            print(k, self.win.dictAutoTestResult[k])
+            if self.win.dictAutoTestResult[k] <= 0 or self.win.dictAutoTestResult[key] != self.circle:
+                all_pass = False
+                result[1] = 'fail'
+        if all_pass:
+            self.win.ui.resultLabel.setPixmap(passPix)
+        else:
+            self.win.ui.resultLabel.setPixmap(failPix)
+        self.win.write_result_csv('a', result)
         # if allRight:
         #     img_bgr = cv2.imread('pic/pass.png')
         # else:
@@ -355,9 +368,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         lcd_items = ["正常", "上下", "左右", "上下左右"]
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
-        self.ui.swLabel = QLabel()
-        self.ui.swLabel.setText(SW_VERSION)
-        self.ui.statusbar.addPermanentWidget(self.ui.swLabel, stretch=0)
+        self.ui.snLabel = QLabel()
         self.ui.hwLabel = QLabel()
 
         # 温度补偿
@@ -365,8 +376,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.cols_voltage = []
         # 温度标定数据
         self.read_ntc_excel()
-        # 阈值参数
-        self.read_para()
+
+        # 初始化阈值参数
+        para = self.read_para()
+        self.ui.ntcThresholdLowerEdit.setText(para[0][0])
+        self.ui.ntcThresholdUpperEdit.setText(para[0][1])
+        self.ui.ntcLedThresholdLowerEdit.setText(para[1][0])
+        self.ui.ntcLedThresholdUpperEdit.setText(para[1][1])
 
         self.totalRounds = 0
         self.limitSteps = 0
@@ -498,12 +514,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return result
 
     def save_para(self):
-        data = [[0, 0]]
+        data = [[0, 0], [0, 0]]
         error = True
         data[0][0] = int(self.ui.ntcThresholdLowerEdit.text())
         data[0][1] = int(self.ui.ntcThresholdUpperEdit.text())
-
-        with open(FILE_PARA, 'w') as file:
+        data[1][0] = int(self.ui.ntcLedThresholdLowerEdit.text())
+        data[1][1] = int(self.ui.ntcLedThresholdUpperEdit.text())
+        with open(FILE_PARA, 'w', newline='') as file:
             writer = csv.writer(file)
             for i in range(len(data)):
                 writer.writerow(data[i])
@@ -553,11 +570,21 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoTestFinishLabel.setText('测试中...')
             self.sn = str(text)
             # self.ui.motorTestCycleEdit.setText(str(2))
+            self.ui.snLabel.setText('')
+            self.ui.snLabel.clear()
+            self.ui.statusbar.addPermanentWidget(self.ui.snLabel, stretch=1)
+
             self.ui.snLabel.setText("SN: " + str(text))
+            self.ui.statusbar.addPermanentWidget(self.ui.snLabel, stretch=1)
+            current_data = datetime.datetime.now()
+            print(current_data)
             data = ['', '']
+            data[0] = 'TIME'
+            data[1] = current_data
+            self.write_result_csv('w', data)
             data[0] = 'SN'
             data[1] = str(text)
-            if self.write_result_csv('w', data):
+            if self.write_result_csv('a', data):
                 self.ui.autoTestButton.setEnabled(False)
                 self.auto_test_motor_open()
             else:
@@ -607,6 +634,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.testFan2Label.setPixmap(failPix)
             self.ui.testFan1Label.setPixmap(failPix)
             self.ui.testMotorLabel.setPixmap(failPix)
+            self.ui.resultLabel.setPixmap(failPix)
 
     def open_pgu_led(self):
         if self.mPguLedFlag:
@@ -784,7 +812,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.refresh_port.setEnabled(False)
             self.slot_lcd_mirror(2)
             self.ui.hwLabel.setText('')
-            self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
+            self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
             time.sleep(1)
             self.get_hw_version()
         else:
@@ -861,7 +889,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                         val3 = i
                 if self.dictAutoTest['NTC-LED']:
                     data[0] = 'NTC-LED'
-                    if int(self.ui.ntcThresholdLowerEdit.text()) < val2 < int(self.ui.ntcThresholdUpperEdit.text()):
+                    if int(self.ui.ntcLedThresholdLowerEdit.text()) < val2 < int(
+                            self.ui.ntcLedThresholdUpperEdit.text()):
                         data[1] = 'pass'
                         self.dictAutoTestResult['NTC-LED'] += 1
                     else:
@@ -898,7 +927,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print('>>>>>>>>>> Uart receive CMD_GET_FANS')
                 if self.dictAutoTest['FAN1-LED']:
                     data[0] = 'FAN1-LED'
-                    if dataList[1] == 1:
+                    if dataList[0] == 1:
                         data[1] = 'pass'
                         # self.ui.testFan1Label.setPixmap(passPix)
                         self.dictAutoTestResult['FAN1-LED'] += 1
@@ -909,7 +938,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     # self.write_result_csv('a', data)
                 if self.dictAutoTest['FAN2-LCD']:
                     data[0] = 'FAN2-LCD'
-                    if dataList[0] == 1:
+                    if dataList[1] == 1:
                         data[1] = 'pass'
                         # self.ui.testFan2Label.setPixmap(passPix)
                         self.dictAutoTestResult['FAN2-LCD'] += 1
@@ -1126,6 +1155,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     w = ProjectorWindow()
-    w.resize(1239, 900)
+    w.resize(1239, 960)
     w.show()
     sys.exit(app.exec_())
