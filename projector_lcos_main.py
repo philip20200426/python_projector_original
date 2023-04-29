@@ -12,6 +12,8 @@ import qdarkstyle
 from PyQt5.QtGui import QPixmap, QTextCharFormat, QRegExpValidator
 from qdarkstyle import DarkPalette
 from PyQt5 import QtCore
+from win32com.client import Dispatch
+
 from log_utils import Logger
 
 # import serial
@@ -393,6 +395,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         validator.setRegExp(reg)
         self.ui.ntcThresholdUpperEdit.setValidator(validator)
         self.ui.ntcThresholdLowerEdit.setValidator(validator)
+        self.ui.ntcLedThresholdLowerEdit.setValidator(validator)
+        self.ui.ntcLedThresholdUpperEdit.setValidator(validator)
         self.dictAutoTest = {'MOTOR': False,
                              'FAN1-LED': False, 'FAN2-LCD': False,
                              'NTC-LED': False, 'NTC-LCD': False,
@@ -412,7 +416,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autoTestFanFlag = False
         self.autoTestNtcFlag = False
         self.autoTestMotorFlag = False
+        self.motorPosition = 0
         self.totalSteps = 0
+
+        parser = Dispatch("Scripting.FileSystemObject")
+        version = parser.GetFileVersion('PGUTestBoard.exe')
+        print('000000000000000', version)
+        self.ui.swVersionLabel = QLabel()
+        self.ui.swVersionLabel.setText('SW: ' + version)
+        self.ui.statusbar.addPermanentWidget(self.ui.swVersionLabel, stretch=0)
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
@@ -865,12 +877,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 hw_version = str(dataList[0]) + "." \
                              + str(dataList[1]) + "." \
                              + str(dataList[2]) + " "
-                del dataList[0:3]
-                dataList.insert(12, 32)
-                dataList.insert(12, 32)
+                # del dataList[0:3]
+                # dataList.insert(12, 32)
+                # dataList.insert(12, 32)
                 for i in range(0, len(dataList)):
                     hw_version = hw_version + chr(dataList[i])
                 hw_version = 'HW: ' + hw_version
+                print(hw_version)
                 self.ui.hwLabel.setText(hw_version)
                 self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
             if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
@@ -975,6 +988,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     actualSteps = self.limitSteps - reverseSteps
                     self.totalSteps = self.totalSteps + actualSteps
                     print('马达回转结束 limitSteps ', self.limitSteps, reverseSteps, actualSteps)
+                    self.motorPosition = 0
                     self.mMotorFinished = True
                 elif dataList[0] == 0:
                     self.ui.motorStatuslabel.setStyleSheet("color:black")
@@ -983,7 +997,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     # self.mMotorFinished = True
                 else:
                     self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达异常")
+                    self.ui.motorStatuslabel.setText("马达故障")
                     print("返回错误", dataList[0])
                 self.ui.actualStepsLabel.setText(str(actualSteps))
             self.ui.port_status.setText('数据设置状态: 成功')

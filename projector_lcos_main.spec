@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['projector_lcos_main.py', 'projector_pdu.py', 'serial_utils.py', 'log_utils.py'],
+    ['projector_lcos_main.py'],
     pathex=['package'],
     binaries=[],
     datas=[],
@@ -28,7 +28,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='projector_lcos_main',
+    name='PGUTestBoard',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -41,4 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    version='file_version_info.txt',
 )
