@@ -118,8 +118,17 @@ def set_point(point):
     os.system(cmd)
     time.sleep(1)
     os.system("adb shell service call SurfaceFlinger 1006")
+    os.system("adb shell service call SurfaceFlinger 1006")
 
 
+def get_point():
+    source_points = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
+    if len(source_points) > 0:
+        source_points = source_points.strip().split(',')
+        #source_points = list(map(float, source_points))
+        source_points = list(map(int, source_points))
+    print('当前坐标：', source_points)
+    return source_points
 # dll.doubleTest.argtypes = [c_double]
 # dll.doubleTest.restype = c_double
 # d1 = c_double(10.0)

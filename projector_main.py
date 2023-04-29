@@ -238,6 +238,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "TOF全向校正失败，校正数据错误")
 
     def auto_keystone_cam(self):
+        point = get_point()
         self.kst_reset()
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
         time.sleep(3)
@@ -246,6 +247,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "相机全向校正成功")
         else:
             QMessageBox.warning(self, "警告", "相机全向校正失败")
+        set_point(point)
 
     def cam_inter_cal(self):
         if reference_cam_calib():
@@ -321,6 +323,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         print("devices ", devices[::-1])
         print("len ", len(devices))
+        os.system("adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity")
         self.ui.rootButton.setEnabled(True)
 
     def clean_data(self):
@@ -371,6 +374,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # if os.path.exists(DIR_NAME_PRO):
         #     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
         #     preLenFiles = len(files)
+        point = get_point()
+        self.kst_reset()
         os.system("adb shell am broadcast -a asu.intent.action.SaveData")
         time.sleep(2)
         self.cal = True
@@ -411,10 +416,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "数据保存成功")
         else:
             QMessageBox.warning(self, "警告", "数据保存失败")
+        set_point(point)
 
 
     def pull_data(self):
-        os.system("adb pull /sdcard/DCIM/projectionFiles ./asuFiles")
+        cmd0 = "adb pull /sdcard/DCIM/projectionFiles "
+        cmd1 = DIR_NAME + '/' + SN
+        cmd = cmd0 + cmd1
+        os.system(cmd)
 
     def removePattern(self):
         os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
