@@ -92,23 +92,30 @@ def show_img(num):
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
+    serial_except_signal = pyqtSignal(name='serial_abnormal')
 
     def __init__(self, ser=None):
         super().__init__()
         self.ser = ser
         self.current_data = b''
-        self.exitFlag = False
+        self.running = False
         self.num = 0
 
     def run(self):
         time.sleep(1)  # 防止直接进循环, 阻塞主ui
+        self.running = True
         while True:
+            if not self.running:
+                self.running = False
+                return
             try:
                 if self.ser is not None and self.ser.inWaiting():
                     self.current_data = self.ser.read(self.ser.inWaiting())
                     self.num += 1
                     self.data_arrive_signal.emit()
             except:
+                print('!!!!!!!!!!!!!!!!!!!! 串口异常，可能时未关闭串口就拔出硬件')
+                self.serial_except_signal.emit()
                 return
 
 
@@ -333,6 +340,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
         self.serial_thread.data_arrive_signal.connect(self.receive_data)  # 不要每次打开时都关联signal，会导致每次接收数据时signal多次
+        self.serial_thread.serial_except_signal.connect(self.serial_except)
         self.autoTestThread = None
 
         pix = QPixmap(imageList[0])
@@ -419,12 +427,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.motorPosition = 0
         self.totalSteps = 0
 
-        parser = Dispatch("Scripting.FileSystemObject")
-        version = parser.GetFileVersion('PGUTestBoard.exe')
-        print('000000000000000', version)
-        self.ui.swVersionLabel = QLabel()
-        self.ui.swVersionLabel.setText('SW: ' + version)
-        self.ui.statusbar.addPermanentWidget(self.ui.swVersionLabel, stretch=0)
+        if os.path.exists('PGUTestBoard.exe'):
+            parser = Dispatch("Scripting.FileSystemObject")
+            version = parser.GetFileVersion('PGUTestBoard.exe')
+            m_time = time.ctime(os.path.getmtime('PGUTestBoard.exe'))
+            print('000000000000000', version)
+            self.ui.swVersionLabel = QLabel()
+            self.ui.swVersionLabel.setText('SW: ' + version + '  ' + m_time)
+            self.ui.statusbar.addPermanentWidget(self.ui.swVersionLabel, stretch=0)
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
@@ -769,6 +779,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # print(red_current_value)
 
     def switch_windows_ui(self, switch):
+        self.ui.frame_12.setEnabled(switch)
         self.ui.frame1.setEnabled(switch)
         self.ui.frame_5.setEnabled(switch)
         self.ui.frame_9.setEnabled(switch)
@@ -835,6 +846,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # self.serial_thread.quit()
             # self.serial_thread.wait()
             self.serial_thread.ser = None  # 没有正常退出，不可以，后面继续研究
+            self.serial_thread.running = False
             # self.repeat_send_timer.stop()
             self.current_port.flushInput()
             self.current_port.flushOutput()
@@ -859,6 +871,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.serial_selection.clear()
         self.ui.serial_selection.addItems(available_ports)
 
+    def serial_except(self):
+        print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+        self.close_port()
+
     def receive_data(self):
         # receive_ascii_format = self.ui.receive_ascii_format.isChecked()
         reverseSteps = 0
@@ -872,139 +888,142 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd_data = ()  # 如果下面不分开，通过元祖接收
         cmd, length, dataList = asu_pdu_parse_one_frame(raw_data_list)
         print("uart receive data : ", cmd, length, dataList)
-        if cmd in mPduCmdDict2Rev.keys():
-            if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
-                hw_version = str(dataList[0]) + "." \
-                             + str(dataList[1]) + "." \
-                             + str(dataList[2]) + " "
-                # del dataList[0:3]
-                # dataList.insert(12, 32)
-                # dataList.insert(12, 32)
-                for i in range(0, len(dataList)):
-                    hw_version = hw_version + chr(dataList[i])
-                hw_version = 'HW: ' + hw_version
-                print(hw_version)
-                self.ui.hwLabel.setText(hw_version)
-                self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
-            if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
-                print('>>>>>>>>>> Uart receive CMD_GET_TEMPS')
-                # 根据电压检索对应的温度值
-                temp1 = int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)
-                temp2 = int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)
-                temp3 = int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)
-                val1, val2, val3 = 0, 0, 0
-                for i in range(1, len(self.cols_voltage)):
-                    if temp1 < int(self.cols_voltage[i] * 1000):
-                        val1 = i
-                    if temp2 < int(self.cols_voltage[i] * 1000):
-                        val2 = i
-                    if temp3 < int(self.cols_voltage[i] * 1000):
-                        val3 = i
-                if self.dictAutoTest['NTC-LED']:
-                    data[0] = 'NTC-LED'
-                    if int(self.ui.ntcLedThresholdLowerEdit.text()) < val2 < int(
-                            self.ui.ntcLedThresholdUpperEdit.text()):
-                        data[1] = 'pass'
-                        self.dictAutoTestResult['NTC-LED'] += 1
-                    else:
-                        data[1] = 'fail'
-                        self.dictAutoTestResult['NTC-LED'] -= 1
-                if self.dictAutoTest['NTC-LCD']:
-                    data[0] = 'NTC-LCD'
-                    if int(self.ui.ntcThresholdLowerEdit.text()) < val3 < int(self.ui.ntcThresholdUpperEdit.text()):
-                        self.dictAutoTestResult['NTC-LCD'] += 1
-                        data[1] = 'pass'
-                    else:
-                        data[1] = 'fail'
-                        self.dictAutoTestResult['NTC-LCD'] -= 1
-                    # self.write_result_csv('a', data)
-                if self.dictAutoTest['NTC-EVR']:
-                    if int(self.ui.ntcThresholdLowerEdit.text()) < val1 < int(self.ui.ntcThresholdUpperEdit.text()):
-                        # self.ui.testTemp3Label.setPixmap(passPix)
-                        data[1] = 'pass'
-                        self.write_result_csv('a', data)
-                        self.dictAutoTestResult['NTC-EVR'] += 1
-                    else:
-                        data[1] = 'fail'
-                        # self.ui.testTemp3Label.setPixmap(failPix)
-                        self.dictAutoTestResult['NTC-EVR'] -= 1
-                    # self.write_result_csv('a', data)
-                self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
-                self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
-                self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
-                self.ui.temp1Label.setText(str(int(val1 + 1)))  # EVR
-                self.ui.temp2Label.setText(str(int(val2 + 1)))  # LED
-                self.ui.temp3Label.setText(str(int(val3 + 1)))  # LCD
-                self.mNtcFinished = True
-            if mPduCmdDict2Rev[cmd] == 'CMD_GET_FANS':
-                print('>>>>>>>>>> Uart receive CMD_GET_FANS')
-                if self.dictAutoTest['FAN1-LED']:
-                    data[0] = 'FAN1-LED'
+        if cmd > -1:
+            if cmd in mPduCmdDict2Rev.keys():
+                if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
+                    hw_version = str(dataList[0]) + "." \
+                                 + str(dataList[1]) + "." \
+                                 + str(dataList[2]) + " "
+                    # del dataList[0:3]
+                    # dataList.insert(12, 32)
+                    # dataList.insert(12, 32)
+                    for i in range(0, len(dataList)):
+                        hw_version = hw_version + chr(dataList[i])
+                    hw_version = 'HW: ' + hw_version
+                    print(hw_version)
+                    self.ui.hwLabel.setText(hw_version)
+                    self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
+                if mPduCmdDict2Rev[cmd] == 'CMD_GET_TEMPS':
+                    print('>>>>>>>>>> Uart receive CMD_GET_TEMPS')
+                    # 根据电压检索对应的温度值
+                    temp1 = int(hex(dataList[4] << 8), 16) + int(hex(dataList[3]), 16)
+                    temp2 = int(hex(dataList[6] << 8), 16) + int(hex(dataList[5]), 16)
+                    temp3 = int(hex(dataList[8] << 8), 16) + int(hex(dataList[7]), 16)
+                    val1, val2, val3 = 0, 0, 0
+                    for i in range(1, len(self.cols_voltage)):
+                        if temp1 < int(self.cols_voltage[i] * 1000):
+                            val1 = i
+                        if temp2 < int(self.cols_voltage[i] * 1000):
+                            val2 = i
+                        if temp3 < int(self.cols_voltage[i] * 1000):
+                            val3 = i
+                    if self.dictAutoTest['NTC-LED']:
+                        data[0] = 'NTC-LED'
+                        if int(self.ui.ntcLedThresholdLowerEdit.text()) < val2 < int(
+                                self.ui.ntcLedThresholdUpperEdit.text()):
+                            data[1] = 'pass'
+                            self.dictAutoTestResult['NTC-LED'] += 1
+                        else:
+                            data[1] = 'fail'
+                            self.dictAutoTestResult['NTC-LED'] -= 1
+                    if self.dictAutoTest['NTC-LCD']:
+                        data[0] = 'NTC-LCD'
+                        if int(self.ui.ntcThresholdLowerEdit.text()) < val3 < int(self.ui.ntcThresholdUpperEdit.text()):
+                            self.dictAutoTestResult['NTC-LCD'] += 1
+                            data[1] = 'pass'
+                        else:
+                            data[1] = 'fail'
+                            self.dictAutoTestResult['NTC-LCD'] -= 1
+                        # self.write_result_csv('a', data)
+                    if self.dictAutoTest['NTC-EVR']:
+                        if int(self.ui.ntcThresholdLowerEdit.text()) < val1 < int(self.ui.ntcThresholdUpperEdit.text()):
+                            # self.ui.testTemp3Label.setPixmap(passPix)
+                            data[1] = 'pass'
+                            self.write_result_csv('a', data)
+                            self.dictAutoTestResult['NTC-EVR'] += 1
+                        else:
+                            data[1] = 'fail'
+                            # self.ui.testTemp3Label.setPixmap(failPix)
+                            self.dictAutoTestResult['NTC-EVR'] -= 1
+                        # self.write_result_csv('a', data)
+                    self.ui.temp1VoltageLabel.setText(str(temp1 / 1000))
+                    self.ui.temp2VoltageLabel.setText(str(temp2 / 1000))
+                    self.ui.temp3VoltageLabel.setText(str(temp3 / 1000))
+                    self.ui.temp1Label.setText(str(int(val1 + 1)))  # EVR
+                    self.ui.temp2Label.setText(str(int(val2 + 1)))  # LED
+                    self.ui.temp3Label.setText(str(int(val3 + 1)))  # LCD
+                    self.mNtcFinished = True
+                if mPduCmdDict2Rev[cmd] == 'CMD_GET_FANS':
+                    print('>>>>>>>>>> Uart receive CMD_GET_FANS')
+                    if self.dictAutoTest['FAN1-LED']:
+                        data[0] = 'FAN1-LED'
+                        if dataList[0] == 1:
+                            data[1] = 'pass'
+                            # self.ui.testFan1Label.setPixmap(passPix)
+                            self.dictAutoTestResult['FAN1-LED'] += 1
+                        else:
+                            data[1] = 'fail'
+                            # self.ui.testFan1Label.setPixmap(failPix)
+                            self.dictAutoTestResult['FAN1-LED'] -= 1
+                        # self.write_result_csv('a', data)
+                    if self.dictAutoTest['FAN2-LCD']:
+                        data[0] = 'FAN2-LCD'
+                        if dataList[1] == 1:
+                            data[1] = 'pass'
+                            # self.ui.testFan2Label.setPixmap(passPix)
+                            self.dictAutoTestResult['FAN2-LCD'] += 1
+                        else:
+                            data[1] = 'fail'
+                            # self.ui.testFan2Label.setPixmap(failPix)
+                            self.dictAutoTestResult['FAN2-LCD'] -= 1
+                        # self.write_result_csv('a', data)
+                    if self.dictAutoTest['FAN3-EVR']:
+                        data[0] = 'FAN3-EVR'
+                        if dataList[2] == 1:
+                            data[1] = 'pass'
+                            # self.ui.testFan3Label.setPixmap(passPix)
+                            self.dictAutoTestResult['FAN3-EVR'] += 1
+                        else:
+                            data[1] = 'fail'
+                            # self.ui.testFan3Label.setPixmap(failPix)
+                            self.dictAutoTestResult['FAN3-EVR'] -= 1
+                        # self.write_result_csv('a', data)
+                    self.mFanFinished = True
+                if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
+                    print('>>>>>>>>>> Uart receive CMD_SET_FOCUSMOTOR')
+                    print(">>>>>>>>>> motor callback data : ", cmd, dataList)
                     if dataList[0] == 1:
-                        data[1] = 'pass'
-                        # self.ui.testFan1Label.setPixmap(passPix)
-                        self.dictAutoTestResult['FAN1-LED'] += 1
+                        self.ui.motorStatuslabel.setStyleSheet("color:red")
+                        self.ui.motorStatuslabel.setText("马达限位")
+                        self.dictAutoTestResult['MOTOR'] += 1
+                        self.limitSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+                        print('马达限位 limitSteps ', self.limitSteps)
+                    elif dataList[0] == 2:
+                        self.ui.motorStatuslabel.setStyleSheet("color:red")
+                        self.ui.motorStatuslabel.setText("马达回转结束")
+                        reverseSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+                        actualSteps = self.limitSteps - reverseSteps
+                        self.totalSteps = self.totalSteps + actualSteps
+                        print('马达回转结束 limitSteps ', self.limitSteps, reverseSteps, actualSteps)
+                        self.motorPosition = 0
+                        self.mMotorFinished = True
+                    elif dataList[0] == 0:
+                        self.ui.motorStatuslabel.setStyleSheet("color:black")
+                        self.ui.motorStatuslabel.setText("马达步进结束")
+                        actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
+                        # self.mMotorFinished = True
                     else:
-                        data[1] = 'fail'
-                        # self.ui.testFan1Label.setPixmap(failPix)
-                        self.dictAutoTestResult['FAN1-LED'] -= 1
-                    # self.write_result_csv('a', data)
-                if self.dictAutoTest['FAN2-LCD']:
-                    data[0] = 'FAN2-LCD'
-                    if dataList[1] == 1:
-                        data[1] = 'pass'
-                        # self.ui.testFan2Label.setPixmap(passPix)
-                        self.dictAutoTestResult['FAN2-LCD'] += 1
-                    else:
-                        data[1] = 'fail'
-                        # self.ui.testFan2Label.setPixmap(failPix)
-                        self.dictAutoTestResult['FAN2-LCD'] -= 1
-                    # self.write_result_csv('a', data)
-                if self.dictAutoTest['FAN3-EVR']:
-                    data[0] = 'FAN3-EVR'
-                    if dataList[2] == 1:
-                        data[1] = 'pass'
-                        # self.ui.testFan3Label.setPixmap(passPix)
-                        self.dictAutoTestResult['FAN3-EVR'] += 1
-                    else:
-                        data[1] = 'fail'
-                        # self.ui.testFan3Label.setPixmap(failPix)
-                        self.dictAutoTestResult['FAN3-EVR'] -= 1
-                    # self.write_result_csv('a', data)
-                self.mFanFinished = True
-            if mPduCmdDict2Rev[cmd] == 'CMD_SET_FOCUSMOTOR':
-                print('>>>>>>>>>> Uart receive CMD_SET_FOCUSMOTOR')
-                print(">>>>>>>>>> motor callback data : ", cmd, dataList)
-                if dataList[0] == 1:
-                    self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达限位")
-                    self.dictAutoTestResult['MOTOR'] += 1
-                    self.limitSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-                    print('马达限位 limitSteps ', self.limitSteps)
-                elif dataList[0] == 2:
-                    self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达回转结束")
-                    reverseSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-                    actualSteps = self.limitSteps - reverseSteps
-                    self.totalSteps = self.totalSteps + actualSteps
-                    print('马达回转结束 limitSteps ', self.limitSteps, reverseSteps, actualSteps)
-                    self.motorPosition = 0
-                    self.mMotorFinished = True
-                elif dataList[0] == 0:
-                    self.ui.motorStatuslabel.setStyleSheet("color:black")
-                    self.ui.motorStatuslabel.setText("马达步进结束")
-                    actualSteps = int(hex(dataList[2] << 8), 16) + int(hex(dataList[1]), 16)
-                    # self.mMotorFinished = True
-                else:
-                    self.ui.motorStatuslabel.setStyleSheet("color:red")
-                    self.ui.motorStatuslabel.setText("马达故障")
-                    print("返回错误", dataList[0])
-                self.ui.actualStepsLabel.setText(str(actualSteps))
-            self.ui.port_status.setText('数据设置状态: 成功')
+                        self.ui.motorStatuslabel.setStyleSheet("color:red")
+                        self.ui.motorStatuslabel.setText("马达故障")
+                        print("返回错误", dataList[0])
+                    self.ui.actualStepsLabel.setText(str(actualSteps))
+                self.ui.port_status.setText('数据设置状态: 成功')
+            else:
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! cmd %d is not found' % cmd)
+                self.ui.port_status.setText('数据设置失败')
         else:
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! cmd %d is not found' % cmd)
-            self.ui.port_status.setText('数据设置失败')
-
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! cmd %d 串口干扰数据' % cmd)
+            return
         try:
             if receive_ascii_format:
                 current_data = self.serial_thread.current_data.decode('utf-8')
