@@ -204,8 +204,12 @@ def asu_pdu_parse_one_frame(message):
         tail_frame:   str                          b6
     """
     if isinstance(message, bytes):
-        if message[0] != 254 or message[1] != 254:
-            print("HEAD ERROR !!!")
+        if len(message) > 1:
+            if message[0] != 254 or message[1] != 254:
+                print("HEAD ERROR !!!")
+                return -1, 0, 0
+        else:
+            print("串口数据格式异常，长度 ", len(message))
             return -1, 0, 0
         sum_crc = 0
         total = 0
