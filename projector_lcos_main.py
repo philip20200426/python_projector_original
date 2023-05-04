@@ -144,7 +144,7 @@ class AutoTestThread(QThread):
         self.win.totalSteps = 0
         print('>>>>>>>>>> 自动化测试开始 ', motorData[0], self.roundSteps, self.count, self.circle)
         preTime = time.time()
-        while self.count < self.circle:
+        while self.win.serialRunning and self.count < self.circle:
             if self.exitFlag:
                 self.exitFlag = False
                 print(">>>>>>>>>> AutoTestThread Exit ", self.count)
@@ -157,7 +157,7 @@ class AutoTestThread(QThread):
                         'NTC-EVR']:
                         self.win.update_data()
                         lastTime = time.time()
-                        while not self.win.mNtcFinished:
+                        while self.win.serialRunning and not self.win.mNtcFinished:
                             nowTime = time.time()
                             # print(nowTime-lastTime)
                             if (nowTime - lastTime) > 2:
@@ -171,7 +171,7 @@ class AutoTestThread(QThread):
                         strHex = asu_pdu_build_one_frame('CMD_GET_FANS', 0, None)
                         self.win.serial_write(strHex)
                         lastTime = time.time()
-                        while not self.win.mFanFinished:
+                        while self.win.serialRunning and not self.win.mFanFinished:
                             nowTime = time.time()
                             if (nowTime - lastTime) > 3:
                                 break
@@ -188,7 +188,7 @@ class AutoTestThread(QThread):
                         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(motorData), motorData)
                         self.win.serial_write(strHex)
                         lastTime = time.time()
-                        while not self.win.mMotorFinished:
+                        while self.win.serialRunning and not self.win.mMotorFinished:
                             currentTime = time.time()
                             # time.sleep(1)
                             if (currentTime - lastTime) > 6:
@@ -426,7 +426,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autoTestMotorFlag = False
         self.motorPosition = 0
         self.totalSteps = 0
-
+        self.serialRunning = False
         if os.path.exists('PGUTestBoard.exe'):
             parser = Dispatch("Scripting.FileSystemObject")
             version = parser.GetFileVersion('PGUTestBoard.exe')
@@ -838,6 +838,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
             time.sleep(1)
             self.get_hw_version()
+            self.serialRunning = True
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
 
@@ -859,6 +860,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.hwLabel.setText('')
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
             self.current_port = None
+            self.serialRunning = False
+            print('串口已关闭')
         else:
             self.ui.port_status.setText('无串口可关闭')
 
