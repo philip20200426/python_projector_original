@@ -323,7 +323,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         print("devices ", devices[::-1])
         print("len ", len(devices))
-        os.system("adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity")
+        #os.system("adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity")
+        #time.sleep(1)
+        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         self.ui.rootButton.setEnabled(True)
 
     def clean_data(self):
@@ -402,27 +404,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:2]
                 if ext == '.bmp' and head == 'n0':
-                    ret["jpg"] = ret["jpg"] + 1
-                if ext == ".png" and head == 'n0':
+                    ret["bmp"] = ret["bmp"] + 1
                     pro_file_list.append(file)
+                if ext == ".png" and head == 'n0':
                     ret["png"] = ret["png"] + 1
-        print('最新图片: ', pro_file_list[-1])
-        pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
-        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-        imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
-        print(pro_img_size[0], pro_img_size[1], imageSize)
-        if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize > 132500:
-            # 图片的大小
-            QMessageBox.warning(self, "警告", "数据保存成功")
+
+        if len(pro_file_list) > 0:
+            print('最新图片: ', len(pro_file_list), pro_file_list[-1])
+            pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+            pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+            imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+            print(pro_img_size[0], pro_img_size[1], imageSize)
+            if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
+                # 图片的大小
+                QMessageBox.warning(self, "警告", "数据保存成功")
+            else:
+                QMessageBox.warning(self, "警告", "数据保存失败")
         else:
-            QMessageBox.warning(self, "警告", "数据保存失败")
+            QMessageBox.warning(self, "警告", "没有发现图片数据")
         set_point(point)
 
-
     def pull_data(self):
-        cmd0 = "adb pull /sdcard/DCIM/projectionFiles "
-        cmd1 = DIR_NAME + '/' + SN
-        cmd = cmd0 + cmd1
+        localSN = get_sn()
+        distDirName = DIR_NAME + '/' + localSN
+        cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
+        print(cmd)
         os.system(cmd)
 
     def removePattern(self):
