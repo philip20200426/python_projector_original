@@ -21,7 +21,7 @@ if len(SN) < 3:
     SN = 'ASU0123456789'
 
 # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
-IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
+IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
 FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
 DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
 DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
@@ -114,9 +114,9 @@ def set_point(point):
     # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
     cmd = "adb shell setprop persist.vendor.hwc.keystone "
     cmd = cmd + point
-    print('keystone : ', cmd)
+    print('set point : ', cmd)
     os.system(cmd)
-    time.sleep(1)
+    #time.sleep(1)
     os.system("adb shell service call SurfaceFlinger 1006")
     os.system("adb shell service call SurfaceFlinger 1006")
 
@@ -127,7 +127,7 @@ def get_point():
         source_points = source_points.strip().split(',')
         #source_points = list(map(float, source_points))
         source_points = list(map(float, source_points))
-    print('当前坐标：', source_points)
+    print('get point ：', source_points)
     return source_points
 # dll.doubleTest.argtypes = [c_double]
 # dll.doubleTest.restype = c_double
@@ -346,7 +346,7 @@ def reference_cam_calib():
         print('>>>>>>>>>>>>>>>>>>>> 内参标定算法返回状态 ', error_list)
         return True
     else:
-        print('>>>>>>>>>>>>>>>>>>>> 内参标定所需要的图片不存在', list_size)
+        print('>>>>>>>>>>>>>>>>>>>> 外置相机内参标定需要12张图片，实际图片数量是', list_size)
         return False
 
 
@@ -375,25 +375,37 @@ def keystone_correct_tof():
         file = open(FILE_AUTO_KEYSTONE)
         line = file.readline().strip()  # 读取第一行
         tof_data.append(line)
-        while line:  # 直到读取完文件
+        i = 0
+        while i < 4:  # 直到读取完文件
+            #print('======', tof_data[i])
             line = file.readline().strip()  # 读取一行文件，包括换行符
             tof_data.append(line)
+            i += 1
         file.close()  # 关闭文件
-        depth_data = tof_data[1].split(',')
-        del depth_data[-1]
-        depth_data = list(map(float, depth_data))
-        print(depth_data)
+        # IMU Data
+        if len(tof_data[3]) > 4:
+            imu_data_list = tof_data[3].split(',')
+            imu_data_list = list(map(float, imu_data_list))
+            print(imu_data_list)
+        # TOF Data
+        if len(tof_data[1]) > 3:
+            depth_data = tof_data[1].split(',')
+            #del depth_data[-1]
+            depth_data = list(map(float, depth_data))
+            print(depth_data)
+            points = keystone_correct_tof_api(CALIB_DATA_PATH,
+                                              len(depth_data), len(imu_data_list),
+                                              source_points,
+                                              depth_data, imu_data_list,
+                                              correct_points)
+            for i in range(len(correct_points)):
+                correct_points[i] = points[i]
+            print('>>>>>>>>>>>>>>>>>>>> 校正算法返回坐标 ', correct_points)
+            set_point(correct_points)
+        else:
+            print('TOF标定所需要的TOF数据错误')
     else:
         print(IMG_AUTO_KEYSTONE, ' 标定所需要的文件不存在')
-
-    points = keystone_correct_tof_api(CALIB_DATA_PATH,
-                                      len(depth_data), len(imu_data_list),
-                                      source_points,
-                                      depth_data, imu_data_list,
-                                      correct_points)
-    for i in range(len(correct_points)):
-        correct_points[i] = points[i]
-    print('>>>>>>>>>>>>>>>>>>>> correct points ', correct_points)
     return True
 
 
@@ -432,6 +444,7 @@ def auto_keystone_cam():
         for i in range(8):
             correct_points[i] = ret[i]
         print('>>>>>>>>>>>>>>>>>>>> 校正算法返回坐标 ', correct_points)
+        set_point(correct_points)
         return True
     else:
         print(IMG_AUTO_KEYSTONE, ' 标定所需要的图片不存在')
@@ -458,6 +471,7 @@ def auto_keystone_calib():
     ref_file_list = []
     pro_file_list = []
     ret = {"jpg": 0, "png": 0, "bmp": 0}
+    print(DIR_NAME_REF)
     for root, dirs, files in os.walk(DIR_NAME_REF):
         for file in files:
             ext = os.path.splitext(file)[-1].lower()
@@ -465,7 +479,7 @@ def auto_keystone_calib():
             if ext == '.png':
                 ret["jpg"] = ret["jpg"] + 1
             if ext == ".bmp" and head == 'ref':
-                ref_file_list.append(file)
+                ref_file_list.append(DIR_NAME_REF + file)
                 ret["bmp"] = ret["bmp"] + 1
 
     ret = {"jpg": 0, "png": 0, "bmp": 0}
@@ -475,7 +489,7 @@ def auto_keystone_calib():
             head = os.path.splitext(file)[0].lower()[:2]
             if ext == '.bmp' and head == 'n0':
                 ret["bmp"] = ret["bmp"] + 1
-                pro_file_list.append(file)
+                pro_file_list.append(DIR_NAME_PRO + file)
             if ext == ".png" and head == 'n0':
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
@@ -486,11 +500,11 @@ def auto_keystone_calib():
         print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致')
         return False
 
-    ref_img = cv2.imread(DIR_NAME_REF + ref_file_list[0])
+    ref_img = cv2.imread(ref_file_list[-1])
     ref_img_size = (ref_img.shape[0], ref_img.shape[1])
     print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
 
-    pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[0])
+    pro_img = cv2.imread(pro_file_list[-1])
     pro_img_size = (pro_img.shape[0], pro_img.shape[1])
     print(pro_img_size[0], pro_img_size[1])
     # 分析csv
@@ -509,17 +523,20 @@ def auto_keystone_calib():
                 count += 1
 
             depth_data_list = []
+            print('zidian ', len(data_list[CSV_TOF]), data_list[CSV_TOF])
+            #if data_list[]
             for i in range(CSV_TOF, count, CSV_ITEM_NUM):
-                del data_list[i]['']
-                del data_list[i][None]
+                #del data_list[i]['']
+                #del data_list[i][None]
                 for key in data_list[i].keys():
-                    depth_data_list.append(data_list[i][key])
+                    if data_list[i][key] is not None and data_list[i][key] != '':
+                        depth_data_list.append(data_list[i][key])
             print(len(depth_data_list), depth_data_list)
 
             imu_data_list = []
             for i in range(CSV_IMU, count, CSV_ITEM_NUM):
                 # print('IMU: ', data_list[i])
-                del data_list[i]['']
+                #del data_list[i]['']
                 for j in range(5, 64):
                     del data_list[i][str(j)]
                 for key in data_list[i].keys():

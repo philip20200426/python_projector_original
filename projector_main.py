@@ -228,8 +228,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
     def auto_keystone_tof(self):
-        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
-        time.sleep(3)
+        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
+        time.sleep(4)
         self.pull_data()
         # coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
         if keystone_correct_tof():
@@ -238,16 +238,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "TOF全向校正失败，校正数据错误")
 
     def auto_keystone_cam(self):
-        point = get_point()
         self.kst_reset()
-        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone")
-        time.sleep(3)
+        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 1")
+        time.sleep(4.5)
         self.pull_data()
         if auto_keystone_cam():
             QMessageBox.warning(self, "警告", "相机全向校正成功")
         else:
             QMessageBox.warning(self, "警告", "相机全向校正失败")
-        set_point(point)
 
     def cam_inter_cal(self):
         if reference_cam_calib():
@@ -258,11 +256,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def kst_calibrate(self):
         # os.system("adb shell am broadcast -a asu.intent.action.SaveData")
         # 拿到所有数据 n组，每组两个照片，imu，tof
-        self.kst_reset()
+        # self.statusBar_3.clear()
+        # self.statusBar_3.setText('')
+        # self.statusBar_3.setText('全向标定运行中...')
+        self.ui.kstCalButton.setEnabled(False)
+        # point = get_point()
+        # self.kst_reset()
         if auto_keystone_calib():
             QMessageBox.warning(self, "警告", "全向自动标定成功")
+            #self.statusBar_3.setText('全向自动标定成功')
+            pass
         else:
             QMessageBox.warning(self, "警告", "全向自动标定失败")
+            #self.statusBar_3.setText('全向自动标定失败')
+        # set_point(point)
+        self.ui.kstCalButton.setEnabled(True)
+
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
@@ -376,6 +385,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # if os.path.exists(DIR_NAME_PRO):
         #     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
         #     preLenFiles = len(files)
+        # self.statusBar_3.clear()
+        # self.statusBar_3.setText('保存当前姿态数据中...')
+        self.ui.saveDataButton.setEnabled(False)
+
+        startTime = time.time()
         point = get_point()
         self.kst_reset()
         os.system("adb shell am broadcast -a asu.intent.action.SaveData")
@@ -383,7 +397,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.cal = True
         self.external_take_picture()
         self.cal = False
-        time.sleep(2)
+        time.sleep(3.5)
         self.pull_data()
         # files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
         # nowLenFiles = len(files)
@@ -403,32 +417,39 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:2]
+                print(file, ext, head)
                 if ext == '.bmp' and head == 'n0':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_file_list.append(file)
                 if ext == ".png" and head == 'n0':
                     ret["png"] = ret["png"] + 1
-
         if len(pro_file_list) > 0:
-            print('最新图片: ', len(pro_file_list), pro_file_list[-1])
             pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
             pro_img_size = (pro_img.shape[0], pro_img.shape[1])
             imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
-            print(pro_img_size[0], pro_img_size[1], imageSize)
+            print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
             if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
                 # 图片的大小
+                endTime = time.time()
+                print('保存数据耗时：', (endTime - startTime))
                 QMessageBox.warning(self, "警告", "数据保存成功")
+                os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
+                #self.statusBar_3.setText('当前姿态下数据保存完成')
             else:
+                #self.statusBar_3.setText('当前姿态下数据保存失败')
                 QMessageBox.warning(self, "警告", "数据保存失败")
         else:
-            QMessageBox.warning(self, "警告", "没有发现图片数据")
+            print('没有发现投影设备返回的图片数据 ', pro_file_list)
+            QMessageBox.warning(self, "警告", "没有发现投影设备返回的图片数据")
+            #self.statusBar_3.setText('当前姿态下数据保存失败')
         set_point(point)
+        self.ui.saveDataButton.setEnabled(True)
 
     def pull_data(self):
         localSN = get_sn()
         distDirName = DIR_NAME + '/' + localSN
         cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
-        print(cmd)
+        print('Pull files from PC : ', cmd)
         os.system(cmd)
 
     def removePattern(self):
