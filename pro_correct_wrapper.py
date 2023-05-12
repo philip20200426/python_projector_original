@@ -275,6 +275,8 @@ if hasattr(dll, 'KeystoneCorrectCalibS'):
                                               POINTER(c_double),
                                               POINTER(c_double)]
         dll.KeystoneCorrectCalibS.restype = c_int
+        print('tof_data_size', tof_data_size)
+        print('imu_data_size', imu_data_size)
         print('ref_imgs ', len(ref_imgs), ref_imgs)
         print('pro_imgs ', len(pro_imgs), pro_imgs)
         print('depth_data_list ', len(depth_data_list), depth_data_list)
@@ -287,8 +289,8 @@ if hasattr(dll, 'KeystoneCorrectCalibS'):
         ref_img_c = c_int(ref_img_size[1])
         pro_img_r = c_int(pro_img_size[0])
         pro_img_c = c_int(pro_img_size[1])
-        tof_data_size = c_int(tof_data_size)
-        imu_data_size = c_int(imu_data_size)
+        tof_data_size = c_int(int(tof_data_size))
+        imu_data_size = c_int(int(imu_data_size))
         ref_cam_pattern_imgs_name = make_charpp(ref_imgs)
         pro_cam_pattern_imgs_name = make_charpp(pro_imgs)
         depth_data = (c_double * len(depth_data_list))(*list(map(float, depth_data_list)))
@@ -463,7 +465,7 @@ def auto_keystone_calib():
     while not len(files) >= NUM_POSTURE:
         currentTime = time.time()
         if (currentTime - lastTime) > 6:
-            print('>>>>>>>>>>>>>>>>>>>> 投影仪采集的数据不够 ', DIR_NAME_PRO)
+            print('>>>>>>>>>>>>>>>>>>>> 投影仪采集的数据不够 ', DIR_NAME_PRO, len(files))
             return False
 
     print('>>>>>>>>>>>>>>>>>>>> 启动全向自动标定')
@@ -494,10 +496,10 @@ def auto_keystone_calib():
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
     print('相机图片 ', len(pro_file_list), pro_file_list)
-    if len(ref_file_list) == len(pro_file_list):
+    if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
         print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
     else:
-        print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致')
+        print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
         return False
 
     ref_img = cv2.imread(ref_file_list[-1])
@@ -541,7 +543,7 @@ def auto_keystone_calib():
                     del data_list[i][str(j)]
                 for key in data_list[i].keys():
                     imu_data_list.append(data_list[i][key])
-            print(len(imu_data_list), imu_data_list)
+            print('=====================', len(imu_data_list), imu_data_list)
             #     del data_list[i]['']
             #     del data_list[i][None]
             #     for key in data_list[i].keys():
@@ -579,10 +581,12 @@ def auto_keystone_calib():
         #           len(result) -
     else:
         print('>>>>>>>>>>>>>>>>>>>>', FILE_NAME_CSV + ' 文件不存在')
+        return
+
     error_list = [0] * len(ref_file_list)
     ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,
                                     len(ref_file_list), ref_img_size, pro_img_size,
-                                    len(depth_data_list), len(imu_data_list),
+                                    len(depth_data_list)/len(ref_file_list), len(imu_data_list)/len(ref_file_list),
                                     ref_file_list, pro_file_list, depth_data_list, imu_data_list, robot_pose_list,
                                     error_list)
     for i in range(len(ret)):
