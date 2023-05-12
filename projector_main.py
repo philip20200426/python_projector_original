@@ -401,26 +401,20 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 if ext == ".png" and head == 'n0':
                     pro_file_list.append(file)
                     ret["png"] = ret["png"] + 1
-        # print('最新图片: ', len(pro_file_list), pro_file_list[-1])
-        if len(pro_file_list) > 0:
-            pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
-            pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-            imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
-            print(pro_img_size[0], pro_img_size[1], imageSize)
-            if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize > 132500:
-                # 图片的大小
-                QMessageBox.warning(self, "警告", "数据保存成功")
-            else:
-                QMessageBox.warning(self, "警告", "数据保存失败")
+        print('最新图片: ', pro_file_list[-1])
+        pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+        imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+        print(pro_img_size[0], pro_img_size[1], imageSize)
+        if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize > 132500:
+            # 图片的大小
+            QMessageBox.warning(self, "警告", "数据保存成功")
         else:
-            QMessageBox.warning(self, "警告", "没有发现图片数据")
+            QMessageBox.warning(self, "警告", "数据保存失败")
+
 
     def pull_data(self):
-        localSN = get_sn()
-        srcDirName = DIR_NAME + '/' + localSN
-        cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + srcDirName
-        print(cmd)
-        os.system(cmd)
+        os.system("adb pull /sdcard/DCIM/projectionFiles ./asuFiles")
 
     def removePattern(self):
         os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")

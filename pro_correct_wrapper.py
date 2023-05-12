@@ -47,7 +47,7 @@ if not dirExists:
 # 对应标定的姿态数量
 NUM_POSTURE = 6
 # 投影仪生成的csv数据
-CSV_ITEM_NUM = 5  # 4
+CSV_ITEM_NUM = 4  # 4
 CSV_TOF = 1
 CSV_IMU = 3
 CSV_IMG = 4
@@ -465,9 +465,9 @@ def auto_keystone_calib():
             ext = os.path.splitext(file)[-1].lower()
             head = os.path.splitext(file)[0].lower()[:2]
             if ext == '.bmp' and head == 'n0':
-                ret["bmp"] = ret["bmp"] + 1
-                pro_file_list.append(file)
+                ret["jpg"] = ret["jpg"] + 1
             if ext == ".png" and head == 'n0':
+                pro_file_list.append(file)
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
     print('相机图片 ', len(pro_file_list), pro_file_list)
