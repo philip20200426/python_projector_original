@@ -27,7 +27,7 @@
      <enum>QTabWidget::Triangular</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -2063,7 +2063,7 @@
        <rect>
         <x>10</x>
         <y>80</y>
-        <width>421</width>
+        <width>511</width>
         <height>171</height>
        </rect>
       </property>
@@ -2075,7 +2075,7 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>391</width>
+         <width>481</width>
          <height>81</height>
         </rect>
        </property>
@@ -2170,7 +2170,7 @@
        <rect>
         <x>10</x>
         <y>270</y>
-        <width>421</width>
+        <width>511</width>
         <height>421</height>
        </rect>
       </property>
@@ -2182,7 +2182,7 @@
         <rect>
          <x>10</x>
          <y>20</y>
-         <width>391</width>
+         <width>481</width>
          <height>161</height>
         </rect>
        </property>
@@ -2201,7 +2201,7 @@
        <widget class="QSpinBox" name="redSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>10</y>
           <width>71</width>
           <height>41</height>
@@ -2236,9 +2236,9 @@
        <widget class="QSlider" name="blueHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>120</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2258,7 +2258,7 @@
        <widget class="QSpinBox" name="blueSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>110</y>
           <width>71</width>
           <height>41</height>
@@ -2293,9 +2293,9 @@
        <widget class="QSlider" name="greenHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>70</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2312,9 +2312,9 @@
        <widget class="QSlider" name="redHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>20</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2365,7 +2365,7 @@
        <widget class="QSpinBox" name="greenSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>60</y>
           <width>71</width>
           <height>41</height>
@@ -2384,7 +2384,7 @@
         <rect>
          <x>10</x>
          <y>190</y>
-         <width>391</width>
+         <width>481</width>
          <height>161</height>
         </rect>
        </property>
@@ -2403,7 +2403,7 @@
        <widget class="QSpinBox" name="blueMaxSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>110</y>
           <width>71</width>
           <height>41</height>
@@ -2419,9 +2419,9 @@
        <widget class="QSlider" name="greenMaxHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>70</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2438,7 +2438,7 @@
        <widget class="QSpinBox" name="redMaxSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>10</y>
           <width>71</width>
           <height>41</height>
@@ -2454,7 +2454,7 @@
        <widget class="QSpinBox" name="greenMaxSpinBox">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>380</x>
           <y>60</y>
           <width>71</width>
           <height>41</height>
@@ -2508,9 +2508,9 @@
        <widget class="QSlider" name="redMaxHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>20</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2542,9 +2542,9 @@
        <widget class="QSlider" name="blueMaxHorizontalSlider">
         <property name="geometry">
          <rect>
-          <x>70</x>
+          <x>90</x>
           <y>120</y>
-          <width>141</width>
+          <width>271</width>
           <height>21</height>
          </rect>
         </property>
@@ -2586,7 +2586,7 @@
         <rect>
          <x>10</x>
          <y>360</y>
-         <width>391</width>
+         <width>481</width>
          <height>51</height>
         </rect>
        </property>
@@ -2619,49 +2619,6 @@
         </property>
        </widget>
       </widget>
-     </widget>
-     <widget class="QComboBox" name="comboBox">
-      <property name="geometry">
-       <rect>
-        <x>790</x>
-        <y>460</y>
-        <width>281</width>
-        <height>22</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QListWidget" name="listWidget">
-      <property name="geometry">
-       <rect>
-        <x>510</x>
-        <y>480</y>
-        <width>256</width>
-        <height>192</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QListWidget" name="listWidget_2">
-      <property name="geometry">
-       <rect>
-        <x>560</x>
-        <y>80</y>
-        <width>256</width>
-        <height>192</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QCheckBox" name="checkBox_2">
-      <property name="geometry">
-       <rect>
-        <x>860</x>
-        <y>380</y>
-        <width>91</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>CheckBox</string>
-      </property>
      </widget>
     </widget>
    </widget>
@@ -2825,6 +2782,198 @@
     <hint type="destinationlabel">
      <x>262</x>
      <y>184</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>greenHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>greenSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>434</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>434</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>greenSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>greenHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>434</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>434</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>redSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>redHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>384</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>blueSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>blueHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>484</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>484</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>redHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>redSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>384</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>blueHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>blueSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>484</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>484</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>redMaxHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>redMaxSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>554</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>554</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>redMaxSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>redMaxHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>554</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>554</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>greenMaxHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>greenMaxSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>604</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>604</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>greenMaxSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>greenMaxHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>604</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>604</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>blueMaxSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>blueMaxHorizontalSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>447</x>
+     <y>654</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>654</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>blueMaxHorizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>blueMaxSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>654</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>447</x>
+     <y>654</y>
     </hint>
    </hints>
   </connection>
