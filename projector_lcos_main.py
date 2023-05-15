@@ -303,7 +303,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.mFanFinished = False
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle('调试工具')
+        self.setWindowTitle('PGU Debug Tool')
         self.mLoginOn = False
         self.switch_windows_ui(False)
         available_ports = get_ports()
@@ -312,8 +312,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
         self.ui.saveThresholdButton.clicked.connect(self.save_para)
-        self.ui.saveRGBCurrentButton.clicked.connect(self.save_rgb_current)
-        self.ui.saveRGBMaxCurrentButton.clicked.connect(self.save_max_rgb_current)
+        self.ui.saveRGBCurrentButton.clicked.connect(self.save_lcos_rgb_current)
+        self.ui.obtainRGBCurrentButton.clicked.connect(self.obtain_lcos_rgb_current)
+        self.ui.saveRGBMaxCurrentButton.clicked.connect(self.save_lcos_max_rgb_current)
+        self.ui.obtainRGBMaxCurrentButton.clicked.connect(self.obtain_lcos_max_rgb_current)
         self.ui.autoTestButton.clicked.connect(self.auto_test_pdu)
         self.ui.fan1HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan2HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
@@ -708,15 +710,24 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.serial_write(strHex)
 
-    def save_rgb_current(self):
+    def save_lcos_rgb_current(self):
         data = [0]
         strHex = asu_pdu_build_one_frame('CMD_SAVE_PARAMRTER', len(data), data)
         self.serial_write(strHex)
 
-    def save_max_rgb_current(self):
+    def obtain_lcos_rgb_current(self):
+        strHex = asu_pdu_build_one_frame('CMD_GET_CURRENTS', 0, None)
+        self.serial_write(strHex)
+
+    def save_lcos_max_rgb_current(self):
         data = [14]
         strHex = asu_pdu_build_one_frame('CMD_SAVE_PARAMRTER', len(data), data)
         self.serial_write(strHex)
+
+    def obtain_lcos_max_rgb_current(self):
+        strHex = asu_pdu_build_one_frame('CMD_GET_MAX_CURRENTS', 0, None)
+        self.serial_write(strHex)
+
     def update_temperature(self):
         if self.current_port is not None:
             if self.update_temp_flag:
@@ -770,7 +781,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data[5] = (int(self.ui.blueMaxHorizontalSlider.value()) & 0xFF00) >> 8
         strHex = asu_pdu_build_one_frame('CMD_SET_MAX_CURRENTS', len(data), data)
         self.serial_write(strHex)
-        time.sleep(0.05)
+        time.sleep(0.2)
+        self.set_current()
 
     def update_data(self):
         print('>>>>>>>>>> get ntc data')
@@ -787,7 +799,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.frame_12.setEnabled(switch)
         self.ui.frame1.setEnabled(switch)
         self.ui.frame_5.setEnabled(switch)
-        self.ui.frame_9.setEnabled(switch)
         self.ui.send_data.setEnabled(switch)
         self.ui.input_data.setEnabled(switch)
         self.ui.close_port.setEnabled(switch)
@@ -799,9 +810,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if switch:
             if self.mLoginOn:
                 self.ui.lcdGroupBox.setEnabled(switch)
+                self.ui.frame_9.setEnabled(switch)
         else:
-            print(switch)
             self.ui.lcdGroupBox.setEnabled(switch)
+            self.ui.frame_9.setEnabled(switch)
 
     def open_port(self):
         # print(self.mPduCmdDict)
@@ -898,14 +910,26 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print("uart receive data : ", cmd, length, dataList)
         if cmd > -1:
             if cmd in mPduCmdDict2Rev.keys():
+                if mPduCmdDict2Rev[cmd] == 'CMD_GET_CURRENTS':
+                    print('>>>>>>>>>> Uart receive CMD_GET_CURRENTS')
+                    self.ui.redSpinBox.setValue(dataList[0])
+                    self.ui.greenSpinBox.setValue(dataList[1])
+                    self.ui.blueSpinBox.setValue(dataList[2])
+            if cmd in mPduCmdDict2Rev.keys():
+                if mPduCmdDict2Rev[cmd] == 'CMD_GET_MAX_CURRENTS':
+                    print('>>>>>>>>>> Uart receive CMD_GET_MAX_CURRENTS')
+                    self.ui.redMaxSpinBox.setValue(dataList[0])
+                    self.ui.greenMaxSpinBox.setValue(dataList[1])
+                    self.ui.blueMaxSpinBox.setValue(dataList[2])
+            if cmd in mPduCmdDict2Rev.keys():
                 if mPduCmdDict2Rev[cmd] == 'CMD_GET_VERSION':
                     hw_version = str(dataList[0]) + "." \
                                  + str(dataList[1]) + "." \
                                  + str(dataList[2]) + " "
                     # del dataList[0:3]
+                    dataList.insert(14, 32)
                     # dataList.insert(12, 32)
-                    # dataList.insert(12, 32)
-                    for i in range(0, len(dataList)):
+                    for i in range(3, len(dataList)):
                         hw_version = hw_version + chr(dataList[i])
                     hw_version = 'HW: ' + hw_version
                     print(hw_version)
@@ -1193,6 +1217,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
 
 if __name__ == '__main__':
+    print('>>>>>>>>>>>>>>>>>>>> 光机测试开始')
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     w = ProjectorWindow()

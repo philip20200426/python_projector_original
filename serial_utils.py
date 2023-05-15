@@ -14,6 +14,8 @@ mPduCmdDictSend = {'CMD_SET_CURRENTS': 30,
                    'CMD_SET_PANEL_PWM': 38,
                    'CMD_SET_LCD_MIRROR': 39,
                    'CMD_SAVE_PARAMRTER': 40,
+                   'CMD_GET_MAX_CURRENTS': 26,
+                   'CMD_GET_CURRENTS': 20,
                    'CMD_GET_VERSION': 22,
                    'CMD_GET_TEMPS': 23,
                    'CMD_GET_FANS': 21}

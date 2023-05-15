@@ -24,7 +24,7 @@ from glob import glob
 import shutil
 from pathlib import Path
 
-Path('集合文件').mkdir(parents=True, exist_ok=True)  # 直接创建集合文件
+# Path('集合文件').mkdir(parents=True, exist_ok=True)  # 直接创建集合文件
 # parents = True: 创建中间级父目录
 # exist_ok= True: 目标目录存在时不报错
 
