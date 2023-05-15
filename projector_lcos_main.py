@@ -312,7 +312,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
         self.ui.saveThresholdButton.clicked.connect(self.save_para)
-        self.ui.savePduDataButton.clicked.connect(self.save_pdu_data)
+        self.ui.saveRGBCurrentButton.clicked.connect(self.save_rgb_current)
+        self.ui.saveRGBMaxCurrentButton.clicked.connect(self.save_max_rgb_current)
         self.ui.autoTestButton.clicked.connect(self.auto_test_pdu)
         self.ui.fan1HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
         self.ui.fan2HorizontalSlider.valueChanged['int'].connect(self.set_fan_speed)
@@ -707,11 +708,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.serial_write(strHex)
 
-    def save_pdu_data(self):
+    def save_rgb_current(self):
         data = [0]
         strHex = asu_pdu_build_one_frame('CMD_SAVE_PARAMRTER', len(data), data)
         self.serial_write(strHex)
 
+    def save_max_rgb_current(self):
+        data = [14]
+        strHex = asu_pdu_build_one_frame('CMD_SAVE_PARAMRTER', len(data), data)
+        self.serial_write(strHex)
     def update_temperature(self):
         if self.current_port is not None:
             if self.update_temp_flag:
