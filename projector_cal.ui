@@ -586,7 +586,7 @@
       <x>290</x>
       <y>140</y>
       <width>451</width>
-      <height>571</height>
+      <height>471</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -932,7 +932,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>310</y>
+       <y>270</y>
        <width>431</width>
        <height>28</height>
       </rect>
@@ -945,7 +945,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>430</y>
+       <y>350</y>
        <width>431</width>
        <height>28</height>
       </rect>
@@ -958,7 +958,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>470</y>
+       <y>390</y>
        <width>431</width>
        <height>28</height>
       </rect>
@@ -967,24 +967,11 @@
       <string>CAM自动对焦</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="kstCalButton">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>390</y>
-       <width>431</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>自动全向梯形标定</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="autoCamKstButton">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>350</y>
+       <y>310</y>
        <width>431</width>
        <height>28</height>
       </rect>
@@ -1004,19 +991,6 @@
      </property>
      <property name="text">
       <string>梯形复位</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="camInterCalButton">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>270</y>
-       <width>431</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>CAM内参标定</string>
      </property>
     </widget>
    </widget>
@@ -1153,7 +1127,7 @@
       <number>20</number>
      </property>
      <property name="maximum">
-      <number>60000</number>
+      <number>500000</number>
      </property>
      <property name="singleStep">
       <number>10</number>
@@ -1196,7 +1170,7 @@
       <number>20</number>
      </property>
      <property name="maximum">
-      <number>60000</number>
+      <number>500000</number>
      </property>
      <property name="value">
       <number>9000</number>
@@ -1237,6 +1211,48 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
+   </widget>
+   <widget class="QFrame" name="frame_9">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>620</y>
+      <width>451</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QPushButton" name="camInterCalButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>431</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CAM内参标定</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="kstCalButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>431</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>自动全向梯形标定</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
