@@ -465,7 +465,7 @@ def auto_keystone_calib():
     while not len(files) >= NUM_POSTURE:
         currentTime = time.time()
         if (currentTime - lastTime) > 6:
-            print('>>>>>>>>>>>>>>>>>>>> 投影仪采集的数据不够 ', DIR_NAME_PRO, len(files))
+            print('>>>>>>>>>>>>>>>>>>>> 投影仪采集的图片数据不够 ', DIR_NAME_PRO, len(files))
             return False
 
     print('>>>>>>>>>>>>>>>>>>>> 启动全向自动标定')
@@ -473,7 +473,6 @@ def auto_keystone_calib():
     ref_file_list = []
     pro_file_list = []
     ret = {"jpg": 0, "png": 0, "bmp": 0}
-    print(DIR_NAME_REF)
     for root, dirs, files in os.walk(DIR_NAME_REF):
         for file in files:
             ext = os.path.splitext(file)[-1].lower()
@@ -518,70 +517,72 @@ def auto_keystone_calib():
             # 每一行用一个字典存储
             reader = csv.DictReader(file)
             count = 0
-            data_list = [] * 30
+            data_list = []
             for line in reader:
                 # print(line)
                 data_list.append(line)
                 count += 1
+            print('csv 文件项目数量：', len(data_list), count)
+            if count % CSV_ITEM_NUM == 0:
+                depth_data_list = []
+                for i in range(CSV_TOF, count, CSV_ITEM_NUM):
+                    #del data_list[i]['']
+                    #del data_list[i][None]
+                    for key in data_list[i].keys():
+                        if data_list[i][key] is not None and data_list[i][key] != '':
+                            depth_data_list.append(data_list[i][key])
+                print(len(depth_data_list), depth_data_list)
 
-            depth_data_list = []
-            print('zidian ', len(data_list[CSV_TOF]), data_list[CSV_TOF])
-            #if data_list[]
-            for i in range(CSV_TOF, count, CSV_ITEM_NUM):
-                #del data_list[i]['']
-                #del data_list[i][None]
-                for key in data_list[i].keys():
-                    if data_list[i][key] is not None and data_list[i][key] != '':
-                        depth_data_list.append(data_list[i][key])
-            print(len(depth_data_list), depth_data_list)
+                imu_data_list = []
+                for i in range(CSV_IMU, count, CSV_ITEM_NUM):
+                    # print('IMU: ', data_list[i])
+                    #del data_list[i]['']
+                    for j in range(5, 64):
+                        del data_list[i][str(j)]
+                    for key in data_list[i].keys():
+                        imu_data_list.append(data_list[i][key])
+                print('=====================', len(imu_data_list), imu_data_list)
+                #     del data_list[i]['']
+                #     del data_list[i][None]
+                #     for key in data_list[i].keys():
+                #         depth_data_list.append(data_list[i][key])
+                # print(len(depth_data_list), depth_data_list)
 
-            imu_data_list = []
-            for i in range(CSV_IMU, count, CSV_ITEM_NUM):
-                # print('IMU: ', data_list[i])
-                #del data_list[i]['']
-                for j in range(5, 64):
-                    del data_list[i][str(j)]
-                for key in data_list[i].keys():
-                    imu_data_list.append(data_list[i][key])
-            print('=====================', len(imu_data_list), imu_data_list)
-            #     del data_list[i]['']
-            #     del data_list[i][None]
-            #     for key in data_list[i].keys():
-            #         depth_data_list.append(data_list[i][key])
-            # print(len(depth_data_list), depth_data_list)
+                # csv.DictWriter() #以字典的形式读写数据
+                # 遍历列表将数据按行输出
+                # result = list(reader)
+                # print('csv文件总行数', len(result), 'csv文件总项目数', (len(result) - 1)/CSV_ITEM_NUM)
+                # depth_data_list = []
+                # csv_img_name_list = []
+                # for i in range(CSV_TOF, len(result), CSV_ITEM_NUM):
+                #     depth_data_list = depth_data_list + result[i]
+                # print('Tof', len(depth_data_list), depth_data_list)
+                # for i in range(CSV_IMU, len(result), CSV_ITEM_NUM):
+                #     del result[][]
+                #     imu_data_list = imu_data_list + result[i]
+                # print('Tof', len(depth_data_list), depth_data_list)
+                # for i in range(CSV_IMG, len(result), CSV_ITEM_NUM):
+                #     if len(result[i]) > 1:
+                #         del result[i][1]
+                #     csv_img_name_list = csv_img_name_list + result[i]
+                # print('csv img name', len(csv_img_name_list), csv_img_name_list)
+                # file.close() with会自动close文件
 
-            # csv.DictWriter() #以字典的形式读写数据
-            # 遍历列表将数据按行输出
-            # result = list(reader)
-            # print('csv文件总行数', len(result), 'csv文件总项目数', (len(result) - 1)/CSV_ITEM_NUM)
-            # depth_data_list = []
-            # csv_img_name_list = []
-            # for i in range(CSV_TOF, len(result), CSV_ITEM_NUM):
-            #     depth_data_list = depth_data_list + result[i]
-            # print('Tof', len(depth_data_list), depth_data_list)
-            # for i in range(CSV_IMU, len(result), CSV_ITEM_NUM):
-            #     del result[][]
-            #     imu_data_list = imu_data_list + result[i]
-            # print('Tof', len(depth_data_list), depth_data_list)
-            # for i in range(CSV_IMG, len(result), CSV_ITEM_NUM):
-            #     if len(result[i]) > 1:
-            #         del result[i][1]
-            #     csv_img_name_list = csv_img_name_list + result[i]
-            # print('csv img name', len(csv_img_name_list), csv_img_name_list)
-        # file.close() with会自动close文件
-
-        # if (len(result) - 1) / 4 == len(ref_file_list):
-        #     if csv_img_name_list == pro_file_list:
-        #         print('>>>>>>>>>>>>>>>>>>>> 图片数据与CSV中图片文字一致')
-        #     else:
-        #         print('>>>>>>>>>>>>>>>>>>>> 图片数据与CSV中图片文字不一致')
-        #         return False
-        # else:
-        #     print('>>>>>>>>>>>>>>>>>>>>', FILE_NAME_CSV + '中项目数与图片数量不一致', len(ref_file_list),
-        #           len(result) -
+                # if (len(result) - 1) / 4 == len(ref_file_list):
+                #     if csv_img_name_list == pro_file_list:
+                #         print('>>>>>>>>>>>>>>>>>>>> 图片数据与CSV中图片文字一致')
+                #     else:
+                #         print('>>>>>>>>>>>>>>>>>>>> 图片数据与CSV中图片文字不一致')
+                #         return False
+                # else:
+                #     print('>>>>>>>>>>>>>>>>>>>>', FILE_NAME_CSV + '中项目数与图片数量不一致', len(ref_file_list),
+                #           len(result) -
+            else:
+                print('>>>>>>>>>>>>>>>>>>>>', FILE_NAME_CSV + '中数据不完整')
+                return False
     else:
         print('>>>>>>>>>>>>>>>>>>>>', FILE_NAME_CSV + ' 文件不存在')
-        return
+        return False
 
     error_list = [0] * len(ref_file_list)
     ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,

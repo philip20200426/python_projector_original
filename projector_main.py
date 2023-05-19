@@ -324,6 +324,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if len(devices) > 30:
             os.system("adb root")
             os.system("adb remount")
+            os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
             self.open_ui()
             self.update_data_timer.start(1000)
         else:
