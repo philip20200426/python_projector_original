@@ -29,6 +29,21 @@ import os
 import shutil
 from glob import glob
 
+
+class AutoCalThread(QThread):
+
+    def __init__(self, win=None):
+        super().__init__()
+        self.win = win
+
+    def run(self):
+        time.sleep(1)  # 防止直接进循环, 阻塞主ui
+        while True:
+            # position 1
+            # self.win.save_data()
+            print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
+
+
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
 
@@ -105,6 +120,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_thread = SerialThread(self.current_port)
         self.serial_thread.start()
         self.serial_thread.data_arrive_signal.connect(self.receive_data)
+
+        self.auto_cal_thread = AutoCalThread(self)
+        self.auto_cal_thread.start()
 
         self.update_data_timer = QTimer()
         self.update_data_timer.timeout.connect(self.update_data)
@@ -264,14 +282,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.kst_reset()
         if auto_keystone_calib():
             QMessageBox.warning(self, "警告", "全向自动标定成功")
-            #self.statusBar_3.setText('全向自动标定成功')
+            # self.statusBar_3.setText('全向自动标定成功')
             pass
         else:
             QMessageBox.warning(self, "警告", "全向自动标定失败")
-            #self.statusBar_3.setText('全向自动标定失败')
+            # self.statusBar_3.setText('全向自动标定失败')
         # set_point(point)
         self.ui.kstCalButton.setEnabled(True)
-
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
@@ -333,8 +350,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         print("devices ", devices[::-1])
         print("len ", len(devices))
-        #os.system("adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity")
-        #time.sleep(1)
+        # os.system("adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity")
+        # time.sleep(1)
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         self.ui.rootButton.setEnabled(True)
 
@@ -344,7 +361,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         srcExit = os.path.isdir(srcDirName)
         if srcExit:
             times = datetime.datetime.now(tz=None)
-            distDirName = DIR_NAME_COPY + '/' + localSN + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+            distDirName = DIR_NAME_COPY + '/' + localSN + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':',
+                                                                                                                    '_')
             # shutil.copytree(DIR_NAME, 'copy')
             ret = shutil.move(srcDirName, distDirName)
             print('备份结束', ret)
@@ -435,14 +453,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print('保存数据耗时：', (endTime - startTime))
                 QMessageBox.warning(self, "警告", "数据保存成功")
                 os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
-                #self.statusBar_3.setText('当前姿态下数据保存完成')
+                # self.statusBar_3.setText('当前姿态下数据保存完成')
             else:
-                #self.statusBar_3.setText('当前姿态下数据保存失败')
+                # self.statusBar_3.setText('当前姿态下数据保存失败')
                 QMessageBox.warning(self, "警告", "数据保存失败")
         else:
             print('没有发现投影设备返回的图片数据 ', pro_file_list)
             QMessageBox.warning(self, "警告", "没有发现投影设备返回的图片数据")
-            #self.statusBar_3.setText('当前姿态下数据保存失败')
+            # self.statusBar_3.setText('当前姿态下数据保存失败')
         set_point(point)
         self.ui.saveDataButton.setEnabled(True)
 

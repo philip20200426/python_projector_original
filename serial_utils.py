@@ -26,7 +26,6 @@ def get_ports():
 
 
 def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE):
-    print(mPduCmdDict2Rev[22])
     ser = serial.Serial(port=port_name,
                         baudrate=baudrate,
                         bytesize=bytesize,
