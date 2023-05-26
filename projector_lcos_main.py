@@ -272,6 +272,8 @@ class AutoTestThread(QThread):
         else:
             self.win.ui.resultLabel.setPixmap(failPix)
         self.win.write_result_csv('a', result)
+        print('>>>>>>>>>>>>>>>>>>>> 马达回到清晰位置')
+        self.win.motor_back()
         # if allRight:
         #     img_bgr = cv2.imread('pic/pass.png')
         # else:
@@ -589,10 +591,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def auto_test_pdu(self):
         text, ok = QInputDialog().getText(QWidget(), '光机序列号', '输入光机序列号:')
-        if text != "":
-            self.sn = str(text)
-        if ok and text:
+        if ok and text != '':
+            text = text.upper()
             print(self.ui.testItemsComboBox.get_selected())
+            self.sn = str(text)
             self.totalRounds = 0
             self.auto_test_ui_switch(False)
             self.ui.autoTestFinishLabel.setText('测试中...')
@@ -617,6 +619,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             else:
                 self.ui.autoTestButton.setEnabled(True)
                 return
+        else:
+            print('SN 号不能为空')
+            return
 
     def write_result_csv(self, mode='w', data=[]):
         if mode == 'w':
@@ -697,6 +702,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.totalRoundLabel.setText(str(self.autoTestThread.count))
 
     def motor_back(self):
+        self.ui.motorBackButton.setEnabled(False)
         data = [1, 0, 0]
         # 步数用两个字节表示，低字节在前，高字节在后
         print(hex(int(self.ui.motorStepsEdit.text())))
@@ -704,8 +710,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data[2] = int(self.ui.motorStepsEdit.text()) >> 8
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.serial_write(strHex)
+        time.sleep(1)
+        self.ui.motorBackButton.setEnabled(True)
 
     def motor_forward(self):
+        self.ui.motorForwardButton.setEnabled(False)
         data = [0, 0, 0]
         # 步数用两个字节表示，低字节在前，高字节在后
         print(hex(int(self.ui.motorStepsEdit.text())))
@@ -713,6 +722,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         data[2] = int(self.ui.motorStepsEdit.text()) >> 8
         strHex = asu_pdu_build_one_frame('CMD_SET_FOCUSMOTOR', len(data), data)
         self.serial_write(strHex)
+        time.sleep(1)
+        self.ui.motorForwardButton.setEnabled(True)
 
     def save_lcos_rgb_current(self):
         data = [0]
