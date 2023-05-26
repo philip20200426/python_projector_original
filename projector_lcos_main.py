@@ -438,6 +438,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.swVersionLabel = QLabel()
             self.ui.swVersionLabel.setText('SW: ' + version + '  ' + m_time)
             self.ui.statusbar.addPermanentWidget(self.ui.swVersionLabel, stretch=0)
+        self.file_create_time = ''
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
@@ -588,12 +589,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def auto_test_pdu(self):
         text, ok = QInputDialog().getText(QWidget(), '光机序列号', '输入光机序列号:')
+        if text != "":
+            self.sn = str(text)
         if ok and text:
             print(self.ui.testItemsComboBox.get_selected())
             self.totalRounds = 0
             self.auto_test_ui_switch(False)
             self.ui.autoTestFinishLabel.setText('测试中...')
-            self.sn = str(text)
             # self.ui.motorTestCycleEdit.setText(str(2))
             self.ui.snLabel.setText('')
             self.ui.snLabel.clear()
@@ -617,8 +619,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 return
 
     def write_result_csv(self, mode='w', data=[]):
-
-        file_name = self.sn + '.csv'
+        if mode == 'w':
+            times = datetime.datetime.now(tz=None)
+            self.file_create_time = times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+        file_name = self.sn + '_' + self.file_create_time + '.csv'
         dir_name = 'result'
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
@@ -1221,6 +1225,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     w = ProjectorWindow()
-    w.resize(1239, 960)
+    w.resize(1239, 810)
     w.show()
     sys.exit(app.exec_())

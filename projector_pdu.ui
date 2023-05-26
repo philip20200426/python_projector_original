@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1462</width>
-    <height>954</height>
+    <width>1274</width>
+    <height>822</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,14 +20,14 @@
       <x>10</x>
       <y>20</y>
       <width>1241</width>
-      <height>881</height>
+      <height>751</height>
      </rect>
     </property>
     <property name="tabShape">
      <enum>QTabWidget::Triangular</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -1297,7 +1297,7 @@
          </size>
         </property>
         <property name="text">
-         <string>1000</string>
+         <string>780</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -1830,117 +1830,13 @@
        </widget>
       </widget>
      </widget>
-     <widget class="QPlainTextEdit" name="testResultTextEdit">
-      <property name="geometry">
-       <rect>
-        <x>710</x>
-        <y>310</y>
-        <width>511</width>
-        <height>331</height>
-       </rect>
-      </property>
-      <property name="inputMethodHints">
-       <set>Qt::ImhDigitsOnly</set>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Box</enum>
-      </property>
-     </widget>
-     <widget class="QFrame" name="frame_11">
-      <property name="geometry">
-       <rect>
-        <x>160</x>
-        <y>730</y>
-        <width>1061</width>
-        <height>111</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Panel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="lineWidth">
-       <number>2</number>
-      </property>
-      <property name="midLineWidth">
-       <number>1</number>
-      </property>
-      <widget class="QLabel" name="imageCharLabel">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>清晰度</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-      <widget class="QLabel" name="imageWhiteLabel">
-       <property name="geometry">
-        <rect>
-         <x>190</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>白图</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-      <widget class="QLabel" name="imageBlackLabel">
-       <property name="geometry">
-        <rect>
-         <x>370</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>黑图</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </widget>
      <widget class="QFrame" name="frame_12">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>730</y>
-        <width>131</width>
-        <height>111</height>
+        <x>710</x>
+        <y>320</y>
+        <width>511</width>
+        <height>51</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -1980,10 +1876,10 @@
       <widget class="QPushButton" name="openLedButton">
        <property name="geometry">
         <rect>
-         <x>10</x>
+         <x>20</x>
          <y>10</y>
-         <width>100</width>
-         <height>39</height>
+         <width>161</width>
+         <height>31</height>
         </rect>
        </property>
        <property name="maximumSize">
@@ -2007,11 +1903,99 @@
       <widget class="QComboBox" name="mirrorComboBox">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>60</y>
-         <width>100</width>
+         <x>290</x>
+         <y>10</y>
+         <width>161</width>
          <height>31</height>
         </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QFrame" name="frame_11">
+      <property name="geometry">
+       <rect>
+        <x>710</x>
+        <y>400</y>
+        <width>511</width>
+        <height>111</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Panel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
+      <property name="midLineWidth">
+       <number>1</number>
+      </property>
+      <widget class="QLabel" name="imageCharLabel">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>10</y>
+         <width>160</width>
+         <height>90</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <property name="text">
+        <string>清晰度</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="imageWhiteLabel">
+       <property name="geometry">
+        <rect>
+         <x>175</x>
+         <y>10</y>
+         <width>160</width>
+         <height>90</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <property name="text">
+        <string>白图</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="imageBlackLabel">
+       <property name="geometry">
+        <rect>
+         <x>340</x>
+         <y>10</y>
+         <width>160</width>
+         <height>90</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <property name="text">
+        <string>黑图</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </widget>
@@ -2655,7 +2639,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1462</width>
+     <width>1274</width>
      <height>26</height>
     </rect>
    </property>
