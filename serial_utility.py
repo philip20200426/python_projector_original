@@ -12,8 +12,8 @@ from PyQt5.QtCore import QTimer, QThread, pyqtSignal, QSettings, Qt
 # from qdarkstyle.light.palette import LightPalette
 # from qdarkstyle.dark.palette import DarkPalette
 
-from learn_serial.code.my_serial import Ui_MainWindow
-from learn_serial.code.serial_utils import get_ports, open_port
+from my_serial import Ui_MainWindow
+from serial_utils import get_ports, open_port
 
 count = 0
 

@@ -8,6 +8,7 @@ import qdarkstyle
 from PyQt5.QtCore import Qt
 from qdarkstyle import DarkPalette
 
+from AutoCalThread import AutoCalThread
 from pro_correct_wrapper import *
 # from learn_serial.pro_correct_wrapper import keystone_correct_cam_libs
 from CameraThread import CameraThread
@@ -30,18 +31,18 @@ import shutil
 from glob import glob
 
 
-class AutoCalThread(QThread):
-
-    def __init__(self, win=None):
-        super().__init__()
-        self.win = win
-
-    def run(self):
-        time.sleep(1)  # 防止直接进循环, 阻塞主ui
-        while True:
-            # position 1
-            # self.win.save_data()
-            print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
+# class AutoCalThread(QThread):
+#
+#     def __init__(self, win=None):
+#         super().__init__()
+#         self.win = win
+#
+#     def run(self):
+#         time.sleep(1)  # 防止直接进循环, 阻塞主ui
+#         while True:
+#             # position 1
+#             # self.win.save_data()
+#             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 
 
 class SerialThread(QThread):
@@ -121,8 +122,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_thread.start()
         self.serial_thread.data_arrive_signal.connect(self.receive_data)
 
-        self.auto_cal_thread = AutoCalThread(self)
-        self.auto_cal_thread.start()
+        self.auto_cal_thread = None
 
         self.update_data_timer = QTimer()
         self.update_data_timer.timeout.connect(self.update_data)
@@ -170,6 +170,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.positionLabel.setEnabled(False)
         self.ui.stepsLabel.setEnabled(False)
         self.ui.sumStepsLabel.setEnabled(False)
+        self.ui.frame_9.setEnabled(False)
 
     def open_ui(self):
         self.ui.camAfButton.setEnabled(True)
@@ -272,23 +273,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "相机内参标定失败")
 
     def kst_calibrate(self):
-        # os.system("adb shell am broadcast -a asu.intent.action.SaveData")
-        # 拿到所有数据 n组，每组两个照片，imu，tof
-        # self.statusBar_3.clear()
-        # self.statusBar_3.setText('')
-        # self.statusBar_3.setText('全向标定运行中...')
         self.ui.kstCalButton.setEnabled(False)
-        # point = get_point()
-        # self.kst_reset()
-        if auto_keystone_calib():
-            QMessageBox.warning(self, "警告", "全向自动标定成功")
-            # self.statusBar_3.setText('全向自动标定成功')
-            pass
-        else:
-            QMessageBox.warning(self, "警告", "全向自动标定失败")
-            # self.statusBar_3.setText('全向自动标定失败')
-        # set_point(point)
-        self.ui.kstCalButton.setEnabled(True)
+        self.auto_cal_thread.start()
+        self.auto_cal_thread.num = int(self.ui.kstAutoCalCountEdit.text()) + 1
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
@@ -400,12 +387,56 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system(cmd)
         self.statusBar_2.setText("投影内部相机状态：关闭")
 
+    def save_position_data(self):
+        startTime = time.time()
+        os.system("adb shell am broadcast -a asu.intent.action.SaveData")
+        time.sleep(2)
+        self.cal = True
+        self.external_take_picture()
+        self.cal = False
+        time.sleep(2.5)
+        self.pull_data()
+        # parse data
+        pro_file_list = []
+        ret = {"jpg": 0, "png": 0, "bmp": 0}
+        for root, dirs, files in os.walk(DIR_NAME_PRO):
+            for file in files:
+                ext = os.path.splitext(file)[-1].lower()
+                head = os.path.splitext(file)[0].lower()[:2]
+                print(file, ext, head)
+                if ext == '.bmp' and head == 'n0':
+                    ret["bmp"] = ret["bmp"] + 1
+                    pro_file_list.append(file)
+                if ext == ".png" and head == 'n0':
+                    ret["png"] = ret["png"] + 1
+        if len(pro_file_list) > 0:
+            pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+            pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+            imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+            print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
+            if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
+                # 图片的大小
+                endTime = time.time()
+                print('保存数据耗时：', (endTime - startTime))
+                os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
+                return True
+                # self.statusBar_3.setText('当前姿态下数据保存完成')
+            else:
+                # self.statusBar_3.setText('当前姿态下数据保存失败')
+                return False
+        else:
+            print('没有发现投影设备返回的图片数据 ', pro_file_list)
+            return False
+            # self.statusBar_3.setText('当前姿态下数据保存失败')
+        self.ui.saveDataButton.setEnabled(True)
+
     def save_data(self):
         # if os.path.exists(DIR_NAME_PRO):
         #     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
         #     preLenFiles = len(files)
         # self.statusBar_3.clear()
         # self.statusBar_3.setText('保存当前姿态数据中...')
+        save_finish = False
         self.ui.saveDataButton.setEnabled(False)
 
         startTime = time.time()
@@ -453,13 +484,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print('保存数据耗时：', (endTime - startTime))
                 QMessageBox.warning(self, "警告", "数据保存成功")
                 os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
+                return True
                 # self.statusBar_3.setText('当前姿态下数据保存完成')
             else:
                 # self.statusBar_3.setText('当前姿态下数据保存失败')
                 QMessageBox.warning(self, "警告", "数据保存失败")
+                return False
         else:
             print('没有发现投影设备返回的图片数据 ', pro_file_list)
             QMessageBox.warning(self, "警告", "没有发现投影设备返回的图片数据")
+            return False
             # self.statusBar_3.setText('当前姿态下数据保存失败')
         set_point(point)
         self.ui.saveDataButton.setEnabled(True)
@@ -552,15 +586,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         available_ports = get_ports()
         self.ui.serial_selection.addItems(available_ports)
         self.ui.baud_rate.setEditable(True)
-        self.ui.baud_rate.setCurrentText("921600")
+        self.ui.baud_rate.setCurrentText("9600")
 
     def open_port(self):
-        self.ui.statusBar.showMessage("4556")
-        print("88888888");
         current_port_name = self.ui.serial_selection.currentText()
         baud_rate = int(self.ui.baud_rate.currentText())
         bytesize = 8
-        check_bit = "N"
+        check_bit = "E"
         stop_bit = 1.0
         try:
             self.current_port = open_port(current_port_name,
@@ -577,7 +609,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.close_port.setEnabled(True)
             self.ui.send_data.setEnabled(True)
             self.ui.refresh_port.setEnabled(False)
+            self.ui.frame_9.setEnabled(True)
             self.serial_thread.ser = self.current_port
+            self.auto_cal_thread = AutoCalThread(self.current_port, self)
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
 
