@@ -84,6 +84,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
 
+        self.ui.rotateButton.clicked.connect(self.rotating_write)
         self.ui.kstResetButton.clicked.connect(self.kst_reset)
         self.ui.camInterCalButton.clicked.connect(self.cam_inter_cal)
         self.ui.camAfButton.clicked.connect(self.auto_focus_vision)
@@ -145,6 +146,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
         self.ui.previewCameraLabel.setPixmap(image)
         return None
+
+    def rotating_write(self):
+        xy = '{:04X}'.format(int(self.ui.xyEdit.text()))
+        xz = '{:04X}'.format(int(self.ui.xzEdit.text()))
+        yz = '{:04X}'.format(int(self.ui.yzEdit.text()))
+        print(xy[0:2], xy[2:4])
 
     def close_ui(self):
         self.ui.camAfButton.setEnabled(False)

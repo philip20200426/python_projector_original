@@ -586,7 +586,7 @@
       <x>290</x>
       <y>140</y>
       <width>451</width>
-      <height>471</height>
+      <height>431</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -1216,9 +1216,9 @@
     <property name="geometry">
      <rect>
       <x>290</x>
-      <y>620</y>
+      <y>580</y>
       <width>451</width>
-      <height>91</height>
+      <height>161</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -1231,7 +1231,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>20</y>
+       <y>10</y>
        <width>351</width>
        <height>60</height>
       </rect>
@@ -1244,7 +1244,7 @@
      <property name="geometry">
       <rect>
        <x>370</x>
-       <y>20</y>
+       <y>10</y>
        <width>71</width>
        <height>60</height>
       </rect>
@@ -1267,14 +1267,109 @@
     <property name="geometry">
      <rect>
       <x>300</x>
-      <y>740</y>
+      <y>760</y>
       <width>431</width>
-      <height>51</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
      <string>CAM内参标定</string>
     </property>
+   </widget>
+   <widget class="QFrame" name="frame_10">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>660</y>
+      <width>451</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QPushButton" name="rotateButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>141</width>
+       <height>60</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>写入</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="xyEdit">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>10</y>
+       <width>71</width>
+       <height>60</height>
+      </rect>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>0</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="xzEdit">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>10</y>
+       <width>71</width>
+       <height>60</height>
+      </rect>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>0</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="yzEdit">
+     <property name="geometry">
+      <rect>
+       <x>369</x>
+       <y>10</y>
+       <width>71</width>
+       <height>60</height>
+      </rect>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>12</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </widget>
    <zorder>previewCameraLabel</zorder>
    <zorder>frame</zorder>
@@ -1290,6 +1385,7 @@
    <zorder>frame_8</zorder>
    <zorder>frame_9</zorder>
    <zorder>camInterCalButton</zorder>
+   <zorder>frame_10</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
