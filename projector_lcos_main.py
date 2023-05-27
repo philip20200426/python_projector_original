@@ -274,6 +274,9 @@ class AutoTestThread(QThread):
         self.win.write_result_csv('a', result)
         print('>>>>>>>>>>>>>>>>>>>> 马达回到清晰位置')
         self.win.motor_back()
+        self.win.ui.snLineEdit.setText('')
+        self.win.ui.snLineEdit.setFocus()
+        self.win.ui.snLineEdit.setEnabled(True)
         # if allRight:
         #     img_bgr = cv2.imread('pic/pass.png')
         # else:
@@ -311,7 +314,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         available_ports = get_ports()
         self.ui.serial_selection.addItems(available_ports)
         self.ui.baud_rate.setCurrentText("921600")
-
+        self.ui.snLineEdit.textChanged.connect(self.sn_text_changed)
         self.ui.adminPasswordButton.clicked.connect(self.admin_password_logon)
         self.ui.saveThresholdButton.clicked.connect(self.save_para)
         self.ui.saveRGBCurrentButton.clicked.connect(self.save_lcos_rgb_current)
@@ -403,13 +406,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.limitSteps = 0
         # 限定文本框输入的数据类型
         reg = QRegExp('[0-9]+$')
-        # reg = QRegExp('[a-zA-Z0-9]+$') #数字和字母
         validator = QRegExpValidator()
         validator.setRegExp(reg)
         self.ui.ntcThresholdUpperEdit.setValidator(validator)
         self.ui.ntcThresholdLowerEdit.setValidator(validator)
         self.ui.ntcLedThresholdLowerEdit.setValidator(validator)
         self.ui.ntcLedThresholdUpperEdit.setValidator(validator)
+        self.ui.snLineEdit.setFocus()
+        reg1 = QRegExp('[a-zA-Z0-9]+$') # 数字和字母
+        validator1 = QRegExpValidator()
+        validator1.setRegExp(reg1)
+        self.ui.snLineEdit.setValidator(validator1)
+
         self.dictAutoTest = {'MOTOR': False,
                              'FAN1-LED': False, 'FAN2-LCD': False,
                              'NTC-LED': False, 'NTC-LCD': False,
@@ -441,6 +449,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.swVersionLabel.setText('SW: ' + version + '  ' + m_time)
             self.ui.statusbar.addPermanentWidget(self.ui.swVersionLabel, stretch=0)
         self.file_create_time = ''
+        self.date_time = ''
 
     def show_autotest_items(self, index):
         select_items = self.ui.testItemsComboBox.get_selected()
@@ -589,11 +598,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def show_black_img(self, v):
         show_img(2)
 
+    def sn_text_changed(self):
+        if len(self.ui.snLineEdit.text()) == 20:
+            self.ui.snLineEdit.setEnabled(False)
+            print('>>>>>>>>>>>>>>>>>>>> 扫码完成，自动触发自动化测试')
+            self.auto_test_pdu()
+
     def auto_test_pdu(self):
-        text, ok = QInputDialog().getText(QWidget(), '光机序列号', '输入光机序列号:')
-        if ok and text != '':
-            text = text.upper()
+        text = self.ui.snLineEdit.text()
+        if len(text) > 19:
+            text = text[-20:].upper()
+            print('SN ', text, len(text))
             print(self.ui.testItemsComboBox.get_selected())
+            self.ui.snLineEdit.setText(text)
             self.sn = str(text)
             self.totalRounds = 0
             self.auto_test_ui_switch(False)
@@ -620,20 +637,23 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.autoTestButton.setEnabled(True)
                 return
         else:
-            print('SN 号不能为空')
+            print('SN号长度不对', len(text))
             return
 
     def write_result_csv(self, mode='w', data=[]):
         if mode == 'w':
             times = datetime.datetime.now(tz=None)
             self.file_create_time = times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
-        file_name = self.sn + '_' + self.file_create_time + '.csv'
-        dir_name = 'result'
+            self.date_time = times.strftime("%Y-%m-%d").strip()
+        dir_name = 'result' + '/' + self.date_time
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
+            print('创建目录 ', dir_name)
         else:
-            pass
+            print('目录已存在', dir_name)
+        file_name = self.sn + '_' + self.file_create_time + '.csv'
         file_name = dir_name + "/" + file_name
+        print(file_name)
         try:
             with open(file_name, mode=mode, newline='') as csvfile:
                 writer = csv.writer(csvfile)
@@ -703,6 +723,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def motor_back(self):
         self.ui.motorBackButton.setEnabled(False)
+        self.ui.motorForwardButton.setEnabled(False)
         data = [1, 0, 0]
         # 步数用两个字节表示，低字节在前，高字节在后
         print(hex(int(self.ui.motorStepsEdit.text())))
@@ -712,9 +733,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_write(strHex)
         time.sleep(1)
         self.ui.motorBackButton.setEnabled(True)
+        self.ui.motorForwardButton.setEnabled(True)
 
     def motor_forward(self):
         self.ui.motorForwardButton.setEnabled(False)
+        self.ui.motorBackButton.setEnabled(False)
         data = [0, 0, 0]
         # 步数用两个字节表示，低字节在前，高字节在后
         print(hex(int(self.ui.motorStepsEdit.text())))
@@ -724,6 +747,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.serial_write(strHex)
         time.sleep(1)
         self.ui.motorForwardButton.setEnabled(True)
+        self.ui.motorBackButton.setEnabled(True)
 
     def save_lcos_rgb_current(self):
         data = [0]
@@ -822,6 +846,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.panelPwmSpinBox.setEnabled(switch)
         self.ui.openLedButton.setEnabled(switch)
         self.auto_test_ui_switch(switch)
+        self.ui.snLineEdit.setEnabled(switch)
         if switch:
             if self.mLoginOn:
                 self.ui.lcdGroupBox.setEnabled(switch)
@@ -870,6 +895,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
             time.sleep(1)
             self.get_hw_version()
+            time.sleep(1)
+            self.open_pgu_led()
+            self.ui.snLineEdit.setEnabled(True)
+            self.ui.snLineEdit.setText('')
+            self.ui.snLineEdit.setFocus()
             self.serialRunning = True
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
@@ -893,6 +923,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=1)
             self.current_port = None
             self.serialRunning = False
+            self.ui.snLineEdit.setEnabled(False)
             print('串口已关闭')
         else:
             self.ui.port_status.setText('无串口可关闭')
@@ -1236,6 +1267,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     w = ProjectorWindow()
-    w.resize(1239, 810)
+    w.resize(1239, 655)
     w.show()
     sys.exit(app.exec_())

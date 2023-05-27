@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1274</width>
-    <height>822</height>
+    <width>1626</width>
+    <height>664</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,9 +18,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>0</y>
       <width>1241</width>
-      <height>751</height>
+      <height>721</height>
      </rect>
     </property>
     <property name="tabShape">
@@ -37,7 +37,7 @@
       <property name="geometry">
        <rect>
         <x>710</x>
-        <y>20</y>
+        <y>10</y>
         <width>511</width>
         <height>271</height>
        </rect>
@@ -299,9 +299,9 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>20</y>
+        <y>0</y>
         <width>681</width>
-        <height>691</height>
+        <height>591</height>
        </rect>
       </property>
       <property name="contextMenuPolicy">
@@ -320,9 +320,9 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>190</y>
+         <y>180</y>
          <width>421</width>
-         <height>301</height>
+         <height>261</height>
         </rect>
        </property>
        <property name="contextMenuPolicy">
@@ -347,7 +347,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>210</y>
+          <y>180</y>
           <width>91</width>
           <height>41</height>
          </rect>
@@ -366,7 +366,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>250</y>
+          <y>220</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -385,7 +385,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>170</y>
+          <y>140</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -404,7 +404,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>170</y>
+          <y>140</y>
           <width>91</width>
           <height>41</height>
          </rect>
@@ -423,7 +423,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>210</y>
+          <y>180</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -442,7 +442,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>210</y>
+          <y>180</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -537,7 +537,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>250</y>
+          <y>220</y>
           <width>91</width>
           <height>41</height>
          </rect>
@@ -556,7 +556,7 @@
         <property name="geometry">
          <rect>
           <x>110</x>
-          <y>170</y>
+          <y>140</y>
           <width>41</width>
           <height>41</height>
          </rect>
@@ -575,7 +575,7 @@
         <property name="geometry">
          <rect>
           <x>160</x>
-          <y>250</y>
+          <y>220</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -594,7 +594,7 @@
         <property name="geometry">
          <rect>
           <x>210</x>
-          <y>170</y>
+          <y>140</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -613,7 +613,7 @@
         <property name="geometry">
          <rect>
           <x>210</x>
-          <y>210</y>
+          <y>180</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -632,7 +632,7 @@
         <property name="geometry">
          <rect>
           <x>210</x>
-          <y>250</y>
+          <y>220</y>
           <width>51</width>
           <height>41</height>
          </rect>
@@ -651,7 +651,7 @@
         <property name="geometry">
          <rect>
           <x>280</x>
-          <y>250</y>
+          <y>220</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -670,7 +670,7 @@
         <property name="geometry">
          <rect>
           <x>280</x>
-          <y>210</y>
+          <y>180</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -689,7 +689,7 @@
         <property name="geometry">
          <rect>
           <x>280</x>
-          <y>170</y>
+          <y>140</y>
           <width>61</width>
           <height>41</height>
          </rect>
@@ -708,7 +708,7 @@
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>170</y>
+          <y>140</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -727,7 +727,7 @@
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>210</y>
+          <y>180</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -746,7 +746,7 @@
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>250</y>
+          <y>220</y>
           <width>21</width>
           <height>41</height>
          </rect>
@@ -787,7 +787,7 @@
         <property name="geometry">
          <rect>
           <x>200</x>
-          <y>70</y>
+          <y>60</y>
           <width>51</width>
           <height>31</height>
          </rect>
@@ -806,7 +806,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>70</y>
+          <y>60</y>
           <width>101</width>
           <height>31</height>
          </rect>
@@ -825,7 +825,7 @@
         <property name="geometry">
          <rect>
           <x>260</x>
-          <y>70</y>
+          <y>60</y>
           <width>71</width>
           <height>31</height>
          </rect>
@@ -849,8 +849,8 @@
        <widget class="QLineEdit" name="ntcThresholdLowerEdit">
         <property name="geometry">
          <rect>
-          <x>130</x>
-          <y>70</y>
+          <x>120</x>
+          <y>60</y>
           <width>61</width>
           <height>31</height>
          </rect>
@@ -875,9 +875,9 @@
         <property name="geometry">
          <rect>
           <x>340</x>
-          <y>70</y>
+          <y>60</y>
           <width>71</width>
-          <height>81</height>
+          <height>71</height>
          </rect>
         </property>
         <property name="text">
@@ -907,7 +907,7 @@
         <property name="geometry">
          <rect>
           <x>200</x>
-          <y>120</y>
+          <y>100</y>
           <width>51</width>
           <height>31</height>
          </rect>
@@ -926,7 +926,7 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>120</y>
+          <y>100</y>
           <width>101</width>
           <height>31</height>
          </rect>
@@ -944,8 +944,8 @@
        <widget class="QLineEdit" name="ntcLedThresholdLowerEdit">
         <property name="geometry">
          <rect>
-          <x>130</x>
-          <y>120</y>
+          <x>120</x>
+          <y>100</y>
           <width>61</width>
           <height>31</height>
          </rect>
@@ -970,7 +970,7 @@
         <property name="geometry">
          <rect>
           <x>260</x>
-          <y>120</y>
+          <y>100</y>
           <width>71</width>
           <height>31</height>
          </rect>
@@ -1200,13 +1200,389 @@
         </property>
        </widget>
       </widget>
+      <widget class="QFrame" name="frame_15">
+       <property name="geometry">
+        <rect>
+         <x>450</x>
+         <y>10</y>
+         <width>201</width>
+         <height>571</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <property name="lineWidth">
+        <number>2</number>
+       </property>
+       <property name="midLineWidth">
+        <number>1</number>
+       </property>
+       <widget class="QLabel" name="testFan2Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>290</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testMotorLabel">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>180</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+        <property name="openExternalLinks">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp3Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>530</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testFan1Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>230</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp1Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>350</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp1Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>350</y>
+          <width>80</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>NTC-LED</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testFan1Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>230</y>
+          <width>80</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>FAN1-LED</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testFan2Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>290</y>
+          <width>80</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>FAN2-LCD</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp3Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>530</y>
+          <width>80</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>NTC-EVR</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testMotorLabel1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>180</y>
+          <width>71</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>MOTOR</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp2Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>410</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testTemp2Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>410</y>
+          <width>80</width>
+          <height>40</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>NTC-LCD</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testFan3Label1">
+        <property name="geometry">
+         <rect>
+          <x>26</x>
+          <y>470</y>
+          <width>80</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>FAN3-EVR</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="testFan3Label">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>470</y>
+          <width>41</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="autoTestFinishLabel">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>80</y>
+          <width>161</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="autoTestButton">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>10</y>
+          <width>160</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>160</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>自动测试</string>
+        </property>
+       </widget>
+       <widget class="ComboCheckBox" name="testItemsComboBox">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>50</y>
+          <width>160</width>
+          <height>22</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="resultLabel">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>100</y>
+          <width>141</width>
+          <height>81</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Arial</family>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </widget>
       <widget class="QFrame" name="frame">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>510</y>
-         <width>421</width>
-         <height>161</height>
+         <y>460</y>
+         <width>420</width>
+         <height>121</height>
         </rect>
        </property>
        <property name="frameShape">
@@ -1224,10 +1600,10 @@
        <widget class="QLabel" name="label_30">
         <property name="geometry">
          <rect>
-          <x>20</x>
-          <y>110</y>
+          <x>30</x>
+          <y>90</y>
           <width>121</width>
-          <height>31</height>
+          <height>25</height>
          </rect>
         </property>
         <property name="font">
@@ -1244,7 +1620,7 @@
         <property name="geometry">
          <rect>
           <x>150</x>
-          <y>20</y>
+          <y>10</y>
           <width>121</width>
           <height>31</height>
          </rect>
@@ -1268,10 +1644,10 @@
        <widget class="QLabel" name="motorStatuslabel">
         <property name="geometry">
          <rect>
-          <x>150</x>
-          <y>110</y>
+          <x>140</x>
+          <y>90</y>
           <width>121</width>
-          <height>31</height>
+          <height>25</height>
          </rect>
         </property>
         <property name="text">
@@ -1285,7 +1661,7 @@
         <property name="geometry">
          <rect>
           <x>290</x>
-          <y>20</y>
+          <y>10</y>
           <width>121</width>
           <height>31</height>
          </rect>
@@ -1306,8 +1682,8 @@
        <widget class="QPushButton" name="motorForwardButton">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>20</y>
+          <x>20</x>
+          <y>10</y>
           <width>121</width>
           <height>31</height>
          </rect>
@@ -1325,8 +1701,8 @@
        <widget class="QPushButton" name="autoTestMotorOpenButton">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>70</y>
+          <x>20</x>
+          <y>50</y>
           <width>121</width>
           <height>31</height>
          </rect>
@@ -1345,7 +1721,7 @@
         <property name="geometry">
          <rect>
           <x>150</x>
-          <y>70</y>
+          <y>50</y>
           <width>121</width>
           <height>31</height>
          </rect>
@@ -1364,7 +1740,7 @@
         <property name="geometry">
          <rect>
           <x>290</x>
-          <y>70</y>
+          <y>50</y>
           <width>61</width>
           <height>31</height>
          </rect>
@@ -1386,9 +1762,9 @@
         <property name="geometry">
          <rect>
           <x>290</x>
-          <y>110</y>
+          <y>90</y>
           <width>51</width>
-          <height>31</height>
+          <height>25</height>
          </rect>
         </property>
         <property name="font">
@@ -1410,7 +1786,7 @@
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>70</y>
+          <y>50</y>
           <width>51</width>
           <height>31</height>
          </rect>
@@ -1432,9 +1808,9 @@
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>110</y>
+          <y>90</y>
           <width>51</width>
-          <height>31</height>
+          <height>25</height>
          </rect>
         </property>
         <property name="font">
@@ -1453,388 +1829,12 @@
         </property>
        </widget>
       </widget>
-      <widget class="QFrame" name="frame_15">
-       <property name="geometry">
-        <rect>
-         <x>450</x>
-         <y>10</y>
-         <width>201</width>
-         <height>661</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <property name="lineWidth">
-        <number>2</number>
-       </property>
-       <property name="midLineWidth">
-        <number>1</number>
-       </property>
-       <widget class="QLabel" name="testFan2Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>360</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testMotorLabel">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>240</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-        <property name="openExternalLinks">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp3Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>600</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testFan1Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>300</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp1Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>420</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp1Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>420</y>
-          <width>80</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>NTC-LED</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testFan1Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>300</y>
-          <width>80</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>FAN1-LED</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testFan2Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>360</y>
-          <width>80</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>FAN2-LCD</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp3Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>600</y>
-          <width>80</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>NTC-EVR</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testMotorLabel1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>240</y>
-          <width>71</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>MOTOR</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp2Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>480</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testTemp2Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>480</y>
-          <width>80</width>
-          <height>40</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>NTC-LCD</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testFan3Label1">
-        <property name="geometry">
-         <rect>
-          <x>26</x>
-          <y>540</y>
-          <width>80</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>FAN3-EVR</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="testFan3Label">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>540</y>
-          <width>41</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>C:/Users/user/.designer/backup/pic/fail.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QLabel" name="autoTestFinishLabel">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>100</y>
-          <width>161</width>
-          <height>30</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="autoTestButton">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>10</y>
-          <width>160</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>160</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>自动测试</string>
-        </property>
-       </widget>
-       <widget class="ComboCheckBox" name="testItemsComboBox">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>70</y>
-          <width>160</width>
-          <height>22</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QLabel" name="resultLabel">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>129</y>
-          <width>161</width>
-          <height>101</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </widget>
      </widget>
      <widget class="QFrame" name="frame_12">
       <property name="geometry">
        <rect>
         <x>710</x>
-        <y>320</y>
+        <y>520</y>
         <width>511</width>
         <height>51</height>
        </rect>
@@ -1903,7 +1903,7 @@
       <widget class="QComboBox" name="mirrorComboBox">
        <property name="geometry">
         <rect>
-         <x>290</x>
+         <x>330</x>
          <y>10</y>
          <width>161</width>
          <height>31</height>
@@ -1911,93 +1911,37 @@
        </property>
       </widget>
      </widget>
-     <widget class="QFrame" name="frame_11">
+     <widget class="QLabel" name="label_50">
       <property name="geometry">
        <rect>
         <x>710</x>
-        <y>400</y>
-        <width>511</width>
-        <height>111</height>
+        <y>450</y>
+        <width>31</width>
+        <height>31</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Panel</enum>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>9</pointsize>
+       </font>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+      <property name="text">
+       <string>SN</string>
       </property>
-      <property name="lineWidth">
-       <number>2</number>
+     </widget>
+     <widget class="QLineEdit" name="snLineEdit">
+      <property name="geometry">
+       <rect>
+        <x>760</x>
+        <y>450</y>
+        <width>461</width>
+        <height>31</height>
+       </rect>
       </property>
-      <property name="midLineWidth">
-       <number>1</number>
+      <property name="text">
+       <string/>
       </property>
-      <widget class="QLabel" name="imageCharLabel">
-       <property name="geometry">
-        <rect>
-         <x>8</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>清晰度</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-      <widget class="QLabel" name="imageWhiteLabel">
-       <property name="geometry">
-        <rect>
-         <x>175</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>白图</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-      <widget class="QLabel" name="imageBlackLabel">
-       <property name="geometry">
-        <rect>
-         <x>340</x>
-         <y>10</y>
-         <width>160</width>
-         <height>90</height>
-        </rect>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>黑图</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
@@ -2633,13 +2577,101 @@
      <set>QDialogButtonBox::NoButton</set>
     </property>
    </widget>
+   <widget class="QFrame" name="frame_11">
+    <property name="geometry">
+     <rect>
+      <x>720</x>
+      <y>320</y>
+      <width>511</width>
+      <height>111</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <widget class="QLabel" name="imageCharLabel">
+     <property name="geometry">
+      <rect>
+       <x>8</x>
+       <y>10</y>
+       <width>160</width>
+       <height>90</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string>清晰度</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="imageWhiteLabel">
+     <property name="geometry">
+      <rect>
+       <x>175</x>
+       <y>10</y>
+       <width>160</width>
+       <height>90</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string>白图</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="imageBlackLabel">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>10</y>
+       <width>160</width>
+       <height>90</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string>黑图</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1274</width>
+     <width>1626</width>
      <height>26</height>
     </rect>
    </property>
