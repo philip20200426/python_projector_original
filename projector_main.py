@@ -92,6 +92,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.autoTofKsdButton.clicked.connect(self.auto_keystone_tof)
         self.ui.autoCamKstButton.clicked.connect(self.auto_keystone_cam)
         self.ui.kstCalButton.clicked.connect(self.kst_calibrate)
+        self.ui.kstAutoCalButton.clicked.connect(self.kst_auto_calibrate)
         self.ui.refreshKsdButton.clicked.connect(self.refresh_keystone)
         self.ui.motorForwardButton.clicked.connect(self.motorForward)
         self.ui.motorBackButton.clicked.connect(self.motorBack)
@@ -110,7 +111,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.close_port.clicked.connect(self.close_port)
         self.ui.refresh_port.clicked.connect(self.refresh_port)
         self.ui.send_data.clicked.connect(self.send_data)
-        self.ui.getSwVerButton.clicked.connect(self.get_sw_version)
         self.ui.eOpenCameraButton.clicked.connect(self.open_external_camera)
         self.ui.eCloseCameraButton.clicked.connect(self.close_external_camera)
         self.ui.eTakePictureButton.clicked.connect(self.external_take_picture)
@@ -142,6 +142,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.cameraThread = CameraThread(1, "CameraThread", float(self.ui.exTimeSpinBox.text()))
         self.cameraThread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
+
+        self.mCount = 0
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
         self.ui.previewCameraLabel.setPixmap(image)
@@ -280,6 +282,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "相机内参标定失败")
 
     def kst_calibrate(self):
+        auto_keystone_calib()
+
+    def kst_auto_calibrate(self):
         self.ui.kstCalButton.setEnabled(False)
         self.auto_cal_thread.start()
         self.auto_cal_thread.num = int(self.ui.kstAutoCalCountEdit.text()) + 1
@@ -365,6 +370,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system("rm -rf .\asuFiles")
         os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
         os.system("adb shell am broadcast -a asu.intent.action.Clear")
+        self.mCount = 0
         #
         # dirExists = os.path.isdir('asuFiles')
         # if dirExists:
@@ -447,14 +453,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.saveDataButton.setEnabled(False)
 
         startTime = time.time()
-        point = get_point()
+        # point = get_point()
         self.kst_reset()
-        os.system("adb shell am broadcast -a asu.intent.action.SaveData")
+        cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
+        cmd1 = str(self.mCount)
+        os.system(cmd0 + cmd1)
+        self.mCount += 1
+
         time.sleep(2)
         self.cal = True
         self.external_take_picture()
         self.cal = False
-        time.sleep(3.5)
+        time.sleep(3)
         self.pull_data()
         # files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
         # nowLenFiles = len(files)
@@ -473,12 +483,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         for root, dirs, files in os.walk(DIR_NAME_PRO):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
-                head = os.path.splitext(file)[0].lower()[:2]
+                head = os.path.splitext(file)[0].lower()[:3]
                 print(file, ext, head)
-                if ext == '.bmp' and head == 'n0':
+                if ext == '.bmp' and head == 'pro':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_file_list.append(file)
-                if ext == ".png" and head == 'n0':
+                if ext == ".png" and head == 'pro':
                     ret["png"] = ret["png"] + 1
         if len(pro_file_list) > 0:
             pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
@@ -491,18 +501,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print('保存数据耗时：', (endTime - startTime))
                 QMessageBox.warning(self, "警告", "数据保存成功")
                 os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
-                return True
                 # self.statusBar_3.setText('当前姿态下数据保存完成')
             else:
                 # self.statusBar_3.setText('当前姿态下数据保存失败')
                 QMessageBox.warning(self, "警告", "数据保存失败")
-                return False
         else:
             print('没有发现投影设备返回的图片数据 ', pro_file_list)
             QMessageBox.warning(self, "警告", "没有发现投影设备返回的图片数据")
-            return False
             # self.statusBar_3.setText('当前姿态下数据保存失败')
-        set_point(point)
+        # set_point(point)
         self.ui.saveDataButton.setEnabled(True)
 
     def pull_data(self):
@@ -726,16 +733,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.port_status.setText('数据发送状态: 成功')
         except:
             self.ui.port_status.setText('数据发送状态: 失败')
-
-    def get_sw_version(self):
-        data = "FEFE16000000"
-        Hex_str = bytes.fromhex(data)
-        print("Hex_str : ", Hex_str)
-        # count = count + 1
-        # print("count : %d", count)
-        # if count > 2:
-        #     count = 0
-        self.current_port.write(Hex_str)
 
 
 if __name__ == '__main__':

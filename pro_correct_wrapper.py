@@ -487,11 +487,12 @@ def auto_keystone_calib():
     for root, dirs, files in os.walk(DIR_NAME_PRO):
         for file in files:
             ext = os.path.splitext(file)[-1].lower()
-            head = os.path.splitext(file)[0].lower()[:2]
-            if ext == '.bmp' and head == 'n0':
+            head = os.path.splitext(file)[0].lower()[:3]
+            print('===================', head)
+            if ext == '.bmp' and head == 'pro':
                 ret["bmp"] = ret["bmp"] + 1
                 pro_file_list.append(DIR_NAME_PRO + file)
-            if ext == ".png" and head == 'n0':
+            if ext == ".png" and head == 'pro':
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
     print('相机图片 ', len(pro_file_list), pro_file_list)
@@ -500,14 +501,14 @@ def auto_keystone_calib():
     else:
         print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
         return False
-
-    ref_img = cv2.imread(ref_file_list[-1])
-    ref_img_size = (ref_img.shape[0], ref_img.shape[1])
-    print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
-
-    pro_img = cv2.imread(pro_file_list[-1])
-    pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-    print(pro_img_size[0], pro_img_size[1])
+    if len(ref_file_list) > 0:
+        ref_img = cv2.imread(ref_file_list[-1])
+        ref_img_size = (ref_img.shape[0], ref_img.shape[1])
+        print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
+    if len(pro_file_list) > 0:
+        pro_img = cv2.imread(pro_file_list[-1])
+        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+        print(pro_img_size[0], pro_img_size[1])
     # 分析csv
     if os.path.exists(FILE_NAME_CSV):
         # with 自动关闭文件
