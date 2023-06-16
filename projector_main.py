@@ -287,7 +287,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def kst_auto_calibrate(self):
         self.ui.kstCalButton.setEnabled(False)
         self.auto_cal_thread.start()
-        self.auto_cal_thread.num = int(self.ui.kstAutoCalCountEdit.text()) + 1
+        self.auto_cal_thread.num = int(self.ui.kstAutoCalCountEdit.text())
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
@@ -400,14 +400,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system(cmd)
         self.statusBar_2.setText("投影内部相机状态：关闭")
 
-    def save_position_data(self):
+    def parse_position_data(self):
         startTime = time.time()
-        os.system("adb shell am broadcast -a asu.intent.action.SaveData")
-        time.sleep(2)
-        self.cal = True
-        self.external_take_picture()
-        self.cal = False
-        time.sleep(2.5)
+        # os.system("adb shell am broadcast -a asu.intent.action.SaveData")
+        # time.sleep(2)
+        # self.cal = True
+        # self.external_take_picture()
+        # self.cal = False
+        # time.sleep(2.5)
         self.pull_data()
         # parse data
         pro_file_list = []
@@ -430,8 +430,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
                 # 图片的大小
                 endTime = time.time()
-                print('保存数据耗时：', (endTime - startTime))
-                os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
+                print('分析数据耗时：', (endTime - startTime))
+                # os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
                 return True
                 # self.statusBar_3.setText('当前姿态下数据保存完成')
             else:
