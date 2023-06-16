@@ -1184,7 +1184,7 @@
       <rect>
        <x>10</x>
        <y>30</y>
-       <width>351</width>
+       <width>231</width>
        <height>51</height>
       </rect>
      </property>
@@ -1195,20 +1195,26 @@
     <widget class="QLineEdit" name="kstAutoCalCountEdit">
      <property name="geometry">
       <rect>
-       <x>370</x>
+       <x>250</x>
        <y>30</y>
-       <width>71</width>
+       <width>190</width>
        <height>51</height>
       </rect>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="maximumSize">
       <size>
-       <width>80</width>
+       <width>300</width>
        <height>16777215</height>
       </size>
      </property>
      <property name="text">
-      <string>6</string>
+      <string>1,2,3,4,5,6</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

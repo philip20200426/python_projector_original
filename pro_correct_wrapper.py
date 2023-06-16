@@ -48,7 +48,7 @@ if not dirExists:
 NUM_POSTURE = 6
 # 投影仪生成的csv数据
 CSV_ITEM_NUM = 5  # 4
-CSV_TOF = 1
+CSV_TOF = 2
 CSV_IMU = 3
 CSV_IMG = 4
 

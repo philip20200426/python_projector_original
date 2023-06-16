@@ -286,8 +286,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def kst_auto_calibrate(self):
         self.ui.kstCalButton.setEnabled(False)
+        cmd = self.ui.kstAutoCalCountEdit.text().strip().split(',')
+        self.auto_cal_thread.positionList = list(map(int, cmd))
+        print(self.auto_cal_thread.positionList)
         self.auto_cal_thread.start()
-        self.auto_cal_thread.num = int(self.ui.kstAutoCalCountEdit.text())
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
@@ -415,12 +417,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         for root, dirs, files in os.walk(DIR_NAME_PRO):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
-                head = os.path.splitext(file)[0].lower()[:2]
+                head = os.path.splitext(file)[0].lower()[:5]
                 print(file, ext, head)
-                if ext == '.bmp' and head == 'n0':
+                if ext == '.bmp' and head == 'pro_n':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_file_list.append(file)
-                if ext == ".png" and head == 'n0':
+                if ext == ".png" and head == 'pro_n':
                     ret["png"] = ret["png"] + 1
         if len(pro_file_list) > 0:
             pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
