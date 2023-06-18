@@ -458,7 +458,7 @@ def auto_keystone_calib():
     # file_list_pro = os.listdir(DIR_NAME_P)
     # print(len(file_list_ref), file_list_ref, len(file_list_pro), file_list_pro)
     imu_data_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-    robot_pose_list = [0, 0, 0]
+    robot_pose_list = [0, 0, 0, -15, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, -15, -15, 0, 15, -15, 0, -15, 15, 0, -15, 15, 0, 15]
     # error_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 10, 11, 12, 13]
     files = os.listdir(DIR_NAME_PRO)  # 读入文件夹
     lastTime = time.time()
