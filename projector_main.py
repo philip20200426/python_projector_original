@@ -84,6 +84,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
 
+        self.ui.stopAutoCalButton.clicked.connect(self.stop_auto_cal)
         self.ui.rotateButton.clicked.connect(self.rotating_write)
         self.ui.kstResetButton.clicked.connect(self.kst_reset)
         self.ui.camInterCalButton.clicked.connect(self.cam_inter_cal)
@@ -228,7 +229,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if self.cameraThread is not None:
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
 
-    def external_take_picture(self):
+    def external_take_picture(self, pos=0):
         if self.cameraThread.mRunning:
             path = DIR_NAME_REF
             inter_path = DIR_NAME_INTER_REF
@@ -239,7 +240,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if not internal_dirExists:
                 os.makedirs(inter_path)
             if self.cal:
-                name = 'ref_n0' + str(self.count)
+                name = 'ref_n' + str(pos)
                 filePath = path + '/' + name
                 self.count += 1
             else:
@@ -285,11 +286,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         auto_keystone_calib()
 
     def kst_auto_calibrate(self):
+        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        time.sleep(0.6)
+        self.showCheckerPattern()
+        self.open_external_camera()
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip().split(',')
         self.auto_cal_thread.positionList = list(map(int, cmd))
         print(self.auto_cal_thread.positionList)
         self.auto_cal_thread.start()
+
+    def stop_auto_cal(self):
+        pro_data = self.auto_cal_thread.parse_projector_data()
+        print('==================================================')
+        print(pro_data[0])
+        self.auto_cal_thread.exit = True
+        os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
