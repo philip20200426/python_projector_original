@@ -25,7 +25,7 @@ class AutoCalThread(QThread):
         eTime = time.time()
         point = get_point()
         self.win.kst_reset()
-        print(self.positionList)
+        print('自动全向梯形标定 开始：', self.positionList)
         while len(self.positionList) > 0:
             if self.exit:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
@@ -36,7 +36,7 @@ class AutoCalThread(QThread):
 
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
-                print('>>>>>>>>>>>>>>>>>>> Exit AutoCalThread, Save Data Finished')
+                print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
                 proj_data = self.parse_projector_data()
                 print(proj_data[0])
                 for pos in range(len(self.positionList)):
@@ -47,13 +47,13 @@ class AutoCalThread(QThread):
                 print(self.positionList)
                 if 0 in self.positionList:
                     self.positionList.remove(0)
+                print('>>>>>>>>>>>>>>>>>>> %d个姿态有错误, ' % len(self.positionList))
                 print(">>>>>>>>>>>>>>>>>>> ", self.positionList)
                 self.position = 0
                 if len(self.positionList) == 0:
                     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-                    self.win.ui.kstCalButton.setEnabled(True)
                     xTime = time.time()
-                    print('数据抓取耗时：' + str((xTime - eTime)))
+                    print('数据抓取及解析耗时：' + str((xTime - eTime)))
                     if auto_keystone_calib2(proj_data):
                         cTime = time.time()
                         print('算法运行耗时：' + str((cTime - xTime)))
@@ -66,8 +66,10 @@ class AutoCalThread(QThread):
                         set_point(point)
                     else:
                         print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
+                    self.win.ui.kstCalButton.setEnabled(True)
                     break
 
+            print('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 ' % self.positionList[self.position])
             cmdList = ['01', '06', '04', '87', '00', '0A']
             cmdList[5] = '{:02X}'.format(self.positionList[self.position])
             cmdChar = ' '.join(cmdList)
@@ -80,8 +82,8 @@ class AutoCalThread(QThread):
             else:
                 print('>>>>>>>>>>>>>>>>>>>> 串口异常')
             time.sleep(1.6) # 3.6
-            print('>>>>>>>>>>>>>>>>>>>> 开始保存数据')
 
+            print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
             cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
             cmd1 = str(self.positionList[self.position] - 1)
             os.system(cmd0 + cmd1)
@@ -102,7 +104,6 @@ class AutoCalThread(QThread):
         pro_img_list = []
         pro_file_list = []
         ret = {"jpg": 0, "png": 0, "bmp": 0, "txt": 0}
-        #DIR_NAME_PRO = "asuFiles/ASUXMJGYYD2V0220230200514/projectionFiles"
         print("解析目录：", DIR_NAME_PRO)
         for root, dirs, files in os.walk(DIR_NAME_PRO):
             for file in files:
@@ -165,6 +166,6 @@ class AutoCalThread(QThread):
         # print(pos_error)
         endTime = time.time()
         # 秒
-        print(endTime-startTime)
+        print('解析投影文件耗时', endTime-startTime)
         return pos_error, tof_list, imu_list, img_list
 

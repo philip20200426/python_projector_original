@@ -286,7 +286,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         auto_keystone_calib()
 
     def kst_auto_calibrate(self):
-        get_sn()
+        create_dir_file()
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         time.sleep(0.6)
         self.showCheckerPattern()
@@ -294,7 +294,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip().split(',')
         self.auto_cal_thread.positionList = list(map(int, cmd))
-        print(self.auto_cal_thread.positionList)
         self.auto_cal_thread.start()
         # adb uninstall com.nbd.tofmodule
 

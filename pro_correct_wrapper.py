@@ -8,12 +8,6 @@ import numpy as np
 DIR_NAME = 'asuFiles'
 DIR_NAME_COPY = 'asuFiles/copy'
 
-dirExists = os.path.isdir(DIR_NAME)
-if not dirExists:
-    os.makedirs(DIR_NAME)
-dirExists = os.path.isdir(DIR_NAME_COPY)
-if not dirExists:
-    os.makedirs(DIR_NAME_COPY)
 SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
 SN = SN.strip()
 print(len(SN), SN)
@@ -29,20 +23,6 @@ FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
 CALIB_CONFIG_PARA = 'asuFiles/interRefFiles/ex_cam_correct.yml'
 CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
 DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
-
-dirExists = os.path.isdir(DIR_NAME_REF)
-print(DIR_NAME_REF)
-if not dirExists:
-    os.makedirs(DIR_NAME_REF)
-    print('创建目录：', DIR_NAME_REF)
-dirExists = os.path.isdir(DIR_NAME_INTER_REF)
-if not dirExists:
-    os.makedirs(DIR_NAME_INTER_REF)
-    print('创建目录：', DIR_NAME_INTER_REF)
-dirExists = os.path.isdir(DIR_NAME_PRO)
-if not dirExists:
-    os.makedirs(DIR_NAME_PRO)
-    print('创建目录：', DIR_NAME_PRO)
 
 # 对应标定的姿态数量
 NUM_POSTURE = 6
@@ -70,15 +50,25 @@ def get_sn():
 
 
 def create_dir_file():
-    global SN, DIR_NAME_REF, DIR_NAME_PRO, DIR_NAME_INTER_REF, \
-        IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, FILE_NAME_CSV, CALIB_CONFIG_PARA, CALIB_DATA_PATH
+    get_sn()
     ex = os.path.isdir(DIR_NAME)
     if not ex:
         os.makedirs(DIR_NAME)
     ex = os.path.isdir(DIR_NAME_COPY)
     if not ex:
         os.makedirs(DIR_NAME_COPY)
-    get_sn()
+    dirExists = os.path.isdir(DIR_NAME_REF)
+    if not dirExists:
+        os.makedirs(DIR_NAME_REF)
+        print('创建目录：', DIR_NAME_REF)
+    dirExists = os.path.isdir(DIR_NAME_INTER_REF)
+    if not dirExists:
+        os.makedirs(DIR_NAME_INTER_REF)
+        print('创建目录：', DIR_NAME_INTER_REF)
+    dirExists = os.path.isdir(DIR_NAME_PRO)
+    if not dirExists:
+        os.makedirs(DIR_NAME_PRO)
+        print('创建目录：', DIR_NAME_PRO)
 
 
     # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
