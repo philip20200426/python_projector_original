@@ -26,7 +26,7 @@ FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
 DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
 DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
 FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
-CALIB_CONFIG_PARA = 'asuFiles/interRefFiles' + '/ex_cam_correct.yml'
+CALIB_CONFIG_PARA = 'asuFiles/interRefFiles/ex_cam_correct.yml'
 CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
 DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
 
@@ -80,16 +80,16 @@ def create_dir_file():
         os.makedirs(DIR_NAME_COPY)
     get_sn()
 
-    # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
-    IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
-    FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
-    DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
-    DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
-    FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
-    CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
-    CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
-    DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
 
+    # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
+    # IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
+    # FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
+    # DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
+    # DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
+    # FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
+    # CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
+    # CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
+    # DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
     ex = os.path.isdir(DIR_NAME_REF)
     if not ex:
         os.makedirs(DIR_NAME_REF)

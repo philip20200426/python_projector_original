@@ -269,7 +269,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_keystone_cam(self):
         self.kst_reset()
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 1")
-        time.sleep(4.5)
+        time.sleep(6)
         self.pull_data()
         if auto_keystone_cam():
             QMessageBox.warning(self, "警告", "相机全向校正成功")
@@ -286,6 +286,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         auto_keystone_calib()
 
     def kst_auto_calibrate(self):
+        get_sn()
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         time.sleep(0.6)
         self.showCheckerPattern()
@@ -295,11 +296,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.auto_cal_thread.positionList = list(map(int, cmd))
         print(self.auto_cal_thread.positionList)
         self.auto_cal_thread.start()
+        # adb uninstall com.nbd.tofmodule
 
     def stop_auto_cal(self):
-        pro_data = self.auto_cal_thread.parse_projector_data()
-        print('==================================================')
-        print(pro_data[0])
         self.auto_cal_thread.exit = True
         os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
 

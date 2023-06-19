@@ -4,7 +4,8 @@ import cv2
 from PyQt5.QtCore import QThread
 import time
 
-from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
+from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2, \
+    CALIB_DATA_PATH
 from math_utils import CRC
 
 
@@ -21,6 +22,7 @@ class AutoCalThread(QThread):
         self.positionList = [1, 2, 3, 4, 5, 6]
 
     def run(self):
+        eTime = time.time()
         point = get_point()
         self.win.kst_reset()
         print(self.positionList)
@@ -28,6 +30,7 @@ class AutoCalThread(QThread):
             if self.exit:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
+                self.exit = False
                 print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程')
                 break
 
@@ -49,7 +52,16 @@ class AutoCalThread(QThread):
                 if len(self.positionList) == 0:
                     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                     self.win.ui.kstCalButton.setEnabled(True)
+                    xTime = time.time()
+                    print('数据抓取耗时：' + str((xTime - eTime)))
                     if auto_keystone_calib2(proj_data):
+                        cTime = time.time()
+                        print('算法运行耗时：' + str((cTime - xTime)))
+                        cmd = 'adb push ' + CALIB_DATA_PATH + ' /sdcard/DCIM/'
+                        print(cmd)
+                        os.system(cmd)
+                        os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
+                        # self.win.clean_data()
                         print('>>>>>>>>>>>>>>>>>>> 全向标定完成')
                         set_point(point)
                     else:
@@ -73,10 +85,10 @@ class AutoCalThread(QThread):
             cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
             cmd1 = str(self.positionList[self.position] - 1)
             os.system(cmd0 + cmd1)
-            time.sleep(0.5) # 2
+            time.sleep(2) # 2
             self.win.cal = True
             self.win.external_take_picture(self.positionList[self.position] - 1)
-            time.sleep(0.5) # 1.6
+            time.sleep(1.6) # 1.6
             self.win.cal = False
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (len(self.positionList), self.positionList[self.position]))
             self.position += 1
