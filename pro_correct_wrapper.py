@@ -5,23 +5,31 @@ from ctypes import *
 import cv2
 import numpy as np
 
+import globalVar
+
+try:
+    dll = CDLL("pro_correction.dll", winmode=0)
+    print('load pro_correction.dll')
+except OSError:
+    print('Cannot find pro_correction.dll.')
+
 DIR_NAME = 'asuFiles'
 DIR_NAME_COPY = 'asuFiles/copy'
 
-SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
-SN = SN.strip()
-print(len(SN), SN)
-if len(SN) < 3:
-    SN = 'ASU0123456789'
+# SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
+# SN = SN.strip()
+# print(len(SN), SN)
+# if len(SN) < 3:
+#     SN = 'ASU0123456789'
 
-# IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
+SN = ''
 IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
 FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
 DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
 DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
 FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
-CALIB_CONFIG_PARA = 'asuFiles/interRefFiles/ex_cam_correct.yml'
 CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
+CALIB_CONFIG_PARA = 'asuFiles/interRefFiles/ex_cam_correct.yml'
 DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
 
 # 对应标定的姿态数量
@@ -31,13 +39,6 @@ CSV_ITEM_NUM = 5  # 4
 CSV_TOF = 2
 CSV_IMU = 3
 CSV_IMG = 4
-
-try:
-    dll = CDLL("pro_correction.dll", winmode=0)
-    print('load pro_correction.dll')
-except OSError:
-    print('Cannot find pro_correction.dll.')
-
 
 def get_sn():
     global SN
@@ -50,7 +51,28 @@ def get_sn():
 
 
 def create_dir_file():
+    os.system("adb root")
+    os.system("adb remount")
+    os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
     get_sn()
+    global IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, DIR_NAME_REF, DIR_NAME_PRO, FILE_NAME_CSV, CALIB_DATA_PATH
+    IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
+    FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
+    DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
+    DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
+    FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
+    CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
+    globalVar.set_value('IMG_AUTO_KEYSTONE', IMG_AUTO_KEYSTONE)
+    globalVar.set_value('FILE_AUTO_KEYSTONE', FILE_AUTO_KEYSTONE)
+    globalVar.set_value('DIR_NAME_REF', DIR_NAME_REF)
+    globalVar.set_value('DIR_NAME_PRO', DIR_NAME_PRO)
+    globalVar.set_value('FILE_NAME_CSV', FILE_NAME_CSV)
+    globalVar.set_value('CALIB_DATA_PATH', CALIB_DATA_PATH)
+
+    print(SN)
+    print(IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE)
+    print(DIR_NAME_REF, DIR_NAME_PRO)
+    print(CALIB_DATA_PATH)
     ex = os.path.isdir(DIR_NAME)
     if not ex:
         os.makedirs(DIR_NAME)
@@ -376,11 +398,12 @@ def keystone_correct_tof():
             tof_data.append(line)
             i += 1
         file.close()  # 关闭文件
+        print('++++++++++++++++++++++', tof_data)
         # IMU Data
-        if len(tof_data[3]) > 4:
-            imu_data_list = tof_data[3].split(',')
+        if len(tof_data[2]) > 4:
+            imu_data_list = tof_data[2].split(',')
             imu_data_list = list(map(float, imu_data_list))
-            print(imu_data_list)
+            print('IMU : ', imu_data_list)
         # TOF Data
         if len(tof_data[1]) > 3:
             depth_data = tof_data[1].split(',')
@@ -415,6 +438,26 @@ def auto_keystone_cam():
         print('>>>>>>>>>>>>>>>>>>>> 未获取到投影仪的原始坐标')
         source_points = [0, 0, 1920, 0, 1920, 1080, 0, 1080]
     print('原始坐标 ', source_points)
+
+    if os.path.exists(FILE_AUTO_KEYSTONE):
+        tof_data = []
+        file = open(FILE_AUTO_KEYSTONE)
+        line = file.readline().strip()  # 读取第一行
+        tof_data.append(line)
+        i = 0
+        while i < 4:  # 直到读取完文件
+            # print('======', tof_data[i])
+            line = file.readline().strip()  # 读取一行文件，包括换行符
+            tof_data.append(line)
+            i += 1
+        file.close()  # 关闭文件
+        print('++++++++++++++++++++++', tof_data)
+        # IMU Data
+        if len(tof_data[2]) > 4:
+            imu_data_list = tof_data[2].split(',')
+            imu_data_list = list(map(float, imu_data_list))
+            print('IMU : ', imu_data_list, len(imu_data_list))
+
     # source_points = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
     lastTime = time.time()
     while not os.path.exists(IMG_AUTO_KEYSTONE):

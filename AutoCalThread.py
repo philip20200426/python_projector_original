@@ -4,8 +4,8 @@ import cv2
 from PyQt5.QtCore import QThread
 import time
 
-from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2, \
-    CALIB_DATA_PATH
+import globalVar
+from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
 from math_utils import CRC
 
 
@@ -16,6 +16,13 @@ class AutoCalThread(QThread):
         self.win = win
         self.position = 0
         self.num = 1
+        # 转台完成动作后，稳定时间
+        self.delay1 = 1.6
+        # 发出保存数据后，等待时间
+        self.delay2 = 2
+        # 外部相机保存时间
+        self.delay3 = 1.6
+        self.enableAlgo = True
         self.exit = False
         self.CRC = CRC()
         print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
@@ -33,7 +40,12 @@ class AutoCalThread(QThread):
                 self.exit = False
                 print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程')
                 break
-
+            if self.enableAlgo:
+                if len(self.positionList) == 1 and self.positionList[0] == -1:
+                    self.position = 1
+                    print('>>>>>>>>>>>>>>>>>>> 跳过数据采集，直接运行算法')
+            else:
+                print(' >>>>>>>>>>>>>>>>>>>算法未使能')
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
                 print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
@@ -54,46 +66,49 @@ class AutoCalThread(QThread):
                     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                     xTime = time.time()
                     print('数据抓取及解析耗时：' + str((xTime - eTime)))
-                    if auto_keystone_calib2(proj_data):
-                        cTime = time.time()
-                        print('算法运行耗时：' + str((cTime - xTime)))
-                        cmd = 'adb push ' + CALIB_DATA_PATH + ' /sdcard/DCIM/'
-                        print(cmd)
-                        os.system(cmd)
-                        os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
-                        # self.win.clean_data()
-                        print('>>>>>>>>>>>>>>>>>>> 全向标定完成')
-                        set_point(point)
+                    print(proj_data)
+                    if self.enableAlgo:
+                        if auto_keystone_calib2(proj_data):
+                            cTime = time.time()
+                            print('算法运行耗时：' + str((cTime - xTime)))
+                            cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/DCIM/'
+                            print(cmd)
+                            os.system(cmd)
+                            os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
+                            # self.win.clean_data()
+                            print('>>>>>>>>>>>>>>>>>>> 全向标定完成')
+                            set_point(point)
+                        else:
+                            print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
                     else:
-                        print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
-                    self.win.ui.kstCalButton.setEnabled(True)
+                        print('未使能算法')
                     break
-
-            print('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 ' % self.positionList[self.position])
+            print('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 %d' % (self.positionList[self.position], self.position))
             cmdList = ['01', '06', '04', '87', '00', '0A']
             cmdList[5] = '{:02X}'.format(self.positionList[self.position])
             cmdChar = ' '.join(cmdList)
             crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
             cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
-            print(cmdChar)
+            # print(cmdChar)
             cmdHex = bytes.fromhex(cmdChar)
             if self.ser is not None:
                 self.ser.write(cmdHex)
             else:
                 print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-            time.sleep(1.6) # 3.6
+            time.sleep(self.delay1)
 
             print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
             cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
             cmd1 = str(self.positionList[self.position] - 1)
             os.system(cmd0 + cmd1)
-            time.sleep(2) # 2
+            time.sleep(self.delay2)
             self.win.cal = True
             self.win.external_take_picture(self.positionList[self.position] - 1)
-            time.sleep(1.6) # 1.6
+            time.sleep(self.delay3)
             self.win.cal = False
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (len(self.positionList), self.positionList[self.position]))
             self.position += 1
+        self.win.ui.kstCalButton.setEnabled(True)
 
     def parse_projector_data(self):
         pos_error = [0] * 8
@@ -104,8 +119,8 @@ class AutoCalThread(QThread):
         pro_img_list = []
         pro_file_list = []
         ret = {"jpg": 0, "png": 0, "bmp": 0, "txt": 0}
-        print("解析目录：", DIR_NAME_PRO)
-        for root, dirs, files in os.walk(DIR_NAME_PRO):
+        print("解析目录：", globalVar.get_value('DIR_NAME_PRO'))
+        for root, dirs, files in os.walk(globalVar.get_value('DIR_NAME_PRO')):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:5]
@@ -127,8 +142,8 @@ class AutoCalThread(QThread):
         txt_list = []
         for i in range(max(len(pro_img_list), len(pro_file_list))):
             name = "pro_n" + str(i)
-            file_name = DIR_NAME_PRO + '/' + name + '.txt'
-            img_name = DIR_NAME_PRO + '/' + name + '.bmp'
+            file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'
+            img_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.bmp'
             if os.path.exists(file_name):
                 txt_list.append(file_name)
                 file = open(file_name)

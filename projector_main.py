@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from qdarkstyle import DarkPalette
 
 from AutoCalThread import AutoCalThread
+import globalVar
 from pro_correct_wrapper import *
 # from learn_serial.pro_correct_wrapper import keystone_correct_cam_libs
 from CameraThread import CameraThread
@@ -28,8 +29,6 @@ from ctypes import *
 
 import os
 import shutil
-from glob import glob
-
 
 # class AutoCalThread(QThread):
 #
@@ -231,7 +230,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def external_take_picture(self, pos=0):
         if self.cameraThread.mRunning:
-            path = DIR_NAME_REF
+            path = globalVar.get_value('DIR_NAME_REF')
             inter_path = DIR_NAME_INTER_REF
             dirExists = os.path.isdir(path)
             if not dirExists:
@@ -257,6 +256,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
     def auto_keystone_tof(self):
+        create_dir_file()
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
         time.sleep(4)
         self.pull_data()
@@ -267,9 +267,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "TOF全向校正失败，校正数据错误")
 
     def auto_keystone_cam(self):
+        create_dir_file()
         self.kst_reset()
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 1")
-        time.sleep(6)
+        time.sleep(10)
         self.pull_data()
         if auto_keystone_cam():
             QMessageBox.warning(self, "警告", "相机全向校正成功")
@@ -288,14 +289,25 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def kst_auto_calibrate(self):
         create_dir_file()
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
-        time.sleep(0.6)
-        self.showCheckerPattern()
-        self.open_external_camera()
+        time.sleep(1)
+
         self.ui.kstCalButton.setEnabled(False)
-        cmd = self.ui.kstAutoCalCountEdit.text().strip().split(',')
+        cmd = ''
+        if self.ui.kstAutoCalCountEdit.text().strip() != '':
+            cmd = self.ui.kstAutoCalCountEdit.text().strip().split(',')
         self.auto_cal_thread.positionList = list(map(int, cmd))
+        if len(self.auto_cal_thread.positionList) == 1 and self.auto_cal_thread.positionList[0] == -1:
+            pass
+        else:
+            self.showCheckerPattern()
+            self.open_external_camera()
+        self.auto_cal_thread.delay1 = float(self.ui.delay1Edit.text())
+        self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
+        self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
+        self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
+        print(self.auto_cal_thread.enableAlgo)
         self.auto_cal_thread.start()
-        # adb uninstall com.nbd.tofmodule
+        # os.system('adb uninstall com.nbd.tofmodule')
 
     def stop_auto_cal(self):
         self.auto_cal_thread.exit = True
@@ -377,12 +389,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # shutil.copytree(DIR_NAME, 'copy')
             ret = shutil.move(srcDirName, distDirName)
             print('备份结束', ret)
-        print('创建新目录: ', srcDirName)
-        create_dir_file()
         # os.system("rm -rf .\asuFiles")
         os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
         os.system("adb shell am broadcast -a asu.intent.action.Clear")
         self.mCount = 0
+        #os.system('adb uninstall com.nbd.tofmodule')
         #
         # dirExists = os.path.isdir('asuFiles')
         # if dirExists:
@@ -424,7 +435,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # parse data
         pro_file_list = []
         ret = {"jpg": 0, "png": 0, "bmp": 0}
-        for root, dirs, files in os.walk(DIR_NAME_PRO):
+        for root, dirs, files in os.walk(globalVar.get_value('DIR_NAME_PRO')):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:5]
@@ -435,9 +446,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 if ext == ".png" and head == 'pro_n':
                     ret["png"] = ret["png"] + 1
         if len(pro_file_list) > 0:
-            pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+            pro_img = cv2.imread(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
             pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-            imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+            imageSize = os.path.getsize(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
             print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
             if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
                 # 图片的大小
@@ -492,7 +503,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         #
         pro_file_list = []
         ret = {"jpg": 0, "png": 0, "bmp": 0}
-        for root, dirs, files in os.walk(DIR_NAME_PRO):
+        for root, dirs, files in os.walk(globalVar.get_value('DIR_NAME_PRO')):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:3]
@@ -503,9 +514,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 if ext == ".png" and head == 'pro':
                     ret["png"] = ret["png"] + 1
         if len(pro_file_list) > 0:
-            pro_img = cv2.imread(DIR_NAME_PRO + pro_file_list[-1])
+            pro_img = cv2.imread(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
             pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-            imageSize = os.path.getsize(DIR_NAME_PRO + pro_file_list[-1])
+            imageSize = os.path.getsize(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
             print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
             if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
                 # 图片的大小
@@ -750,6 +761,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     w = ProjectorWindow()
+    globalVar._init()
     # width height
     # w.resize(600, 820)
     w.show()
