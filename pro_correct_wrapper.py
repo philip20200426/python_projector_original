@@ -252,9 +252,9 @@ if hasattr(dll, 'KeystoneCorrectCam'):
         img_r = c_int(img_size[0])
         img_c = c_int(img_size[1])
         source_points = (c_int * len(source_points))(*list(map(int, source_points)))
-        imu_data_list = (c_double * len(imu_data_list))(*list(map(int, imu_data_list)))
+        imu_data_list = (c_double * len(imu_data_list))(*list(map(float, imu_data_list)))
         correct_points = (c_int * len(correct_points))(*list(map(int, correct_points)))
-
+        print('IMU List: ', imu_data_size, imu_data_list)
         dll.KeystoneCorrectCam(calib_data_path, imu_data_size,
                                img_r, img_c,
                                source_points,
