@@ -942,7 +942,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
             self.ui.refresh_port.setEnabled(False)
-            self.slot_lcd_mirror(2)
+            # self.slot_lcd_mirror(2)
             self.ui.hwLabel.setText('')
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
             time.sleep(1)
