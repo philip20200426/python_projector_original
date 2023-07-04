@@ -635,7 +635,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         #     self.win.ui.resultLabel.setPixmap(passPix)
         # else:
         #     self.win.ui.resultLabel.setPixmap(failPix)
-        item_data_list = [str(cur_time), int(self.sn), all_pass, ';'.join(item_fail)]
+        item_data_list = [str(cur_time), str(self.sn), all_pass, ';'.join(item_fail)]
         hand_data_list = [self.ui.limitCheckBox.isChecked(),
                           self.ui.blackDirtyCheckBox.isChecked(),
                           self.ui.blackFieldCheckBox.isChecked(),
@@ -649,17 +649,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def sn_text_changed(self):
         if len(self.ui.snLineEdit.text()) == 20:
+            #print(len(self.ui.snLineEdit.text()), self.ui.snLineEdit.text())
             self.ui.snLineEdit.setEnabled(False)
             print('>>>>>>>>>>>>>>>>>>>> 扫码完成，自动触发自动化测试')
             self.auto_test_pdu()
 
     def auto_test_pdu(self):
         text = self.ui.snLineEdit.text()
-        if len(text) > 19:
+        if len(text) == 20:
             text = text[-20:].upper()
             print('SN ', text, len(text))
             print(self.ui.testItemsComboBox.get_selected())
-            self.ui.snLineEdit.setText(text)
+            #self.ui.snLineEdit.setText(text)
             self.sn = str(text)
             self.totalRounds = 0
             self.auto_test_ui_switch(False)
@@ -681,6 +682,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def write_result_csv(self, mode='w', data=[]):
         # if mode == 'w':
         times = datetime.datetime.now(tz=None)
+        print(times)
         #self.file_create_time = times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
         self.file_create_time = times.strftime("%Y-%m-%d").strip().replace(':', '_')
         self.date_time = times.strftime("%Y-%m-%d").strip()

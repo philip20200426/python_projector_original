@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['projector_lcos_main.py'],
+    ['projector_lcos_main.py', 'projector_pdu.py', 'serial_utils.py', 'log_utils.py'],
     pathex=['package'],
     binaries=[],
     datas=[],
