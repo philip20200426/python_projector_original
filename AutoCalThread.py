@@ -27,12 +27,39 @@ class AutoCalThread(QThread):
         self.CRC = CRC()
         print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6]
+        self.pos_init_finished = False
 
     def run(self):
-        eTime = time.time()
-        point = get_point()
-        self.win.kst_reset()
         print('自动全向梯形标定 开始：', self.positionList)
+        start_time = time.time()
+        if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
+            # 直接到第一个位置，只有第一次在第一個位置時運行
+            cmdList = ['01', '06', '04', '87', '00', '01']
+            cmdChar = ' '.join(cmdList)
+            crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
+            cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
+            cmdHex = bytes.fromhex(cmdChar)
+            if self.ser is not None:
+                self.ser.write(cmdHex)
+            else:
+                print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+            time.sleep(2.6)
+            #os.system('adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+            # time.sleep(2)
+            # 只有自动标定会走到这里
+            # os.system('adb install -r app-debug.apk')
+            print('启动投影仪校准服务')
+            os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+            # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+            # time.sleep(1)
+            os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+            time.sleep(2.9)
+            os.system('adb shell am broadcast -a asu.intent.action.KstReset')
+            os.system('adb shell am broadcast -a asu.intent.action.TofCal')
+            # self.win.showWritePattern()
+            time.sleep(1.9)
+            self.win.showCheckerPattern()
+            self.pos_init_finished = True
         while len(self.positionList) > 0:
             if self.exit:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
@@ -45,7 +72,7 @@ class AutoCalThread(QThread):
                     self.position = 1
                     print('>>>>>>>>>>>>>>>>>>> 跳过数据采集，直接运行算法')
             else:
-                print(' >>>>>>>>>>>>>>>>>>>算法未使能')
+                print(' >>>>>>>>>>>>>>>>>>> 算法未使能')
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
                 print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
@@ -59,25 +86,29 @@ class AutoCalThread(QThread):
                 print(self.positionList)
                 if 0 in self.positionList:
                     self.positionList.remove(0)
+                self.win.pv -= len(self.positionList) * 10
                 print('>>>>>>>>>>>>>>>>>>> %d个姿态有错误, ' % len(self.positionList))
                 print(">>>>>>>>>>>>>>>>>>> ", self.positionList)
                 self.position = 0
                 if len(self.positionList) == 0:
+                    self.win.pv += 5
                     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-                    xTime = time.time()
-                    print('数据抓取及解析耗时：' + str((xTime - eTime)))
+                    end0_time = time.time()
+                    print('数据抓取及解析耗时：' + str((end0_time - start_time)))
                     print(proj_data)
                     if self.enableAlgo:
                         if auto_keystone_calib2(proj_data):
-                            cTime = time.time()
-                            print('算法运行耗时：' + str((cTime - xTime)))
-                            cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/DCIM/'
-                            print(cmd)
+                            end1_ime = time.time()
+                            print('算法运行耗时：' + str((end1_ime - end0_time)))
+                            cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
                             os.system(cmd)
-                            os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
+                            # os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
                             # self.win.clean_data()
-                            print('>>>>>>>>>>>>>>>>>>> 全向标定完成')
-                            set_point(point)
+                            os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+                            self.win.pv += 5
+                            print('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
+                            # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+                            # set_point(point)
                         else:
                             print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
                     else:
@@ -95,6 +126,7 @@ class AutoCalThread(QThread):
                 self.ser.write(cmdHex)
             else:
                 print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+
             time.sleep(self.delay1)
 
             print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
@@ -108,6 +140,33 @@ class AutoCalThread(QThread):
             self.win.cal = False
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (len(self.positionList), self.positionList[self.position]))
             self.position += 1
+            self.win.pv += 10
+        # 标定结束，转台归位
+        self.win.pv = 100
+        cmdList = ['01', '06', '04', '87', '00', '01']
+        cmdChar = ' '.join(cmdList)
+        crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
+        cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
+        cmdHex = bytes.fromhex(cmdChar)
+        if self.ser is not None:
+            print('云台回到第一个位置')
+            self.ser.write(cmdHex)
+        else:
+            print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+
+        # path = globalVar.get_value('DIR_NAME_PRO')
+        # cmd = 'adb pull /sdcard/cal_temp.txt ' + path
+        # print(cmd)
+        # os.system(cmd)
+        # cmd = 'adb pull /sdcard/cal_temp.bin ' + path
+        # print(cmd)
+        # os.system(cmd)
+        # cmd = 'adb pull /sdcard/kst_cal_data_bk.yml ' + path
+        # print(cmd)
+        # os.system(cmd)
+        os.system('adb shell setprop persist.sys.keystone.type 0')
+        os.system('adb shell settings put global tv_auto_focus_asu 1')
+        os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
         self.win.ui.kstCalButton.setEnabled(True)
 
     def parse_projector_data(self):
@@ -124,15 +183,15 @@ class AutoCalThread(QThread):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:5]
-                # print(file, ext, head)
+                full_head = os.path.splitext(file)[0]
+                if ext == ".txt" and head == 'pro_n':
+                    pro_file_list.append(file)
+                    ret["txt"] = ret["png"] + 1
                 if ext == '.bmp' and head == 'pro_n':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_img_list.append(file)
                 if ext == ".png" and head == 'pro_n':
                     ret["png"] = ret["png"] + 1
-                if ext == ".txt" and head == 'pro_n':
-                    pro_file_list.append(file)
-                    ret["txt"] = ret["png"] + 1
         print(pro_img_list)
         print(pro_file_list)
 
@@ -142,6 +201,11 @@ class AutoCalThread(QThread):
         txt_list = []
         for i in range(max(len(pro_img_list), len(pro_file_list))):
             name = "pro_n" + str(i)
+            print('============================= ', name)
+            print('++++++++++++++++++++++++++ ', "".join(list(filter(str.isdigit, name))))
+            if int("".join(list(filter(str.isdigit, name)))) > 7:
+                break
+
             file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'
             img_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.bmp'
             if os.path.exists(file_name):
@@ -151,8 +215,9 @@ class AutoCalThread(QThread):
                 while row < 4:  # 直到读取完文件
                     line = file.readline().strip()  # 读取一行文件，包括换行符
                     if row == 1:
-                        if len(line.split(',')) == 4:
+                        if len(line.split(',')) == 6:
                             tof_list += line.split(',')
+                            print('+++++++++++++++++', tof_list)
                         else:
                             pos_error[i] = -1
                     if row == 2:
@@ -170,6 +235,7 @@ class AutoCalThread(QThread):
                 if imageSize == 2764854:
                     img_list.append(img_name)
                 else:
+                    print('图片尺寸不对')
                     pos_error[i] = -1
             else:
                 pos_error[i] = -1

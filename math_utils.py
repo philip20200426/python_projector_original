@@ -59,7 +59,6 @@ class CRC:
         crc16 = '0xA001'
         # test = '01 06 00 00 00 00'
         test = hex_num.split(' ')
-        print(test)
 
         crc = self.Binary.Hex2Dex(crc)  # 十进制
         crc16 = self.Binary.Hex2Dex(crc16)  # 十进制

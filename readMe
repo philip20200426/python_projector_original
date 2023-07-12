@@ -1,6 +1,8 @@
 pyinstaller --noconsole -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
 pyinstaller --noconsole -p package -F .\projector_lcos_main.py .\projector_pdu.py .\serial_utils.py .\log_utils.py
 
+pyinstaller -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
+
 pyi-makespec -D -c --version-file=file_version_info.txt .\PGUTestBoard.py
 pyinstaller .\projector_lcos_main.spec
 
@@ -8,6 +10,7 @@ git push -u origin kst_cal
 
 
 adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService
+adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity
 adb shell am broadcast -a asu.intent.action.SaveData --ei position 0
 
 2023年4月27日统一整理代码，保存当前状态，后面创建两个分支，分别跟踪下面两个程序：

@@ -22,15 +22,23 @@ DIR_NAME_COPY = 'asuFiles/copy'
 # if len(SN) < 3:
 #     SN = 'ASU0123456789'
 
-SN = ''
-IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
-FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
-DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
-DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
-FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
-CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
+# SN = 'ASU0123456789'
+# IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
+# FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
+# DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
+# DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
+# FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
+# CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
 CALIB_CONFIG_PARA = 'asuFiles/interRefFiles/ex_cam_correct.yml'
 DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
+
+SN = ''
+IMG_AUTO_KEYSTONE = ''
+FILE_AUTO_KEYSTONE = ''
+DIR_NAME_REF = ''
+DIR_NAME_PRO = ''
+FILE_NAME_CSV = ''
+CALIB_DATA_PATH = ''
 
 # 对应标定的姿态数量
 NUM_POSTURE = 6
@@ -40,22 +48,30 @@ CSV_TOF = 2
 CSV_IMU = 3
 CSV_IMG = 4
 
+
 def get_sn():
     global SN
-    SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
-    SN = SN.strip()
-    if len(SN) < 3:
-        SN = 'ASU0123456789'
-    print('投影设备SN: ', len(SN), SN)
+    # SN = os.popen("adb shell cat /sys/devices/platform/asukey/sn").read()
+    # SN = SN.strip()
+    # if len(SN) < 3:
+    #     SN = 'ASU0123456789'
+    # print('投影设备SN: ', len(SN), SN)
     return SN
 
 
+def set_sn(se):
+    global SN
+    SN = se
+    print('SN: ', SN)
+
+
 def create_dir_file():
-    os.system("adb root")
-    os.system("adb remount")
-    os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
-    get_sn()
-    global IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, DIR_NAME_REF, DIR_NAME_PRO, FILE_NAME_CSV, CALIB_DATA_PATH
+    # os.system("adb root")
+    # os.system("adb remount")
+    # os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
+    # get_sn()
+    global SN, IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, DIR_NAME_REF, DIR_NAME_PRO, FILE_NAME_CSV, CALIB_DATA_PATH
+    print('SN: ', SN)
     IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
     FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
     DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
@@ -68,6 +84,8 @@ def create_dir_file():
     globalVar.set_value('DIR_NAME_PRO', DIR_NAME_PRO)
     globalVar.set_value('FILE_NAME_CSV', FILE_NAME_CSV)
     globalVar.set_value('CALIB_DATA_PATH', CALIB_DATA_PATH)
+    globalVar.set_value('DIR_NAME_INTER_REF', DIR_NAME_INTER_REF)
+    globalVar.set_value('SN', SN)
 
     print(SN)
     print(IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE)
@@ -80,18 +98,17 @@ def create_dir_file():
     if not ex:
         os.makedirs(DIR_NAME_COPY)
     dirExists = os.path.isdir(DIR_NAME_REF)
-    if not dirExists:
-        os.makedirs(DIR_NAME_REF)
+    if SN != '' and not dirExists:
         print('创建目录：', DIR_NAME_REF)
+        os.makedirs(DIR_NAME_REF)
     dirExists = os.path.isdir(DIR_NAME_INTER_REF)
     if not dirExists:
-        os.makedirs(DIR_NAME_INTER_REF)
         print('创建目录：', DIR_NAME_INTER_REF)
+        os.makedirs(DIR_NAME_INTER_REF)
     dirExists = os.path.isdir(DIR_NAME_PRO)
-    if not dirExists:
-        os.makedirs(DIR_NAME_PRO)
+    if SN != '' and not dirExists:
         print('创建目录：', DIR_NAME_PRO)
-
+        os.makedirs(DIR_NAME_PRO)
 
     # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
     # IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
@@ -102,18 +119,18 @@ def create_dir_file():
     # CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
     # CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
     # DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
-    ex = os.path.isdir(DIR_NAME_REF)
-    if not ex:
-        os.makedirs(DIR_NAME_REF)
-        print('创建目录：', DIR_NAME_REF)
-    ex = os.path.isdir(DIR_NAME_INTER_REF)
-    if not ex:
-        os.makedirs(DIR_NAME_INTER_REF)
-        print('创建目录：', DIR_NAME_INTER_REF)
-    ex = os.path.isdir(DIR_NAME_PRO)
-    if not ex:
-        os.makedirs(DIR_NAME_PRO)
-        print('创建目录：', DIR_NAME_PRO)
+    # ex = os.path.isdir(DIR_NAME_REF)
+    # if not ex and len(SN) != 0:
+    #     os.makedirs(DIR_NAME_REF)
+    #     print('创建目录：', DIR_NAME_REF)
+    # ex = os.path.isdir(DIR_NAME_INTER_REF)
+    # if not ex:
+    #     os.makedirs(DIR_NAME_INTER_REF)
+    #     print('创建目录：', DIR_NAME_INTER_REF)
+    # ex = os.path.isdir(DIR_NAME_PRO)
+    # if not ex and len(SN) != 0:
+    #     os.makedirs(DIR_NAME_PRO)
+    #     print('创建目录：', DIR_NAME_PRO)
 
 
 def make_charpp(arr):
@@ -123,6 +140,7 @@ def make_charpp(arr):
 def set_point(point):
     # int列表转字符串列表
     point = ','.join(map(str, point))
+    print('set point : ', point)
     # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
     cmd = "adb shell setprop persist.vendor.hwc.keystone "
     cmd = cmd + point
@@ -131,6 +149,12 @@ def set_point(point):
     # time.sleep(1)
     os.system("adb shell service call SurfaceFlinger 1006")
     os.system("adb shell service call SurfaceFlinger 1006")
+
+    cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
+    cmd1 = '"' + point + '"'
+    cmd = cmd0 + cmd1
+    print(cmd)
+    os.system(cmd)
 
 
 def get_point():
@@ -532,11 +556,11 @@ def auto_keystone_calib():
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
     print('相机图片 ', len(pro_file_list), pro_file_list)
-    if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
-        print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
-    else:
-        print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
-        return False
+    # if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
+    #     print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
+    # else:
+    #     print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
+    #     return False
     if len(ref_file_list) > 0:
         ref_img = cv2.imread(ref_file_list[-1])
         ref_img_size = (ref_img.shape[0], ref_img.shape[1])
@@ -681,11 +705,11 @@ def auto_keystone_calib2(pro_data):
                 ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
     print('相机图片 ', len(pro_file_list), pro_file_list)
-    if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
-        print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
-    else:
-        print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
-        return False
+    # if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
+    #     print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
+    # else:
+    #     print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
+    #     return False
     if len(ref_file_list) > 0:
         ref_img = cv2.imread(ref_file_list[-1])
         ref_img_size = (ref_img.shape[0], ref_img.shape[1])
@@ -698,6 +722,13 @@ def auto_keystone_calib2(pro_data):
     depth_data_list = pro_data[1]
     imu_data_list = pro_data[2]
     pro_file_list = pro_data[3]
+    # 保存Tof数据
+    with open('asuFiles/tof.csv', 'a+', newline='') as file:
+        print('------------------保存到csv： ', depth_data_list)
+        data_csv = depth_data_list[:]
+        data_csv.insert(0, SN)
+        writer = csv.writer(file)
+        writer.writerow(data_csv)
 
     error_list = [0] * len(ref_file_list)
     ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,

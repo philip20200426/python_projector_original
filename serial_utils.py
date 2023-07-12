@@ -25,7 +25,7 @@ def get_ports():
     return [i.device for i in port_list]
 
 
-def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE):
+def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, timeout=1):
     ser = serial.Serial(port=port_name,
                         baudrate=baudrate,
                         bytesize=bytesize,
@@ -33,7 +33,7 @@ def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.ST
                         parity=parity,
                         rtscts=False,
                         xonxoff=False,
-                        timeout=None,
+                        timeout=timeout,
                         write_timeout=None)
     return ser
 

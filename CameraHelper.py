@@ -51,7 +51,7 @@ class CameraHelper(QThread):  # 建立一个任务线程类
         self.cam.ExposureTime.set(2000)
 
         # set gain
-        self.cam.Gain.set(10.0)
+        # self.cam.Gain.set(10.0)
 
         # start data acquisition
         self.cam.stream_on()

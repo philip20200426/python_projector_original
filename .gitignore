@@ -1,3 +1,4 @@
+.idea
 dist
 asuFiles
 build
@@ -10,4 +11,6 @@ pro_correct*
 \_\_pycha*
 __pycache__
 ProjCalLibApi/asuFiles
-
+PGUTestBoard.exe
+projector_main.exe
+app-debug.apk
