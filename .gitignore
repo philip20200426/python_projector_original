@@ -9,4 +9,5 @@ ProjCalLib*
 pro_correct*
 \_\_pycha*
 __pycache__
+.idea
 

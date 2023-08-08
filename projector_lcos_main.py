@@ -381,6 +381,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         lcd_items = ["正常", "上下", "左右", "上下左右"]
         self.ui.mirrorComboBox.addItems(lcd_items)
         self.ui.mirrorComboBox.activated.connect(self.slot_lcd_mirror)
+        # self.ui.mirrorComboBox.setCurrentIndex(3)
         self.ui.snLabel = QLabel()
         self.ui.hwLabel = QLabel()
 
@@ -641,7 +642,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                           self.ui.blackFieldCheckBox.isChecked(),
                           self.ui.lightLeakCheckBox.isChecked(),
                           self.ui.displayCheckBox.isChecked(),
-                          self.ui.otherCheckBox.isChecked()]
+                          self.ui.otherCheckBox.isChecked(),
+                          self.ui.temp3Label.text(),
+                          self.ui.temp2Label.text(),
+                          self.ui.temp1Label.text()]
         item_data_list = item_data_list + list(self.dictAutoTestResult.values()) + hand_data_list
         print('item_data_list: ', item_data_list)
         self.write_result_csv('a', item_data_list)
@@ -699,7 +703,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(file_name)
         if not os.path.exists(file_name):
             items_list_head = ['时间', 'SN', '结果', 'NG不良项']
-            items_list_tail = ['限位测试', '脏污黑点', '黑场亮点', '漏光', '显示', '其他']
+            items_list_tail = ['限位测试', '脏污黑点', '黑场亮点', '漏光', '显示', '其他', 'LCD温度', 'LED温度', '环境温度']
             items_list = items_list_head + list(self.dictAutoTestResult.keys()) + items_list_tail
             with open(file_name, mode='a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
@@ -942,7 +946,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
             self.ui.refresh_port.setEnabled(False)
-            # self.slot_lcd_mirror(2)
+            self.slot_lcd_mirror(2)
+            self.ui.mirrorComboBox.setCurrentIndex(2)
             self.ui.hwLabel.setText('')
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
             time.sleep(1)
@@ -1317,7 +1322,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
     print('>>>>>>>>>>>>>>>>>>>> 光机测试开始')
     app = QApplication(sys.argv)
-    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
+    # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
     w = ProjectorWindow()
     w.resize(1239, 655)
     w.show()
