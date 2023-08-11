@@ -41,7 +41,7 @@ cols_voltage = []  # 获取第三列内容
 SW_VERSION = 'SW: 2023042100'
 FILE_PARA = 'pic/param.csv'
 NTC_VOLTAGE_TEMP = 'pic/ntc_vol_temp_list.xls'
-imageList = ["pic/op01_char.jpg", "pic/op02_white.png", "pic/op03_black.png"]
+imageList = ["pic/op01_char.jpg", "pic/op02_white.bmp", "pic/op03_black.bmp", "pic/op04_gray.bmp", "pic/op05_other.bmp"]
 g_img_num = -1
 
 
@@ -52,7 +52,7 @@ def cvCallBack(event, x, y, flags, param):
         print('left button up', x, y, flags)
         global g_img_num
         g_img_num += 1
-        if g_img_num > 2:
+        if g_img_num > 4:
             g_img_num = 0
         show_img(g_img_num)
     elif event == cv2.EVENT_RBUTTONDOWN:
@@ -363,6 +363,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.imageBlackLabel.setScaledContents(True)
         self.ui.imageBlackLabel.setPixmap(pix_black)
         self.ui.imageBlackLabel.mousePressEvent = self.show_black_img
+
+        pix_gray = QPixmap(imageList[3])
+        self.ui.imageGrayLabel.setStyleSheet("border: 3px solid gray")
+        self.ui.imageGrayLabel.setScaledContents(True)
+        self.ui.imageGrayLabel.setPixmap(pix_black)
+        self.ui.imageGrayLabel.mousePressEvent = self.show_gray_img
+
+        pix_other = QPixmap(imageList[4])
+        self.ui.imageOtherLabel.setStyleSheet("border: 3px solid gray")
+        self.ui.imageOtherLabel.setScaledContents(True)
+        self.ui.imageOtherLabel.setPixmap(pix_black)
+        self.ui.imageOtherLabel.mousePressEvent = self.show_other_img
+
         # for i in range(len(imageList)):
         #     pix = QPixmap(imageList[i])
         #     self.ui.imageBlackLabel.setStyleSheet("border: 3px solid gray")
@@ -596,6 +609,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def show_black_img(self, v):
         show_img(2)
+
+    def show_gray_img(self, v):
+        show_img(3)
+
+    def show_other_img(self, v):
+        show_img(4)
 
     def test_finished(self):
         cur_time = datetime.datetime.now()

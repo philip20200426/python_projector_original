@@ -2734,7 +2734,7 @@
       <rect>
        <x>8</x>
        <y>10</y>
-       <width>160</width>
+       <width>91</width>
        <height>90</height>
       </rect>
      </property>
@@ -2754,9 +2754,9 @@
     <widget class="QLabel" name="imageWhiteLabel">
      <property name="geometry">
       <rect>
-       <x>175</x>
+       <x>110</x>
        <y>10</y>
-       <width>160</width>
+       <width>91</width>
        <height>90</height>
       </rect>
      </property>
@@ -2776,9 +2776,9 @@
     <widget class="QLabel" name="imageBlackLabel">
      <property name="geometry">
       <rect>
-       <x>340</x>
+       <x>210</x>
        <y>10</y>
-       <width>160</width>
+       <width>91</width>
        <height>90</height>
       </rect>
      </property>
@@ -2795,6 +2795,50 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
+    <widget class="QLabel" name="imageGrayLabel">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>10</y>
+       <width>91</width>
+       <height>90</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string>灰图</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="imageOtherLabel">
+     <property name="geometry">
+      <rect>
+       <x>410</x>
+       <y>10</y>
+       <width>91</width>
+       <height>90</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string>其他</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -2803,7 +2847,7 @@
      <x>0</x>
      <y>0</y>
      <width>1686</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
