@@ -143,6 +143,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.eCloseCameraButton.clicked.connect(self.close_external_camera)
         self.ui.eTakePictureButton.clicked.connect(self.external_take_picture)
         self.ui.exTimesHorizontalSlider.valueChanged['int'].connect(self.set_exposure_time)
+        self.ui.delay1Edit.textChanged.connect(self.set_exposure_time)
+        self.ui.delay2Edit.textChanged.connect(self.set_exposure_time)
+        self.ui.delay3Edit.textChanged.connect(self.set_exposure_time)
         self.ui.snEdit.textChanged.connect(self.sn_changed)
         self.close_ui()
         # self.ui.frame.setEnabled(False)
@@ -231,6 +234,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 dic = json.load(file)
                 if len(dic) > 0 and 'ExposureTime' in dic.keys():
                     self.ui.exTimeSpinBox.setValue(int(dic['ExposureTime']))
+                if len(dic) > 0 and 'delay1' in dic.keys():
+                    self.ui.delay1Edit.setText(str(dic['delay1']))
+                if len(dic) > 0 and 'delay2' in dic.keys():
+                    self.ui.delay2Edit.setText(str(dic['delay2']))
+                if len(dic) > 0 and 'delay3' in dic.keys():
+                    self.ui.delay3Edit.setText(str(dic['delay3']))
                 print(dic)
                 file.close()
 
@@ -326,8 +335,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def set_exposure_time(self):
         if self.cameraThread is not None:
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
+        if self.auto_cam_af_cal_thread is not None:
             self.auto_cam_af_cal_thread.exposureTime = float(self.ui.exTimeSpinBox.text())
-        dic_para = {'ExposureTime': self.cameraThread.exposureTime}
+        dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()), 'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
         with open('res/para.json', 'w') as file:
             json.dump(dic_para, file)
 
