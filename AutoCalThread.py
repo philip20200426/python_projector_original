@@ -1,3 +1,4 @@
+import json
 import os
 
 import cv2
@@ -31,6 +32,8 @@ class AutoCalThread(QThread):
 
     def run(self):
         print('自动全向梯形标定 开始：', self.positionList)
+        print(self.parse_projector_json())
+        return
         start_time = time.time()
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
@@ -154,16 +157,6 @@ class AutoCalThread(QThread):
         else:
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
 
-        # path = globalVar.get_value('DIR_NAME_PRO')
-        # cmd = 'adb pull /sdcard/cal_temp.txt ' + path
-        # print(cmd)
-        # os.system(cmd)
-        # cmd = 'adb pull /sdcard/cal_temp.bin ' + path
-        # print(cmd)
-        # os.system(cmd)
-        # cmd = 'adb pull /sdcard/kst_cal_data_bk.yml ' + path
-        # print(cmd)
-        # os.system(cmd)
         os.system('adb shell setprop persist.sys.keystone.type 0')
         os.system('adb shell settings put global tv_auto_focus_asu 1')
         os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
@@ -250,3 +243,94 @@ class AutoCalThread(QThread):
         print('解析投影文件耗时', endTime-startTime)
         return pos_error, tof_list, imu_list, img_list
 
+    def parse_projector_json(self):
+        pos_count = 8
+        pos_error = [0] * 8
+
+        dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
+        dir_ref_path = globalVar.get_value('DIR_NAME_REF')
+
+        tof_list = []
+        imu_list = []
+        ref_img_list = []
+        pro_img_list = []
+
+        # 分析json数据
+        file_pro_path = dir_pro_path + "AsuProjectorPara.json"
+        if os.path.isfile(file_pro_path):
+            file = open(file_pro_path, )
+            dic = json.load(file)
+            if len(dic) > 0:
+                for i in range(pos_count):
+                    pos = 'POS' + str(i)
+                    if pos in dic.keys():
+                        if 'tof' in dic[pos].keys():
+                            data = list(map(float, dic[pos]['tof'].split(',')))
+                            if len(data) == 4:
+                                tof_list += data
+                            else:
+                                pos_error[i] = -1
+                        else:
+                            pos_error[i] = -1
+                        if 'imu' in dic[pos].keys():
+                            data = list(map(float, dic[pos]['imu'].split(',')))
+                            if len(data) == 5:
+                                imu_list += data
+                            else:
+                                pos_error[i] = -1
+                        else:
+                            pos_error[i] = -1
+                    else:
+                        pos_error[i] = -1
+            file.close()
+
+            # 分析外部相机图片
+            ref_list = []
+            ret = {"jpg": 0, "png": 0, "bmp": 0}
+            for root, dirs, files in os.walk(dir_ref_path):
+                for file in files:
+                    ext = os.path.splitext(file)[-1].lower()
+                    head = os.path.splitext(file)[0].lower()[:3]
+                    if ext == '.png':
+                        ret["jpg"] = ret["jpg"] + 1
+                    if ext == ".bmp" and head == 'ref':
+                        # ref_img_list.append(dir_ref_path + file)
+                        ref_img = cv2.imread(dir_ref_path + file)
+                        ref_img_size = (ref_img.shape[0], ref_img.shape[1])
+                        print('外部相机尺寸: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
+                        ref_list.append(file)
+                        ret["bmp"] = ret["bmp"] + 1
+
+            # 分析内部相机图片
+            pro_list = []
+            ret = {"jpg": 0, "png": 0, "bmp": 0}
+            for root, dirs, files in os.walk(dir_pro_path):
+                for file in files:
+                    ext = os.path.splitext(file)[-1].lower()
+                    head = os.path.splitext(file)[0].lower()[:3]
+                    if ext == '.png':
+                        ret["jpg"] = ret["jpg"] + 1
+                    if ext == ".bmp" and head == 'pro':
+                        # ref_img_list.append(dir_ref_path + file)
+                        pro_img = cv2.imread(dir_pro_path + file)
+                        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+                        print('内部相机尺寸: ', pro_img_size[0], ' 列Col:', pro_img_size[1])
+                        pro_list.append(file)
+                        ret["bmp"] = ret["bmp"] + 1
+
+            for i in range(pos_count):
+                img = 'ref_n' + str(i) + '.bmp'
+                print(pro_list)
+                if img in ref_list:
+                    ref_img_list.append(dir_ref_path + img)
+                else:
+                    pos_error[i] = -1
+                img = 'pro_n' + str(i) + '.bmp'
+                if img in pro_list:
+                    pro_img_list.append(dir_pro_path + img)
+                else:
+                    pos_error[i] = -1
+
+            if pos_count != ret["bmp"]:
+                print('图片数量不对')
+        return pos_error, tof_list, imu_list, ref_img_list, pro_img_list

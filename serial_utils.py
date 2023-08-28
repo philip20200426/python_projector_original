@@ -25,7 +25,8 @@ def get_ports():
     return [i.device for i in port_list]
 
 
-def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, timeout=1):
+def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE,
+              timeout=1):
     ser = serial.Serial(port=port_name,
                         baudrate=baudrate,
                         bytesize=bytesize,
@@ -36,6 +37,14 @@ def open_port(port_name, baudrate, bytesize=serial.EIGHTBITS, stopbits=serial.ST
                         timeout=timeout,
                         write_timeout=None)
     return ser
+
+
+def ser_send(ser, cmd_hex):
+    try:
+        ser.write(cmd_hex)
+    except serial.SerialException:
+        print('写入时串口异常')
+        return
 
 
 def str2hex(s):
@@ -223,7 +232,7 @@ def asu_pdu_parse_one_frame(message):
             pass
         command = message[2]
         length = message[3]
-        #print("parse : ", command, dataList)
+        # print("parse : ", command, dataList)
         # assert len(message) == total_length * 2
         return command, length, dataList
 

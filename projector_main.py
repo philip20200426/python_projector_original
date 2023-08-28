@@ -5,6 +5,7 @@ import json
 import re
 import struct
 
+import serial
 import yaml
 from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor
 
@@ -36,7 +37,7 @@ import os, sys
 from utils import check_hex, move_file
 from projector_cal import Ui_MainWindow
 import time
-from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame
+from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame, ser_send
 import shutil
 from ctypes import *
 
@@ -244,7 +245,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 file.close()
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
-        self.ui.previewCameraLabel.setPixmap(image)
+        try:
+            self.ui.previewCameraLabel.setPixmap(image)
+        except:
+            print('图片显示异常', image)
         return None
 
     def close_ui(self):
@@ -337,7 +341,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
         if self.auto_cam_af_cal_thread is not None:
             self.auto_cam_af_cal_thread.exposureTime = float(self.ui.exTimeSpinBox.text())
-        dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()), 'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
+        dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
+                    'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
         with open('res/para.json', 'w') as file:
             json.dump(dic_para, file)
 
@@ -401,10 +406,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # print(cmd_char)
             cmd_hex = bytes.fromhex(cmd_char)
             if self.current_port is not None:
-                try:
-                    self.current_port.write(cmd_hex)
-                except:
-                    print('串口写入异常')
+                ser_send(self.current_port, cmd_hex)
             else:
                 print('>>>>>>>>>>>>>>>>>>>> 串口异常')
 
@@ -420,10 +422,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 # print(cmd_char)
                 cmd_hex = bytes.fromhex(cmd_char)
                 if self.current_port is not None:
-                    try:
-                        self.current_port.write(cmd_hex)
-                    except:
-                        print('串口写入异常')
+                    ser_send(self.current_port, cmd_hex)
                 else:
                     print('>>>>>>>>>>>>>>>>>>>> 串口异常')
             else:
@@ -437,10 +436,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 # print(cmd_char)
                 cmd_hex = bytes.fromhex(cmd_char)
                 if self.current_port is not None:
-                    try:
-                        self.current_port.write(cmd_hex)
-                    except:
-                        print('串口写入异常')
+                    ser_send(self.current_port, cmd_hex)
                 else:
                     print('>>>>>>>>>>>>>>>>>>>> 串口异常')
             time.sleep(1)
@@ -454,10 +450,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # print(cmd_char)
         cmd_hex = bytes.fromhex(cmd_char)
         if self.current_port is not None:
-            try:
-                self.current_port.write(cmd_hex)
-            except:
-                print('串口写入异常')
+            ser_send(self.current_port, cmd_hex)
         else:
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
         # self.ui.rotateButton.setEnabled(True)
@@ -475,7 +468,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # print(cmd_char)
         cmd_hex = bytes.fromhex(cmd_char)
         if self.current_port is not None:
-            self.current_port.write(cmd_hex)
+            ser_send(self.current_port, cmd_hex)
         else:
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
         if self.ui.enAutoTofKstCheckBox.isChecked():
@@ -483,12 +476,36 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print('>>>>>>>>>>>>>>>>>>>> 开始执行自动梯形校正')
             self.auto_keystone_tof()
 
+    def serial_send(self, cmd_list):
+        pass
+
     def auto_focus_vision(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusVision")
 
     def auto_focus_tof(self):
-        os.system(
-            'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+        create_dir_file()
+        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
+        time.sleep(float(self.ui.delay2Edit.text()))
+        self.pull_data()
+        position, target_pos = auto_focus_tof()
+        if position < 0 or position > 2900 or target_pos < 0 or target_pos > 2900:
+            print('数据异常 ', position, target_pos)
+        print('当前马达位置:' + str(position) + ',目标位置:' + str(target_pos))
+        if target_pos > position:
+            direction = 2
+            target_steps = target_pos - position
+        else:
+            target_steps = position - target_pos
+            direction = 5
+        cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
+        cmd1 = str(direction)
+        cmd2 = ' --ei value '
+        cmd3 = str(target_steps)
+        cmd = cmd0 + cmd1 + cmd2 + cmd3
+        print(cmd)
+        os.system(cmd)
+        # os.system(
+        #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
         # os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
     def auto_keystone_tof(self):
@@ -498,7 +515,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        create_dir_file()
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
         time.sleep(float(self.ui.delay2Edit.text()))
         self.pull_data()
@@ -606,6 +622,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autofocus_cal_thread.start()
 
     def kst_auto_calibrate(self):
+
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return

@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import time
 from ctypes import *
@@ -223,6 +224,37 @@ if hasattr(dll, 'ReferenceCamCalib'):
                                     error_list)
         return error_list
 
+if hasattr(dll, 'AutofocusTOFRL'):
+    def auto_focus_tof_api(calib_data_path,
+                           tof_data_size,
+                           imu_data_size,
+                           depth_data,
+                           imu_data,
+                           steps):
+        dll.AutofocusTOFRL.argtypes = [c_char_p,
+                                       c_int,
+                                       c_int,
+                                       POINTER(c_double),
+                                       POINTER(c_double),
+                                       POINTER(c_double)]
+        print('>>>>>>>>>AutofocusTOFRL>>>>>>>>>>>', tof_data_size, depth_data, imu_data_size, imu_data)
+        dll.KeystoneCorrectTOF.restype = c_int
+        calib_data_path = create_string_buffer(calib_data_path.encode('utf-8'))
+        tof_data_size = c_int(tof_data_size)
+        imu_data_size = c_int(imu_data_size)
+        depth_data = (c_double * len(depth_data))(*list(map(int, depth_data)))
+        imu_data = (c_double * len(imu_data))(*list(map(float, imu_data)))
+        # steps = (c_double * len(steps))(*steps)
+        steps = c_double(steps)
+        print('>>>>>>>>>>>>>>>>>>>> Call AutofocusTOFRL')
+        ret = dll.AutofocusTOFRL(calib_data_path,
+                                 tof_data_size,
+                                 imu_data_size,
+                                 depth_data,
+                                 imu_data,
+                                 byref(steps))
+        return steps.value
+
 if hasattr(dll, 'KeystoneCorrectTOF'):
     def keystone_correct_tof_api(calib_data_path,
                                  tof_data_size, imu_data_size,
@@ -388,6 +420,48 @@ def reference_cam_calib():
     else:
         print('>>>>>>>>>>>>>>>>>>>> 外置相机内参标定需要12张图片，实际图片数量是', list_size)
         return False
+
+
+def auto_focus_tof():
+    # 解析TOF数据及马达位置
+    depth_data = []
+    imu_data = []
+    position = 0
+    location = 0
+    total_steps = 0
+    steps = 0.0
+    dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
+    file_pro_path = dir_pro_path + "AsuProjectorPara.json"
+    print(dir_pro_path)
+    if os.path.isfile(file_pro_path):
+        file = open(file_pro_path, )
+        dic = json.load(file)
+        if len(dic) > 0 and 'KST' in dic.keys() and 'tof' in dic['KST'].keys():
+            if dic['KST']['tof'] != '':
+                depth_data = dic['KST']['tof'].split(',')
+        if len(dic) > 0 and 'KST' in dic.keys() and 'imu' in dic['KST'].keys():
+            if dic['KST']['imu'] != '':
+                imu_data = dic['KST']['imu'].split(',')
+        if len(dic) > 0 and 'KST' in dic.keys() and 'location' in dic['KST'].keys():
+            if dic['KST']['location'] != '':
+                location = dic['KST']['location']
+        if len(dic) > 0 and 'KST' in dic.keys() and 'position' in dic['KST'].keys():
+            if dic['KST']['position'] != '':
+                position = dic['KST']['position']
+        if len(dic) > 0 and 'KST' in dic.keys() and 'totalSteps' in dic['KST'].keys():
+            if dic['KST']['totalSteps'] != '':
+                total_steps = dic['KST']['totalSteps']
+        file.close()
+    print(depth_data, location, position, total_steps, imu_data)
+    target_steps = auto_focus_tof_api(CALIB_DATA_PATH,
+                                      len(depth_data),
+                                      len(imu_data),
+                                      depth_data,
+                                      imu_data,
+                                      steps)
+    # 控制马达
+    print('>>>>>>>>>>>>>>>>>>>', position, target_steps, steps)
+    return location, int(target_steps)
 
 
 def keystone_correct_tof():
@@ -710,6 +784,51 @@ def auto_keystone_calib2(pro_data):
     # else:
     #     print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
     #     return False
+    if len(ref_file_list) > 0:
+        ref_img = cv2.imread(ref_file_list[-1])
+        ref_img_size = (ref_img.shape[0], ref_img.shape[1])
+        print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
+    if len(pro_file_list) > 0:
+        pro_img = cv2.imread(pro_file_list[-1])
+        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+        print(pro_img_size[0], pro_img_size[1])
+
+    depth_data_list = pro_data[1]
+    imu_data_list = pro_data[2]
+    pro_file_list = pro_data[3]
+    # 保存Tof数据
+    with open('asuFiles/tof.csv', 'a+', newline='') as file:
+        print('------------------保存到csv： ', depth_data_list)
+        data_csv = depth_data_list[:]
+        data_csv.insert(0, SN)
+        writer = csv.writer(file)
+        writer.writerow(data_csv)
+
+    error_list = [0] * len(ref_file_list)
+    ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,
+                                    len(ref_file_list), ref_img_size, pro_img_size,
+                                    len(depth_data_list) / len(ref_file_list), len(imu_data_list) / len(ref_file_list),
+                                    ref_file_list, pro_file_list, depth_data_list, imu_data_list, robot_pose_list,
+                                    error_list)
+    for i in range(len(ret)):
+        error_list[i] = ret[i]
+    print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
+    if os.path.exists(CALIB_DATA_PATH):
+        print('>>>>>>>>>>>>>>>>>>>> 标定算法生成文件 ', CALIB_DATA_PATH)
+    else:
+        print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
+    return True
+
+
+def auto_keystone_calib3(pro_data):
+    # 拿到所有数据 n组，每组两个照片，imu，tof
+    # file_list_ref = os.listdir(DIR_NAME_E)
+    # file_list_pro = os.listdir(DIR_NAME_P)
+    # print(len(file_list_ref), file_list_ref, len(file_list_pro), file_list_pro)
+    imu_data_list = [0.0, 1.0, 2.0, 3.0, 4.0]
+    robot_pose_list = [0, 0, 0, -15, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, -15, -15, 0, 15, -15, 0, -15, 15, 0, -15, 15, 0,
+                       15]
+    # error_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 10, 11, 12, 13]
     if len(ref_file_list) > 0:
         ref_img = cv2.imread(ref_file_list[-1])
         ref_img_size = (ref_img.shape[0], ref_img.shape[1])
