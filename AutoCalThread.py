@@ -156,14 +156,16 @@ class AutoCalThread(QThread):
             self.ser.write(cmdHex)
         else:
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-
+        # 算法切换到ASU
         os.system('adb shell setprop persist.sys.keystone.type 0')
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 1')
+        # 自动垂直校正
+        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+        # 位移自动对焦
         os.system('adb shell settings put global tv_auto_focus_asu 1')
+        # 位移全向自动校正
         os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
         os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
         os.system('adb shell settings put global tv_auto_focus_poweron 1')
-        os.system('adb shell settings put system tv_screen_saver 1')
         os.system('adb reboot')
         self.win.ui.kstCalButton.setEnabled(True)
 

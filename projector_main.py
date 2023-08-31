@@ -574,6 +574,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         #os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
+        # 算法切换到ASU
+        os.system('adb shell setprop persist.sys.keystone.type 0')
+        # 自动垂直校正
+        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+        # 位移自动对焦
+        os.system('adb shell settings put global tv_auto_focus_asu 1')
+        # 位移全向自动校正
+        os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+        os.system('adb shell settings put global tv_auto_focus_poweron 1')
+        print('恢复所有开关到默认状态')
+        time.sleep(1)
         os.system('adb reboot')
 
     def auto_focus_motor(self):
@@ -715,7 +727,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
-        os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+        # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
         self.auto_cam_af_cal_thread.mRunning = False
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.exit = True
@@ -730,7 +742,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd = cmd0 + cmd1
         # print(cmd)
         # os.system(cmd)
-        os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+        # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
 
     def kst_reset(self):
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
