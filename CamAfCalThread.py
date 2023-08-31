@@ -26,6 +26,7 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         self.frameNum = 0
         self.mRunning = False
         self.mRailPosition = -100
+        self.mLaplace = 0
         print('>>>>>>>>>> CamAfCalThread')
 
     def openCamera(self):
@@ -69,14 +70,15 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         print("Camera Init Finished")
         last_time = time.time()
 
+        la_list = []
         while True:
             now_time = time.time()
-            Fmc4030.rail_forward(self.ser, 0, 10)
-            self.mRailPosition = Fmc4030.rail_position(self.ser)
-            if self.mRailPosition > 1000:
-                print('导轨运行结束')
-                break
-            time.sleep(1)
+            # Fmc4030.rail_forward(self.ser, 0, 10)
+            # self.mRailPosition = Fmc4030.rail_position(self.ser)
+            # if self.mRailPosition > 1000:
+            #     print('导轨运行结束')
+            #     break
+            time.sleep(0.02)
             #print('Preview FPS ', now_time - last_time)
             # time.sleep(1)
             # img_green = np.zeros([400, 600], np.uint8)
@@ -91,7 +93,7 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                 return
             self.frameNum += 1
             # 曝光时间单位:us
-            self.cam.ExposureTime.set(self.exposureTime)
+            #self.cam.ExposureTime.set(self.exposureTime)
             # get raw image
             raw_image = self.cam.data_stream[0].get_image()
             if raw_image is None:
@@ -101,13 +103,24 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             # create numpy array with data from raw image
             numpy_image = raw_image.get_numpy_array()
             size = numpy_image.shape
-            print('Image size: ', size[0], size[1])
+            # print('Image size: ', size[0], size[1])
             # dis = numpy_image.shape
             laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
-            print('---------------------', self.mRailPosition, round(laplacian, 2))
+            # print('---------------------', self.mRailPosition, round(laplacian, 2))
+            la_list.append(laplacian)
+            sum_la = 0
+            for i in range(len(la_list)):
+                sum_la += la_list[i]
+            if len(la_list) > 5:
+                la_list.pop(0)
+            print(la_list)
+            self.mLaplace = round(sum_la/len(la_list))
+
+
+            # self.mLaplace = round(laplacian, 2)
             # imageVar = cv2.convertScaleAbs(laplacian)
             # print('+++++++++++++++++++++ ', imageVar, (now_time - last_time))
-            view = str(round(int((now_time - last_time)*1000), 2)) + ' L:' + str(round(laplacian, 2))
+            view = str(round(int((now_time - last_time)*1000), 2)) + ' Lapus:' + str(round(laplacian, 2))
             # 在图片添加文字，参数为，图片，绘制文字，位置，字体类型，字体大小，颜色，线条类型
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(numpy_image, view, (800, 100), font, 3, (255, 255, 255), 8)

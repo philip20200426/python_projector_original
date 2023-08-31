@@ -101,6 +101,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar.addWidget(self.statusBar_4, 1)
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
+        self.ui.writeDataNv.clicked.connect(self.write_to_nv)
+        self.ui.saveLa.clicked.connect(self.save_laplace)
+        self.ui.cleanLa.clicked.connect(self.clean_laplace)
         self.ui.railForewardButton.clicked.connect(self.rail_forward)
         self.ui.railReversalButton.clicked.connect(self.rail_reversal)
         self.ui.railPositionButton.clicked.connect(self.rail_absolute_position)
@@ -224,7 +227,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         ## 设置进度条文字格式
         self.ui.autoCalProgressBar.setFormat(
             'Loaded  %p%'.format(self.ui.autoCalProgressBar.value() - self.ui.autoCalProgressBar.minimum()))
-
+        self.lap_list = []
         # 初始化外部相机曝光参数
         dir_exit = os.path.isdir('res')
         if not dir_exit:
@@ -476,9 +479,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print('>>>>>>>>>>>>>>>>>>>> 开始执行自动梯形校正')
             self.auto_keystone_tof()
 
-    def serial_send(self, cmd_list):
-        pass
-
     def auto_focus_vision(self):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusVision")
 
@@ -566,28 +566,69 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             return False
 
+    def write_to_nv(self):
+        cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
+        print(cmd)
+        os.system(cmd)
+        os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+        #os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
+        time.sleep(3)
+        os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
+        os.system('adb reboot')
+
     def auto_focus_motor(self):
+        print(self.autofocus_cal_thread.dis_steps)
+        self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(float(self.ui.pos11StepsEdit.text())*50)
+        print(self.autofocus_cal_thread.dis_steps)
+        file_path = globalVar.get_value('CALIB_DATA_PATH')
+        print(file_path)
+        prefix = 'FocusA: [ '
+        suffix = ' ]\n'
+        da = prefix + ",".join(list(map(str, self.autofocus_cal_thread.dis_steps))) + suffix
+        with open(file_path, "a") as f1:
+            f1.write(da)
+        with open(file_path, "r") as f1:
+            print(f1.read())
+        # self.win.ui.autoFocusLabel.setText('开始写入数据')
+        # cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
+        # print(cmd)
+        # os.system(cmd)
+        # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+
         # # 提取字符串里的数字
         # sss = 'pro_123uii'
         # print("".join(list(filter(str.isdigit, sss))))
-        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        os.system('adb shell settings put global tv_auto_focus_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 0')
-        os.system('adb shell settings put system tv_screen_saver 0')
-        time.sleep(2.6)
-        cmd = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000'
-        print(cmd)
-        os.system(cmd)
-        time.sleep(3.6)
-        cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value '
-        pos11_steps = self.ui.pos11StepsEdit.text()
-        cmd1 = pos11_steps
-        cmd = cmd0 + cmd1
-        print(cmd)
-        os.system(cmd)
+        # os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        # os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+        # os.system('adb shell settings put global tv_auto_focus_asu 0')
+        # os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
+        # os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+        # os.system('adb shell settings put global tv_auto_focus_poweron 0')
+        # os.system('adb shell settings put system tv_screen_saver 0')
+        # time.sleep(2.6)
+        # cmd = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000'
+        # print(cmd)
+        # os.system(cmd)
+        # time.sleep(3.6)
+        # cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value '
+        # pos11_steps = self.ui.pos11StepsEdit.text()
+        # cmd1 = pos11_steps
+        # cmd = cmd0 + cmd1
+        # print(cmd)
+        # os.system(cmd)
+
+    def save_laplace(self):
+        self.lap_list.append(self.auto_cam_af_cal_thread.mLaplace)
+        print(self.lap_list, len(self.lap_list))
+        total = 0
+        for i in range(len(self.lap_list)):
+            total += self.lap_list[i]
+        print(max(self.lap_list), round(total/len(self.lap_list), 2))
+        if len(self.lap_list) > 9:
+            self.lap_list.clear()
+
+    def clean_laplace(self):
+        self.lap_list.clear()
 
     def auto_cam_af_cal(self):
         # rail_position(self.current_port)
@@ -673,7 +714,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system('adb uninstall com.nbd.tofmodule')
 
     def stop_auto_cal(self):
-        rail_stop(self.current_port)
+        # rail_stop(self.current_port)
         os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
         self.auto_cam_af_cal_thread.mRunning = False
         if self.auto_cal_thread is not None:

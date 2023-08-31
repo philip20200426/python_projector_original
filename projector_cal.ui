@@ -420,19 +420,6 @@
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="motorForwardButton">
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>马达前进</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="motorBackButton">
        <property name="maximumSize">
         <size>
@@ -441,7 +428,20 @@
         </size>
        </property>
        <property name="text">
-        <string>马达后退</string>
+        <string>远离墙:左</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="motorForwardButton">
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>接近墙:右</string>
        </property>
       </widget>
      </item>
@@ -454,7 +454,7 @@
         </size>
        </property>
        <property name="text">
-        <string>1000</string>
+        <string>100</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -1657,7 +1657,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>对焦标定</string>
+     <string>保存数据</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="pos11StepsEdit">
@@ -1676,7 +1676,7 @@
      </size>
     </property>
     <property name="text">
-     <string>1500</string>
+     <string>2</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -1685,23 +1685,23 @@
    <widget class="QPushButton" name="autoFocusMotorButton">
     <property name="geometry">
      <rect>
-      <x>1570</x>
+      <x>1510</x>
       <y>700</y>
-      <width>91</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>马达归位</string>
+     <string>计算并保存</string>
     </property>
    </widget>
    <widget class="QLabel" name="autoFocusLabel">
     <property name="geometry">
      <rect>
-      <x>1370</x>
-      <y>710</y>
-      <width>181</width>
-      <height>20</height>
+      <x>1340</x>
+      <y>699</y>
+      <width>151</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -1839,6 +1839,45 @@
      <string>反转</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="saveLa">
+    <property name="geometry">
+     <rect>
+      <x>1290</x>
+      <y>790</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>保存</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="cleanLa">
+    <property name="geometry">
+     <rect>
+      <x>1370</x>
+      <y>790</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>清楚</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="writeDataNv">
+    <property name="geometry">
+     <rect>
+      <x>1610</x>
+      <y>700</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>写入数据</string>
+    </property>
+   </widget>
    <zorder>previewCameraLabel</zorder>
    <zorder>frame</zorder>
    <zorder>frame_2</zorder>
@@ -1868,6 +1907,9 @@
    <zorder>railPositionButton</zorder>
    <zorder>railForewardButton</zorder>
    <zorder>railReversalButton</zorder>
+   <zorder>saveLa</zorder>
+   <zorder>cleanLa</zorder>
+   <zorder>writeDataNv</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

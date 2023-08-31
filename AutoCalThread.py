@@ -32,8 +32,8 @@ class AutoCalThread(QThread):
 
     def run(self):
         print('自动全向梯形标定 开始：', self.positionList)
-        print(self.parse_projector_json())
-        return
+        # print(self.parse_projector_json())
+        # return
         start_time = time.time()
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
@@ -158,8 +158,13 @@ class AutoCalThread(QThread):
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
 
         os.system('adb shell setprop persist.sys.keystone.type 0')
+        os.system('adb shell settings put global AsuAutoKeyStoneEnable 1')
         os.system('adb shell settings put global tv_auto_focus_asu 1')
         os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+        os.system('adb shell settings put global tv_auto_focus_poweron 1')
+        os.system('adb shell settings put system tv_screen_saver 1')
+        os.system('adb reboot')
         self.win.ui.kstCalButton.setEnabled(True)
 
     def parse_projector_data(self):

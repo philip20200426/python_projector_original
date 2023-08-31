@@ -29,33 +29,32 @@ class AutoFocusCalThread(QThread):
         print('>>>>>>>>>>>>>>>>>>> Init AutoFocusCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6]
         self.pos_init_finished = False
+        self.dis_steps = [-1, -1]
 
     def run(self):
-        print('自动对焦标定 开始：')
+        print('开始保存数据：')
         start_time = time.time()
         pos11_steps = self.win.ui.pos11StepsEdit.text()
 
-        self.win.ui.autoFocusLabel.setText('安装标定APK')
-        os.system('adb install -r app-debug.apk')
+        # self.win.ui.autoFocusLabel.setText('安装标定APK')
+        # os.system('adb install -r app-debug.apk')
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         self.win.ui.autoFocusLabel.setText('启动标定服务')
         time.sleep(2.6)
-        os.system('adb shell am broadcast -a asu.intent.action.TofCal')
-        self.win.ui.autoFocusLabel.setText('启动TOF校准')
-        time.sleep(1)
+        # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
+        # self.win.ui.autoFocusLabel.setText('启动TOF校准')
+        # time.sleep(1)
         self.win.ui.autoFocusLabel.setText('保存位置数据')
         cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
         cmd1 = '11'
         cmd = cmd0 + cmd1
         os.system(cmd)
 
-        time.sleep(3.6)
+        time.sleep(2.9)
         self.win.ui.autoFocusLabel.setText('开始分析数据')
         self.win.pull_data()
-
-        dis_steps = ['-1', pos11_steps]
 
         dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
         file_pro_path = dir_pro_path + "AsuProjectorPara.json"
@@ -64,65 +63,63 @@ class AutoFocusCalThread(QThread):
             dic = json.load(file)
             if len(dic) > 0 and 'POS11' in dic.keys() and 'tof' in dic['POS11'].keys():
                 if dic['POS11']['tof'] != '':
-                    print(dic['POS11']['tof'].split(',')[0])
-                    dis_steps[0] = dic['POS11']['tof'].split(',')[0]
-                    print(pos11_steps)
-            if len(dic) > 0 and 'POS11' in dic.keys() and 'steps' in dic['POS11'].keys():
-                if dic['POS11']['steps'] != '':
-                    print(dic['POS11']['steps'])
-                    dis_steps[1] = str(dic['POS11']['steps'])
-                    if dis_steps[1] != pos11_steps:
-                        self.win.ui.autoFocusLabel.setText('马达位置错误')
-                        print('马达位置错误')
-                        return
+                    # print(dic['POS11']['tof'].split(',')[0])
+                    self.dis_steps[0] = int(dic['POS11']['tof'].split(',')[0])
+            if len(dic) > 0 and 'POS11' in dic.keys() and 'location' in dic['POS11'].keys():
+                if dic['POS11']['location'] != '':
+                    # print(dic['POS11']['location'])
+                    self.dis_steps[1] = dic['POS11']['location']
             file.close()
-        print(dis_steps)
+        location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+        location = location[9:-1]
+        print('TOF:' + str(self.dis_steps[0]) + ',位置:' + str(self.dis_steps[1]) + ',location:' + location)
+        self.dis_steps[1] = int(location)
+        self.win.ui.autoFocusLabel.setText(str(self.dis_steps))
+        # file_path = globalVar.get_value('CALIB_DATA_PATH')
+        # file_pro_path1 = dir_pro_path + "pro_n11.txt"
+        # file_pro_path2 = dir_pro_path + "pro_n12.txt"
+        # if os.path.exists(file_pro_path1):
+        #     tof_list = []
+        #     file = open(file_pro_path1)
+        #     row = 0
+        #     while row < 4:  # 直到读取完文件
+        #         line = file.readline().strip()  # 读取一行文件，包括换行符
+        #         if row == 1:
+        #             tof_list += line.split(',')
+        #             dis_steps[0] = tof_list[0]
+        #             break
+        #         row += 1
+        #     file.close()  # 关闭文件
 
-        file_path = globalVar.get_value('CALIB_DATA_PATH')
-        file_pro_path1 = dir_pro_path + "pro_n11.txt"
-        file_pro_path2 = dir_pro_path + "pro_n12.txt"
-        if os.path.exists(file_pro_path1):
-            tof_list = []
-            file = open(file_pro_path1)
-            row = 0
-            while row < 4:  # 直到读取完文件
-                line = file.readline().strip()  # 读取一行文件，包括换行符
-                if row == 1:
-                    tof_list += line.split(',')
-                    dis_steps[0] = tof_list[0]
-                    break
-                row += 1
-            file.close()  # 关闭文件
+            # prefix = 'FocusA: [ '
+            # suffix = ' ]\n'
+            # da = prefix + ",".join(dis_steps) + suffix
+            # print(da)
+            # with open(file_path, "a") as f1:
+            #     f1.write('%YAML:1.0\n')
+            #     f1.write('---\n')
+            #     f1.write(da)
+            # self.win.ui.autoFocusLabel.setText('开始写入数据')
+            # cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
+            # print(cmd)
+            # os.system(cmd)
+            # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+        # self.win.ui.autoFocusLabel.setText('标定完成')
+        # else:
+        #     self.win.ui.autoFocusLabel.setText('数据异常')
+        #     print(file_pro_path1, '文件不存在')
 
-            prefix = 'FocusA: [ '
-            suffix = ' ]\n'
-            da = prefix + ",".join(dis_steps) + suffix
-            print(da)
-            with open(file_path, "a") as f1:
-                f1.write('%YAML:1.0\n')
-                f1.write('---\n')
-                f1.write(da)
-            self.win.ui.autoFocusLabel.setText('开始写入数据')
-            cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
-            print(cmd)
-            os.system(cmd)
-            os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-            self.win.ui.autoFocusLabel.setText('标定完成')
-        else:
-            self.win.ui.autoFocusLabel.setText('数据异常')
-            print(file_pro_path1, '文件不存在')
-
-        os.system('adb shell settings put global tv_auto_focus_asu 1')
-        # os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
-        os.system('adb shell setprop persist.sys.keystone.type 0')
-        ksd_para = os.popen('adb shell cat sys/devices/platform/asukey/ksdpara').read()
-        index = ksd_para.find('FocusA')
-        print(ksd_para)
-        result = ksd_para[index+8: index+21]
-        print(len(ksd_para), index, result)
-        self.win.ui.autoFocusLabel.setText(result)
-        os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.txt"')
-        os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.bmp"')
+        # os.system('adb shell settings put global tv_auto_focus_asu 1')
+        # # os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+        # os.system('adb shell setprop persist.sys.keystone.type 0')
+        # ksd_para = os.popen('adb shell cat sys/devices/platform/asukey/ksdpara').read()
+        # index = ksd_para.find('FocusA')
+        # print(ksd_para)
+        # result = ksd_para[index+8: index+21]
+        # print(len(ksd_para), index, result)
+        # self.win.ui.autoFocusLabel.setText(result)
+        # os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.txt"')
+        # os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.bmp"')
 
         # print(index)
 
