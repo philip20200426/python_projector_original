@@ -67,7 +67,6 @@ class AutoCalThread(QThread):
             if self.exit:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
-                self.exit = False
                 print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程')
                 break
             if self.enableAlgo:
@@ -164,10 +163,13 @@ class AutoCalThread(QThread):
         os.system('adb shell settings put global tv_auto_focus_asu 1')
         # 位移全向自动校正
         os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+        #开机相关
         os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
         os.system('adb shell settings put global tv_auto_focus_poweron 1')
-        os.system('adb reboot')
+        if not self.exit:
+            os.system('adb reboot')
         self.win.ui.kstCalButton.setEnabled(True)
+        self.exit = False
 
     def parse_projector_data(self):
         pos_error = [0] * 8
