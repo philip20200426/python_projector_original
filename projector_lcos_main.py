@@ -260,6 +260,9 @@ class AutoTestThread(QThread):
                 if key == 'FAN1-LED' or key == 'FAN2-LCD':
                     self.win.open_pgu_led()
                     print('风扇异常，自动关闭光机显示')
+            if result[1] == 'fail':
+                print(result)
+                self.win.ui.resultLabel.setPixmap(failPix)
             print('>>>>>>>>>>>>>>>>>>>>>>>>>> ', self.win.dictAutoTestResult)
             # self.win.write_result_csv('a', result)
             print(result)
