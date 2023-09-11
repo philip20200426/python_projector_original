@@ -8,8 +8,9 @@ from math_utils import CRC
 
 def init(ser):
     # 归零，设置参数
-    cmd_list = [[]]
+    cmd_list = [[], []]
     cmd_list[0] = ['01', '05', '00', '12', 'FF', '00']
+    cmd_list[1] = ['01', '10', '00', '4E', '00', '02', '04', '43', '48', '00', '00']
     start = time.time()
     i = 0
     while i < len(cmd_list):
@@ -19,7 +20,7 @@ def init(ser):
         else:
             print('返回数据错误，重新发送')
         cur = time.time()
-        if (cur - start) > 3:
+        if (cur - start) > 6:
             print('>>>>>>>>>> 导轨操作超时:', (cur - start))
             return -100
 
@@ -39,8 +40,8 @@ def rail_forward(ser, direction, rel_dis):
         cmd_list[1][3] = '00'
     if direction == 1:
         cmd_list[1][3] = '03'
-    print(cmd_list[0])
-    print(cmd_list[1])
+    # print(cmd_list[0])
+    # print(cmd_list[1])
     start = time.time()
     i = 0
     while i < len(cmd_list):
@@ -48,7 +49,7 @@ def rail_forward(ser, direction, rel_dis):
         if data_list[0:3] == cmd_list[i][0:3]:
             i += 1
         cur = time.time()
-        if (cur - start) > 3:
+        if (cur - start) > 5.6:
             print('>>>>>>>>>> 导轨操作超时:', (cur - start))
             return -100
 
@@ -82,7 +83,7 @@ def rail_position(ser):
     data_list = rail_send(ser, cmd_list)
     if data_list[0:2] == cmd_list[0:2]:
         pos = int(hex_to_float(''.join(data_list[3:7])))
-        print(pos)
+        # print(pos)
     else:
         pos = -100
     return pos
@@ -105,7 +106,7 @@ def rail_send(ser, cmd_list):
     cmd_list.append(crc_l)
     cmd_list.append(crc_h)
     cmd_char = ' '.join(cmd_list)
-    print('rail_send,发送数据:', cmd_char)
+    # print('rail_send,发送数据:', cmd_char)
     cmd_hex = bytes.fromhex(cmd_char)
     if ser is not None:
         ser.write(cmd_hex)
@@ -126,7 +127,7 @@ def rail_send(ser, cmd_list):
         else:
             cur_data = data.hex()
             data_list = re.findall('.{2}', cur_data)
-            print('rail_send,返回数据:', data_list)
+            # print('rail_send,返回数据:', data_list)
             return data_list
 
 
