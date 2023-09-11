@@ -7,7 +7,7 @@ import struct
 
 import serial
 import yaml
-from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor
+from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor, QPixmap
 
 import Fmc4030
 import pro_correct_wrapper
@@ -104,6 +104,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.writeDataNv.clicked.connect(self.write_to_nv)
         self.ui.saveLa.clicked.connect(self.save_laplace)
         self.ui.cleanLa.clicked.connect(self.clean_laplace)
+        self.ui.openRotateButton.clicked.connect(self.open_rotate)
+        self.ui.closeRotateButton.clicked.connect(self.close_rotate)
+        self.ui.openRailButton.clicked.connect(self.open_rail)
+        self.ui.closeRailButton.clicked.connect(self.close_rail)
+        self.ui.currentPositionButton.clicked.connect(self.get_rail_position)
+
+
+        self.ui.resetRailButton.clicked.connect(self.reset_rail)
         self.ui.railForewardButton.clicked.connect(self.rail_forward)
         self.ui.railReversalButton.clicked.connect(self.rail_reversal)
         self.ui.railPositionButton.clicked.connect(self.rail_absolute_position)
@@ -151,7 +159,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.delay2Edit.textChanged.connect(self.set_exposure_time)
         self.ui.delay3Edit.textChanged.connect(self.set_exposure_time)
         self.ui.snEdit.textChanged.connect(self.sn_changed)
-        self.close_ui()
+        self.ui.frame_2.hide()
+        # self.close_ui()
         # self.ui.frame.setEnabled(False)
         # self.ui.frame_left_up.setEnabled(False)
         # self.init_status_bar()
@@ -165,8 +174,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autofocus_cal_thread = None
         self.autofocus_cal_thread = AutoFocusCalThread(self.current_port, self)
         self.auto_cam_af_cal_thread = None
-        self.auto_cam_af_cal_thread = CamAfCalThread(self, float(self.ui.exTimeSpinBox.text()))
-        self.auto_cam_af_cal_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
+        self.auto_cam_af_cal_thread = CamAfCalThread(self.current_port, self)
+        # self.auto_cam_af_cal_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
         # self.update_data_timer = QTimer()
         # self.update_data_timer.timeout.connect(self.update_data)
@@ -249,7 +258,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
         try:
-            self.ui.previewCameraLabel.setPixmap(image)
+            if self.cameraThread.mRunning or self.auto_cam_af_cal_thread.mRunning:
+                self.ui.previewCameraLabel.setPixmap(image)
+            else:
+                self.ui.previewCameraLabel.setPixmap(QPixmap(""))
+                self.ui.previewCameraLabel.setText('CAM已关闭')
+                print('关闭工业相机')
         except:
             print('图片显示异常', image)
         return None
@@ -305,11 +319,20 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.stepsLabel.setEnabled(True)
         self.ui.sumStepsLabel.setEnabled(True)
 
+    def get_rail_position(self):
+        self.ui.currentPositionLabel.setText(str(Fmc4030.rail_position(self.current_port)))
+
+    def reset_rail(self):
+        init(self.current_port)
+
     def rail_forward(self):
-        Fmc4030.rail_forward(self.current_port, 0, int(self.ui.railForewardEdit.text()))
+        direction = 1
+        if float(self.ui.railForewardEdit.text()) > 0:
+            direction = 0
+        Fmc4030.rail_forward(self.current_port, direction, abs(float(self.ui.railForewardEdit.text())))
 
     def rail_reversal(self):
-        Fmc4030.rail_forward(self.current_port, 1, int(self.ui.railReversalEdit.text()))
+        Fmc4030.rail_forward(self.current_port, 1, abs(float(self.ui.railForewardEdit.text())))
 
     def rail_absolute_position(self):
         Fmc4030.rail_forward_pos(self.current_port, float(self.ui.railPositionEdit.text()))
@@ -335,15 +358,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def close_external_camera(self):
         if self.cameraThread.mRunning:
             self.cameraThread.closeCamera()
-            self.ui.previewCameraLabel.hide()
+            self.ui.previewCameraLabel.clear()
         else:
             print("External camera is not opened")
 
     def set_exposure_time(self):
         if self.cameraThread is not None:
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
-        if self.auto_cam_af_cal_thread is not None:
-            self.auto_cam_af_cal_thread.exposureTime = float(self.ui.exTimeSpinBox.text())
         dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
                     'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
         with open('res/para.json', 'w') as file:
@@ -377,11 +398,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def rotating_platform_angle(self):
         # degree: yaw roll pitch
         # self.ui.rotateButton.setEnabled(False)
+
+        self.open_rotate()
         if len(self.ui.xyEdit.text()) == 0 or len(self.ui.xzEdit.text()) == 0 or len(self.ui.yzEdit.text()) == 0:
             print('输入角度不能为空')
             return
         polarity = True
         degree = [int(self.ui.xyEdit.text()) * 100, int(self.ui.xzEdit.text()) * 100, int(self.ui.yzEdit.text()) * 100]
+        print('调整转台角度：', degree)
         cmd_list = [['01', '06', '04', '72', '00', '00'], ['01', '06', '04', '70', '00', '00'],
                     ['01', '06', '04', 'ae', '00', '00']]
         # 位置0：cmd_list = [['01', '06', '04', '4c', '00', '00'], ['01', '06', '04', '4e', '00', '00'], ['01', '06', '04', '9c', '00', '00']]
@@ -571,7 +595,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(cmd)
         os.system(cmd)
         os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-        #os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
+        # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
         # 算法切换到ASU
@@ -590,7 +614,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def auto_focus_motor(self):
         print(self.autofocus_cal_thread.dis_steps)
-        self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(float(self.ui.pos11StepsEdit.text())*50)
+        self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
+            float(self.ui.pos11StepsEdit.text()) * 50)
         print(self.autofocus_cal_thread.dis_steps)
         file_path = globalVar.get_value('CALIB_DATA_PATH')
         print(file_path)
@@ -630,26 +655,30 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
 
     def save_laplace(self):
-        self.lap_list.append(self.auto_cam_af_cal_thread.mLaplace)
-        print(self.lap_list, len(self.lap_list))
-        total = 0
-        for i in range(len(self.lap_list)):
-            total += self.lap_list[i]
-        print(max(self.lap_list), round(total/len(self.lap_list), 2))
-        if len(self.lap_list) > 9:
-            self.lap_list.clear()
+        pass
+        # self.lap_list.append(self.auto_cam_af_cal_thread.mLaplace)
+        # print(self.lap_list, len(self.lap_list))
+        # total = 0
+        # for i in range(len(self.lap_list)):
+        #     total += self.lap_list[i]
+        # print(max(self.lap_list), round(total / len(self.lap_list), 2))
+        # if len(self.lap_list) > 9:
+        #     self.lap_list.clear()
 
     def clean_laplace(self):
         self.lap_list.clear()
+        self.auto_cam_af_cal_thread.clear()
+        # self.auto_cam_af_cal_thread.mLaplaceList.clear()
+        # self.auto_cam_af_cal_thread.mRailPosition.clear()
 
     def auto_cam_af_cal(self):
         # rail_position(self.current_port)
         # rail_forward(self.current_port, 0, 300)
         # rail_forward_pos(self.current_port, 1200)
-        init(self.current_port)
-        time.sleep(10)
+        # init(self.current_port)
         # print('+++++++++++++++++++++++++ 自动对焦标定')
-        self.ui.previewCameraLabel.show()
+        self.cameraThread.mEnLaplace = True
+        self.open_external_camera()
         self.auto_cam_af_cal_thread.ser = self.current_port
         self.auto_cam_af_cal_thread.start()
 
@@ -712,6 +741,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
+        print(cmd)
         if cmd != '':
             self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
         if len(self.auto_cal_thread.positionList) == 1 and self.auto_cal_thread.positionList[0] == -1:
@@ -1063,6 +1093,39 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.baud_rate.setEditable(True)
         self.ui.baud_rate.setCurrentText("9600")
 
+    def open_rotate(self):
+        self.open_dev(9600, 'E')
+        self.auto_cal_thread = AutoCalThread(self.current_port, self)
+
+    def close_rotate(self):
+        self.close_port()
+        print('关闭转台')
+
+    def open_rail(self):
+        self.open_dev(115200, 'N')
+
+    def close_rail(self):
+        self.close_port()
+        print('关闭导轨')
+
+    def open_dev(self, baud_rate, check_bit):
+        current_port_name = self.ui.serial_selection.currentText()
+        print(current_port_name)
+        try:
+            if self.current_port is None:
+                self.current_port = open_port(current_port_name,
+                                              baudrate=baud_rate,
+                                              bytesize=8,
+                                              parity=check_bit,
+                                              stopbits=1.0,
+                                              timeout=1)
+            else:
+                print('串口已经打开')
+        except:
+            self.ui.port_status.setText(current_port_name + ' 打开失败')
+            print('打开串口失败')
+            return
+
     def open_port(self):
         current_port_name = self.ui.serial_selection.currentText()
         baud_rate = int(self.ui.baud_rate.currentText())
@@ -1091,7 +1154,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.frame_9.setEnabled(True)
             self.ui.frame_6.setEnabled(True)
             # self.serial_thread.ser = self.current_port
-            self.auto_cal_thread = AutoCalThread(self.current_port, self)
+            # self.auto_cal_thread = AutoCalThread(self.current_port, self)
         else:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
 
@@ -1108,7 +1171,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # self.ui.send_interval.setEnabled(True)
             # self.ui.repeat_send.setEnabled(True)
             self.ui.refresh_port.setEnabled(True)
-            self.ui.frame_6.setEnabled(False)
+            # self.ui.frame_6.setEnabled(False)
             self.current_port = None
         else:
             self.ui.port_status.setText('无串口可关闭')

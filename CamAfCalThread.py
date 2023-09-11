@@ -34,21 +34,21 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         self.work2()
 
     def work1(self):
-        relative_position = 100
+        relative_position = 36
         rail_speed = 200  # mm/s
         direction = 0
         self.clear()
         a = 1.07762125153429e-07
-        b = 0.000151494881929664
+        b = -0.000151494881929664
         c = 0.358375201288244
         d = 1009.02094861660
 
         self.mRailPosition = Fmc4030.rail_position(self.ser)
 
         motor_pos = int(self.win.ui.motorPosPositionEdit.text())
-        position = a * (motor_pos ^ 3) + b * (motor_pos ^ 2) + c * motor_pos + d
+        position = a * (motor_pos ** 3) + b * (motor_pos ** 2) + c * motor_pos + d
         position = position - 900
-        print(self.mRailPosition, position, abs(position - self.mRailPosition))
+        print('导轨位置:', self.mRailPosition, '导轨移动初始位置:', position, abs(position - self.mRailPosition))
 
         Fmc4030.rail_forward_pos(self.ser, position)
         sleep = abs(position - self.mRailPosition) / rail_speed + 0.5
@@ -88,8 +88,8 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
 
             Fmc4030.rail_forward(self.ser, direction, relative_position)
             wait_time = relative_position / rail_speed
-            if wait_time < 1:
-                wait_time = 1
+            if wait_time < 3:
+                wait_time = 3
             print('延时等待：', wait_time)
             time.sleep(wait_time)
             print('延时等待完成,', wait_time)
@@ -98,33 +98,35 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             # plt.show()
 
     def work2(self):
-        relative_position = 800
+        relative_position = 160
         rail_speed = 200  # mm/s
         direction = 2
         self.clear()
         self.win.motorReset()
         a = 6.47681438841663e-07
-        b = 0.00449064062802631
+        b = -0.00449064062802631
         c = 11.0460386267558
         d = -7278.83032890080
         #
         self.mRailPosition = Fmc4030.rail_position(self.ser)
         distance = 901 + self.mRailPosition
-        steps = a * (distance ^ 3) + b * (distance ^ 2) + c * distance + d
-        print(distance, steps)
+        steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
+        steps = int(steps)
+        print('投影位置:', distance, '马达位置:', steps)
         while True:
             location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
             location = location[9:-1]
             if (int(location) - 0) < 5:
                 print('马达复位完成')
                 break
-        # self.motor_forward(2, steps)
-        # while True:
-        #     location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        #     location = location[9:-1]
-        #     if abs(int(location) - steps) < 5:
-        #         print('马达已运行到清晰点附近：', steps)
-        #         break
+        time.sleep(1)
+        self.motor_forward(2, steps)
+        while True:
+            location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+            location = int(location[9:-1])
+            if abs(int(location) - steps) < 5:
+                print('马达已运行到清晰点附近：', steps)
+                break
         # position = position - 900
         # print(self.mRailPosition, position, abs(position - self.mRailPosition))
         #
@@ -159,21 +161,38 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                 print(self.mPositionList)
                 print(self.mLaplaceList)
                 absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
-                dif = absolute_position - int(location)
+                dif = int(absolute_position) - int(location)
                 if dif > 0:
                     self.motor_forward(5, abs(dif))
                 elif dif < 0:
                     self.motor_forward(2, abs(dif))
-                #Fmc4030.rail_forward_pos(self.ser, absolute_position)
-                print("退出对焦自动标定线程,最清晰的导轨位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
+
+                self.win.motorReset()
+                while True:
+                    location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+                    location = location[9:-1]
+                    if (int(location) - 0) < 5:
+                        print('马达复位完成')
+                        break
+                time.sleep(0.6)
+
+                self.motor_forward(2, absolute_position)
+                while True:
+                    location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+                    location = int(location[9:-1])
+                    if abs(int(location) - int(absolute_position)) < 5:
+                        print('马达已运行到清晰点附近：', steps)
+                        break
+                location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+                location = int(location[9:-1])
+                print("退出对焦自动标定线程,最清晰的马达位置:", location, ',清晰度:', max(self.mLaplaceList))
                 self.mRunning = True
                 return
 
-            #Fmc4030.rail_forward(self.ser, direction, relative_position)
             self.motor_forward(direction, relative_position)
             wait_time = relative_position / rail_speed
-            if wait_time < 3:
-                wait_time = 3
+            if wait_time < 0.5:
+                wait_time = 0.5
             print('延时等待：', wait_time)
             time.sleep(wait_time)
             print('延时等待完成,', wait_time)

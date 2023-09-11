@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from PyQt5.QtCore import Qt, QThread, pyqtSignal  # 缩放
 from PyQt5.QtWidgets import QMessageBox
 
@@ -23,6 +24,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.mImageName = 'ref_cam'
         self.frameNum = 0
         self.mRunning = False
+        self.mLaplace = 0
+        self.mEnLaplace = True
 
     def openCamera(self):
         pass
@@ -63,8 +66,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.mRunning = True
         print("Camera Init Finished")
         last_time = time.time()
+        la_list = []
         while True:
-            # now_time = time.time()
             # print('Preview FPS ', now_time - last_time)
             # time.sleep(1)
             # img_green = np.zeros([400, 600], np.uint8)
@@ -92,6 +95,37 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 continue
             # create numpy array with data from raw image
             numpy_image = raw_image.get_numpy_array()
+
+
+            if self.mEnLaplace:
+                # 计算拉普拉斯值
+                orig_img = Image.fromarray(numpy_image)
+                # crop_img = orig_img.crop((510, 280, 940, 820))
+                crop_img = orig_img.crop((960, 860, 1400, 1390))
+                o_h, o_w = crop_img.size
+                #print(type(numpy_image), type(crop_img), o_h, o_w)
+                size = numpy_image.shape
+                # print('Image size: ', size[0], size[1])
+                # dis = numpy_image.shape
+
+                laplacian = cv2.Laplacian(np.array(crop_img), cv2.CV_64F).var()
+                # laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
+                la_list.append(laplacian)
+                sum_la = 0
+                for i in range(len(la_list)):
+                    sum_la += la_list[i]
+                if len(la_list) > 3:
+                    la_list.pop(0)
+                # print(la_list, len(la_list))
+                self.mLaplace = round(sum_la / (len(la_list)+1), 2)
+                now_time = time.time()
+                view = str(round(int((now_time - last_time) * 1000), 2)) + ' Laplace:' + str(self.mLaplace)
+                # 在图片添加文字，参数为，图片，绘制文字，位置，字体类型，字体大小，颜色，线条类型
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                img = cv2.putText(numpy_image, view, (500, 100), font, 3, (255, 255, 255), 8)
+                # img = cv2.putText(numpy_image, view, (200, 200), font, 3, (255, 255, 255), 8)
+                last_time = now_time
+
             if numpy_image is None:
                 print("numpy_image is None.")
                 continue
@@ -100,10 +134,12 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # show acquired image
                 img = Image.fromarray(numpy_image, 'L')
                 img.save(self.mImageName + '.bmp')
+                crop_img.save(self.mImageName + 'crop.bmp')
                 print("TakePicture Frame ID: %d   Height: %d   Width: %d "
                       % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
                 print(self.mImageName + '.bmp')
 
             q_img = QImage(numpy_image.data, numpy_image.shape[1], numpy_image.shape[0], QImage.Format_Grayscale8)
             pix = QPixmap(q_img).scaled(720, 540)
+            # pix = QPixmap(q_img).scaled(430, 540)
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程
