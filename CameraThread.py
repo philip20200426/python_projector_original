@@ -8,6 +8,8 @@ from PyQt5.QtGui import QImage, QPixmap
 from PIL import Image
 import time
 
+from pro_correct_wrapper import auto_focus_cam
+
 
 # 多线程类
 class CameraThread(QThread):  # 建立一个任务线程类
@@ -25,6 +27,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.frameNum = 0
         self.mRunning = False
         self.mLaplace = 0
+        self.mLaplace2 = 0
         self.mEnLaplace = False
 
     def openCamera(self):
@@ -85,18 +88,12 @@ class CameraThread(QThread):  # 建立一个任务线程类
             # get raw image
             raw_image = self.cam.data_stream[0].get_image()
 
-            # (h, w)
-            # image = cv2.imread('op02_white_test.png')
-            # cv2.imshow('hello', image)
-            # imageVar = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
-            # print(imageVar)
             if raw_image is None:
                 print("Get raw image failed.")
                 continue
             # create numpy array with data from raw image
             numpy_image = raw_image.get_numpy_array()
-
-
+            numpy_image_cp = numpy_image.copy()
             if self.mEnLaplace:
                 # 计算拉普拉斯值
                 orig_img = Image.fromarray(numpy_image)
@@ -130,9 +127,10 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 print("numpy_image is None.")
                 continue
             if self.mTakePicture:
+                self.mLaplace2 = auto_focus_cam(numpy_image)
                 self.mTakePicture = False
                 # show acquired image
-                img = Image.fromarray(numpy_image, 'L')
+                img = Image.fromarray(numpy_image_cp, 'L')
                 img.save(self.mImageName + '.bmp')
                 # crop_img.save(self.mImageName + 'crop.bmp')
                 print("TakePicture Frame ID: %d   Height: %d   Width: %d "

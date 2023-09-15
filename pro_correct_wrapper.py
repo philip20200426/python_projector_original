@@ -289,16 +289,11 @@ if hasattr(dll, 'KeystoneCorrectTOF'):
     # PRO_CORRECTION_LIB_API
     # int
     # AutofocusCam(const
-    # char * calib_data_path, const
-    # int
-    # img_r, const
-    # int
-    # img_c,
-    # const
-    # unsigned
-    # char * pattern_imgs, const
-    # int
-    # img_num,
+    # char * calib_data_path,
+    # const int img_r,
+    # const int img_c,
+    # const unsigned char * pattern_imgs,
+    # const int img_num,
     # int * focus_id, int * direction, double * score);
 if hasattr(dll, 'AutofocusCam'):
     def auto_focus_cam_api(calib_data_path,
@@ -308,9 +303,28 @@ if hasattr(dll, 'AutofocusCam'):
                            focus_id,
                            direction,
                            score):
-        pass
-
-
+        dll.AutofocusCam.argtypes = [c_char_p,
+                                     c_int, c_int,
+                                     POINTER(c_ubyte),
+                                     c_int,
+                                     POINTER(c_int),
+                                     POINTER(c_int),
+                                     POINTER(c_double)]
+        dll.KeystoneCorrectCam.restype = c_int
+        calib_data_path = create_string_buffer(calib_data_path.encode('utf-8'))
+        img_r = c_int(img_size[0])
+        img_c = c_int(img_size[1])
+        focus_id = c_int(focus_id)
+        direction = c_int(direction)
+        score = c_double(score)
+        ret = dll.AutofocusCam(calib_data_path,
+                               img_r, img_c,
+                               img.ctypes.data_as(POINTER(c_ubyte)),
+                               c_int(img_num),
+                               byref(focus_id),
+                               byref(direction),
+                               byref(score))
+        return score.value
 
 if hasattr(dll, 'KeystoneCorrectCam'):
     def keystone_correct_cam_api(calib_data_path,
@@ -548,6 +562,22 @@ def keystone_correct_tof():
     else:
         print(IMG_AUTO_KEYSTONE, ' 标定所需要的文件不存在')
     return True
+
+
+def auto_focus_cam(img):
+    img_num = 1
+    focus_id = 0
+    direction = 0
+    score = 0
+    img_size = (img.shape[0], img.shape[1])
+    ret = auto_focus_cam_api(CALIB_DATA_PATH,
+                             img_size,
+                             img,
+                             img_num,
+                             focus_id,
+                             direction,
+                             score)
+    return ret
 
 
 def auto_keystone_cam():

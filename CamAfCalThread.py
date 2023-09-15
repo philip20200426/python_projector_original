@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import cv2
@@ -27,11 +28,12 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         self.mRailPosition = -100
         self.mLaplace = 0
         self.mLaplaceList = []
+        self.mLaplaceList2 = []
         self.mPositionList = []
         print('>>>>>>>>>> CamAfCalThread')
 
     def run(self):
-        self.work2()
+        self.work_test()
 
     def work1(self):
         relative_position = 36
@@ -64,7 +66,7 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
             location = location[9:-1]
             self.win.ui.posValueLabel.setText(location)
-
+            self.mLaplaceList2.append(self.win.cameraThread.mLaplace2)
             self.mLaplaceList.append(self.win.cameraThread.mLaplace)
             self.mPositionList.append(self.mRailPosition)
             if len(self.mLaplaceList) > 1:
@@ -157,6 +159,42 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             # plt.plot(self.mPositionList, self.mLaplaceList)
             # plt.show()
 
+    def work_test(self):
+        if not os.path.exists('asuFiles/interRefFiles'):
+            os.mkdir('asuFiles/interRefFiles')
+        self.clear()
+        position = 0
+        self.mRailPosition = Fmc4030.rail_position(self.ser)
+        print('导轨位置:', self.mRailPosition, '导轨移动初始位置:', position, abs(position - self.mRailPosition))
+        self.motor_reset_steps(1700)
+        time.sleep(2)
+
+        while True:
+            self.mRailPosition = Fmc4030.rail_position(self.ser)
+            self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
+
+            location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+            location = location[9:-1]
+            self.win.ui.posValueLabel.setText(location)
+
+            times = datetime.datetime.now(tz=None)
+            file_path = 'asuFiles/interRefFiles' + '/' + str(position) + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+            self.win.cameraThread.takePicture(file_path)
+
+            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mPositionList.append(self.mRailPosition)
+
+            if not self.mRunning or position > 1900:
+                print(self.mPositionList)
+                print(self.mLaplaceList)
+                absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+                print("退出对焦自动标定线程,最清晰的导轨位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
+                self.mRunning = True
+                return
+            position += 100
+            Fmc4030.rail_forward(self.ser, 0, position)
+            time.sleep(10)
+
     def clear(self):
         self.mLaplaceList.clear()
         self.mPositionList.clear()
@@ -225,100 +263,3 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         else:
             print('马达运行到位置:' + str(motor_pos) + '时,发生错误')
         return motor_pos
-    # def run(self):  # 在启动线程后任务从这个函数里面开始执行
-    #     print('>>>>>>>>>> CAM 自动对焦标定')
-    #     print("Open Camera")
-    #     # create a device manager
-    #     device_manager = gx.DeviceManager()
-    #     dev_num, dev_info_list = device_manager.update_device_list()
-    #     if dev_num == 0:
-    #         print("Number of enumerated devices is 0")
-    #         return
-    #     # open the first device
-    #     self.cam = device_manager.open_device_by_index(1)
-    #     # exit when the camera is a color camera
-    #     if self.cam.PixelColorFilter.is_implemented() is True:
-    #         print("This sample does not support color camera.")
-    #         self.cam.close_device()
-    #         return
-    #     # set continuous acquisition
-    #     self.cam.TriggerMode.set(gx.GxSwitchEntry.OFF)
-    #     # self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)
-    #     # set gain
-    #     # self.cam.Gain.set(10.0)
-    #     # start data acquisition
-    #     self.cam.stream_on()
-    #     self.frameNum = 0
-    #     self.mRunning = True
-    #     print("Camera Init Finished")
-    #     last_time = time.time()
-    #
-    #     la_list = []
-    #     while True:
-    #         now_time = time.time()
-    #         # Fmc4030.rail_forward(self.ser, 0, 10)
-    #         self.mRailPosition = Fmc4030.rail_position(self.ser)
-    #         print(self.mRailPosition)
-    #         # if self.mRailPosition > 1000:
-    #         #     print('导轨运行结束')
-    #         #     break
-    #         # time.sleep(0.02)
-    #         #print('Preview FPS ', now_time - last_time)
-    #         # time.sleep(1)
-    #         # img_green = np.zeros([400, 600], np.uint8)
-    #         # self.value = self.exposureTime
-    #         # img_green[:] = self.value
-    #         # q_img = QImage(img_green.data, img_green.shape[1], img_green.shape[0], QImage.Format_Grayscale8)
-    #         # set exposure
-    #         if not self.mRunning:
-    #             print("Close Camera")
-    #             self.cam.stream_off()
-    #             self.cam.close_device()
-    #             return
-    #         self.frameNum += 1
-    #         # 曝光时间单位:us
-    #         #self.cam.ExposureTime.set(self.exposureTime)
-    #         # get raw image
-    #         raw_image = self.cam.data_stream[0].get_image()
-    #         if raw_image is None:
-    #             print("Get raw image failed.")
-    #             continue
-    #         # 将 RGB 数据转换为 numpy 对象
-    #         # create numpy array with data from raw image
-    #         numpy_image = raw_image.get_numpy_array()
-    #         orig_img = Image.fromarray(numpy_image)
-    #         o_h, o_w = orig_img.size
-    #         print(o_h, o_w)
-    #         size = numpy_image.shape
-    #         # print('Image size: ', size[0], size[1])
-    #         # dis = numpy_image.shape
-    #         laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
-    #         la_list.append(laplacian)
-    #         sum_la = 0
-    #         for i in range(len(la_list)):
-    #             sum_la += la_list[i]
-    #         if len(la_list) > 5:
-    #             la_list.pop(0)
-    #         print(la_list)
-    #         self.mLaplace = round(sum_la/len(la_list), 2)
-    #         view = str(round(int((now_time - last_time)*1000), 2)) + ' Laplace:' + str(self.mLaplace)
-    #         # 在图片添加文字，参数为，图片，绘制文字，位置，字体类型，字体大小，颜色，线条类型
-    #         font = cv2.FONT_HERSHEY_SIMPLEX
-    #         cv2.putText(numpy_image, view, (800, 100), font, 3, (255, 255, 255), 8)
-    #         last_time = now_time
-    #
-    #         if numpy_image is None:
-    #             print("numpy_image is None.")
-    #             continue
-    #         if self.mTakePicture:
-    #             self.mTakePicture = False
-    #             # show acquired image
-    #             img = Image.fromarray(numpy_image, 'L')
-    #             img.save(self.mImageName + '.bmp')
-    #             print("TakePicture Frame ID: %d   Height: %d   Width: %d "
-    #                   % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
-    #             print(self.mImageName + '.bmp')
-    #
-    #         q_img = QImage(numpy_image.data, numpy_image.shape[1], numpy_image.shape[0], QImage.Format_Grayscale8)
-    #         pix = QPixmap(q_img).scaled(720, 540)
-    #         self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

@@ -756,6 +756,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # rail_stop(self.current_port)
         # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
         self.auto_cam_af_cal_thread.mRunning = False
+        print('+++++++++++++++++++++++++++++++++++++++++++++')
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.exit = True
         if self.timer1.isActive():
@@ -1029,37 +1030,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.auto_cam_af_cal_thread.motor_reset_steps(int(self.ui.motorPosition2Edit.text()))
 
     def motorReset(self):
-        # 服务器IP地址和端口号
-        server_address = ('192.168.8.200', 6666)
-        # 创建一个 socket 对象
-        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        para = [[], [], []]
-        # 发送数据到服务端
-        angle = 0
-        mode = '4d'
-        cmdList = ['ff', '01', '00', '4b', '05', '78', 'c9']
-        cmdList[3] = mode
-        cmdList[4] = '{:02x}'.format((angle * 100) >> 8)
-        cmdList[5] = '{:02x}'.format((angle * 100) & 0x00ff)
-        # print(hex(data0), hex(data1))
-        # cmdList = ['ff', '01', '00', '4b', '07', '08', '5b']
-        # cmdList = ['ff', '01', '00', '4d', 'fc', '18', '62']
-
-        sum_data = 0
-        for i in range(1, len(cmdList) - 1):
-            sum_data += int(cmdList[i], 16)
-        cmdList[len(cmdList) - 1] = '{:02x}'.format(sum_data)
-
-        cmdChar = ' '.join(cmdList)
-        cmdHex = bytes.fromhex(cmdChar)
-        print(cmdList)
-
-        udp_socket.sendto(cmdHex, server_address)
-        udp_socket.close()
-        # 接收数据和地址
-        data, server_address = udp_socket.recvfrom(1024)
-        print('UDP Client Received Data From Server: ', data)
         # os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
         os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
 
