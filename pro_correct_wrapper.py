@@ -286,6 +286,32 @@ if hasattr(dll, 'KeystoneCorrectTOF'):
             print(correct_points[i])
         return correct_points
 
+    # PRO_CORRECTION_LIB_API
+    # int
+    # AutofocusCam(const
+    # char * calib_data_path, const
+    # int
+    # img_r, const
+    # int
+    # img_c,
+    # const
+    # unsigned
+    # char * pattern_imgs, const
+    # int
+    # img_num,
+    # int * focus_id, int * direction, double * score);
+if hasattr(dll, 'AutofocusCam'):
+    def auto_focus_cam_api(calib_data_path,
+                           img_size,
+                           img,
+                           img_num,
+                           focus_id,
+                           direction,
+                           score):
+        pass
+
+
+
 if hasattr(dll, 'KeystoneCorrectCam'):
     def keystone_correct_cam_api(calib_data_path,
                                  imu_data_size,

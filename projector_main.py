@@ -10,6 +10,7 @@ import yaml
 from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor, QPixmap
 
 import Fmc4030
+import HuiYuanRotate
 import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
 from CamAfCalThread import CamAfCalThread
@@ -43,6 +44,7 @@ from ctypes import *
 
 import os
 import shutil
+import socket
 
 
 # class AutoCalThread(QThread):
@@ -110,7 +112,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.closeRailButton.clicked.connect(self.close_rail)
         self.ui.currentPositionButton.clicked.connect(self.get_rail_position)
 
-
+        self.ui.getMotorPosButton.clicked.connect(self.get_motor_position)
+        self.ui.doMotorPosButton.clicked.connect(self.execute_motor_position)
         self.ui.resetRailButton.clicked.connect(self.reset_rail)
         self.ui.railForewardButton.clicked.connect(self.rail_forward)
         self.ui.railReversalButton.clicked.connect(self.rail_reversal)
@@ -160,6 +163,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.delay3Edit.textChanged.connect(self.set_exposure_time)
         self.ui.snEdit.textChanged.connect(self.sn_changed)
         self.ui.frame_2.hide()
+        self.hy_enable = True
+        self.hui_yuan = HuiYuanRotate.open_hy_dev()
         # self.close_ui()
         # self.ui.frame.setEnabled(False)
         # self.ui.frame_left_up.setEnabled(False)
@@ -171,6 +176,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.serial_thread.data_arrive_signal.connect(self.receive_data)
 
         self.auto_cal_thread = None
+        self.auto_cal_thread = AutoCalThread(self.current_port, self)
+
         self.autofocus_cal_thread = None
         self.autofocus_cal_thread = AutoFocusCalThread(self.current_port, self)
         self.auto_cam_af_cal_thread = None
@@ -326,6 +333,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         init(self.current_port)
 
     def rail_forward(self):
+
         direction = 1
         if float(self.ui.railForewardEdit.text()) > 0:
             direction = 0
@@ -396,37 +404,84 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print("External camera is not opened")
 
     def rotating_platform_angle(self):
-        # degree: yaw roll pitch
-        # self.ui.rotateButton.setEnabled(False)
-
-        self.open_rotate()
         if len(self.ui.xyEdit.text()) == 0 or len(self.ui.xzEdit.text()) == 0 or len(self.ui.yzEdit.text()) == 0:
             print('输入角度不能为空')
             return
-        polarity = True
-        degree = [int(self.ui.xyEdit.text()) * 100, int(self.ui.xzEdit.text()) * 100, int(self.ui.yzEdit.text()) * 100]
-        print('调整转台角度：', degree)
-        cmd_list = [['01', '06', '04', '72', '00', '00'], ['01', '06', '04', '70', '00', '00'],
-                    ['01', '06', '04', 'ae', '00', '00']]
-        # 位置0：cmd_list = [['01', '06', '04', '4c', '00', '00'], ['01', '06', '04', '4e', '00', '00'], ['01', '06', '04', '9c', '00', '00']]
-        for i in range(len(degree)):
-            if abs(degree[i]) > 9000:
-                print('角度参数异常,退出！！！')
-                return
-            if degree[i] == self.lst_degree[i]:
-                continue
-            self.lst_degree[i] = degree[i]
+        if self.hy_enable:
+            HuiYuanRotate.hy_control(self.hui_yuan, int(self.ui.xyEdit.text()), int(self.ui.yzEdit.text()))
+        else:
+            # degree: yaw roll pitch
+            # self.ui.rotateButton.setEnabled(False)
+            self.open_rotate()
+            polarity = True
+            degree = [int(self.ui.xyEdit.text()) * 100, int(self.ui.xzEdit.text()) * 100,
+                      int(self.ui.yzEdit.text()) * 100]
+            print('调整转台角度：', degree)
+            cmd_list = [['01', '06', '04', '72', '00', '00'], ['01', '06', '04', '70', '00', '00'],
+                        ['01', '06', '04', 'ae', '00', '00']]
+            # 位置0：cmd_list = [['01', '06', '04', '4c', '00', '00'], ['01', '06', '04', '4e', '00', '00'], ['01', '06', '04', '9c', '00', '00']]
+            for i in range(len(degree)):
+                if abs(degree[i]) > 9000:
+                    print('角度参数异常,退出！！！')
+                    return
+                if degree[i] == self.lst_degree[i]:
+                    continue
+                self.lst_degree[i] = degree[i]
 
-            if degree[i] < 0:
-                degree[i] = 65536 - abs(degree[i])
-                polarity = False
-            else:
-                polarity = True
-            angel = '{:04X}'.format(degree[i])
-            cmd_list[i][4] = angel[0:2]
-            cmd_list[i][5] = angel[2:4]
-            # print(cmd_list[i])
-            cmd_char = ' '.join(cmd_list[i])
+                if degree[i] < 0:
+                    degree[i] = 65536 - abs(degree[i])
+                    polarity = False
+                else:
+                    polarity = True
+                angel = '{:04X}'.format(degree[i])
+                cmd_list[i][4] = angel[0:2]
+                cmd_list[i][5] = angel[2:4]
+                # print(cmd_list[i])
+                cmd_char = ' '.join(cmd_list[i])
+                # print(cmd_char)
+                crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
+                cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
+                # print(cmd_char)
+                cmd_hex = bytes.fromhex(cmd_char)
+                if self.current_port is not None:
+                    ser_send(self.current_port, cmd_hex)
+                else:
+                    print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+
+                time.sleep(1.3)
+                if not polarity:
+                    cmd_list[i][3] = str(hex(int(cmd_list[i][3], 16) + 1))[2:4]
+                    cmd_list[i][4] = 'FF'
+                    cmd_list[i][5] = 'FF'
+                    cmd_char = ' '.join(cmd_list[i])
+                    # print(cmd_char)
+                    crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
+                    cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
+                    # print(cmd_char)
+                    cmd_hex = bytes.fromhex(cmd_char)
+                    if self.current_port is not None:
+                        ser_send(self.current_port, cmd_hex)
+                    else:
+                        print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                else:
+                    cmd_list[i][3] = str(hex(int(cmd_list[i][3], 16) + 1))[2:4]
+                    cmd_list[i][4] = '00'
+                    cmd_list[i][5] = '00'
+                    cmd_char = ' '.join(cmd_list[i])
+                    # print(cmd_char)
+                    crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
+                    cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
+                    # print(cmd_char)
+                    cmd_hex = bytes.fromhex(cmd_char)
+                    if self.current_port is not None:
+                        ser_send(self.current_port, cmd_hex)
+                    else:
+                        print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                time.sleep(1)
+            cmd_list = ['01', '06', '04', '87', '00', '0A']
+            # cmd_list[5] = '{:02X}'.format(int(self.ui.positionEdit.text()))
+            # print(cmd_list)
+            cmd_char = ' '.join(cmd_list)
             # print(cmd_char)
             crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
             cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
@@ -436,51 +491,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 ser_send(self.current_port, cmd_hex)
             else:
                 print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-
-            time.sleep(1.3)
-            if not polarity:
-                cmd_list[i][3] = str(hex(int(cmd_list[i][3], 16) + 1))[2:4]
-                cmd_list[i][4] = 'FF'
-                cmd_list[i][5] = 'FF'
-                cmd_char = ' '.join(cmd_list[i])
-                # print(cmd_char)
-                crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
-                cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-                # print(cmd_char)
-                cmd_hex = bytes.fromhex(cmd_char)
-                if self.current_port is not None:
-                    ser_send(self.current_port, cmd_hex)
-                else:
-                    print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-            else:
-                cmd_list[i][3] = str(hex(int(cmd_list[i][3], 16) + 1))[2:4]
-                cmd_list[i][4] = '00'
-                cmd_list[i][5] = '00'
-                cmd_char = ' '.join(cmd_list[i])
-                # print(cmd_char)
-                crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
-                cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-                # print(cmd_char)
-                cmd_hex = bytes.fromhex(cmd_char)
-                if self.current_port is not None:
-                    ser_send(self.current_port, cmd_hex)
-                else:
-                    print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-            time.sleep(1)
-        cmd_list = ['01', '06', '04', '87', '00', '0A']
-        # cmd_list[5] = '{:02X}'.format(int(self.ui.positionEdit.text()))
-        # print(cmd_list)
-        cmd_char = ' '.join(cmd_list)
-        # print(cmd_char)
-        crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
-        cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-        # print(cmd_char)
-        cmd_hex = bytes.fromhex(cmd_char)
-        if self.current_port is not None:
-            ser_send(self.current_port, cmd_hex)
-        else:
-            print('>>>>>>>>>>>>>>>>>>>> 串口异常')
-        # self.ui.rotateButton.setEnabled(True)
+            # self.ui.rotateButton.setEnabled(True)
 
     def manual_position(self):
         # self.showWritePattern()
@@ -533,6 +544,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
     def auto_keystone_tof(self):
+        create_dir_file()
         if len(self.ui.snEdit.text()) >= 19:
             print(self.ui.snEdit.text())
             set_sn(str(self.ui.snEdit.text()).replace('/', ''))
@@ -598,16 +610,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
-        # 算法切换到ASU
-        os.system('adb shell setprop persist.sys.keystone.type 0')
-        # 自动垂直校正
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        # 位移自动对焦
-        os.system('adb shell settings put global tv_auto_focus_asu 1')
-        # 位移全向自动校正
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 1')
+        self.restore_ai_feature()
         print('恢复所有开关到默认状态')
         time.sleep(1)
         os.system('adb reboot')
@@ -687,7 +690,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
         motor_position = os.popen('adb shell getprop persist.motor.position').read()
-        print('马达位置：', motor_position, self.ui.positionLabel.text())
+        # print('马达位置：', motor_position, self.ui.positionLabel.text())
         create_dir_file()
         # palette = QPalette()
         # palette.setColor(QPalette.Background, QColor(255, 0, 0))
@@ -695,12 +698,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.autoFocusLabel.setPalette(palette)
         self.ui.autoFocusLabel.setStyleSheet("color:blue")
         self.ui.autoFocusLabel.setText('开始标定')
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        os.system('adb shell settings put global tv_auto_focus_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 0')
-        os.system('adb shell settings put system tv_screen_saver 0')
+        self.close_ai_feature()
         self.autofocus_cal_thread.start()
 
     def kst_auto_calibrate(self):
@@ -732,12 +730,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
         os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json')
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        os.system('adb shell settings put global tv_auto_focus_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 0')
-        os.system('adb shell settings put system tv_screen_saver 0')
+        self.close_ai_feature()
 
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
@@ -752,6 +745,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
         self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
         self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
+        if self.hy_enable:
+            self.auto_cal_thread.ser = self.hui_yuan
+        else:
+            self.auto_cal_thread.ser = self.current_port
         self.auto_cal_thread.start()
         # os.system('adb uninstall com.nbd.tofmodule')
 
@@ -1020,7 +1017,49 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def showWritePattern(self):
         os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
 
+        self.ui.getMotorPosButton.clicked.connect(self.get_motor_position)
+        self.ui.doMotorPosButton.clicked.connect(self.execute_motor_position)
+
+    def get_motor_position(self):
+        location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+        location = location[9:-1]
+        self.ui.posValueLabel.setText(location)
+
+    def execute_motor_position(self):
+        self.auto_cam_af_cal_thread.motor_reset_steps(int(self.ui.motorPosition2Edit.text()))
+
     def motorReset(self):
+        # 服务器IP地址和端口号
+        server_address = ('192.168.8.200', 6666)
+        # 创建一个 socket 对象
+        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        para = [[], [], []]
+        # 发送数据到服务端
+        angle = 0
+        mode = '4d'
+        cmdList = ['ff', '01', '00', '4b', '05', '78', 'c9']
+        cmdList[3] = mode
+        cmdList[4] = '{:02x}'.format((angle * 100) >> 8)
+        cmdList[5] = '{:02x}'.format((angle * 100) & 0x00ff)
+        # print(hex(data0), hex(data1))
+        # cmdList = ['ff', '01', '00', '4b', '07', '08', '5b']
+        # cmdList = ['ff', '01', '00', '4d', 'fc', '18', '62']
+
+        sum_data = 0
+        for i in range(1, len(cmdList) - 1):
+            sum_data += int(cmdList[i], 16)
+        cmdList[len(cmdList) - 1] = '{:02x}'.format(sum_data)
+
+        cmdChar = ' '.join(cmdList)
+        cmdHex = bytes.fromhex(cmdChar)
+        print(cmdList)
+
+        udp_socket.sendto(cmdHex, server_address)
+        udp_socket.close()
+        # 接收数据和地址
+        data, server_address = udp_socket.recvfrom(1024)
+        print('UDP Client Received Data From Server: ', data)
         # os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
         os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
 
@@ -1094,11 +1133,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.baud_rate.setCurrentText("9600")
 
     def open_rotate(self):
-        self.open_dev(9600, 'E')
-        self.auto_cal_thread = AutoCalThread(self.current_port, self)
+        if self.hy_enable:
+            # self.hui_yuan = HuiYuanRotate.open_hy_dev()
+            pass
+        else:
+            self.open_dev(9600, 'E')
 
     def close_rotate(self):
         self.close_port()
+        # if self.hy_enable:
+        #     self.hui_yuan = HuiYuanRotate.close_hy_dev()
         print('关闭转台')
 
     def open_rail(self):
@@ -1264,6 +1308,27 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.port_status.setText('数据发送状态: 成功')
         except:
             self.ui.port_status.setText('数据发送状态: 失败')
+
+    def close_ai_feature(self):
+        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+        os.system('adb shell settings put global tv_auto_focus_asu 0')
+        os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
+        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+        os.system('adb shell settings put global tv_auto_focus_poweron 0')
+        os.system('adb shell settings put system tv_screen_saver 0')
+
+    def restore_ai_feature(self):
+        # 算法切换到ASU
+        os.system('adb shell setprop persist.sys.keystone.type 0')
+        # 自动垂直校正
+        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+        # 位移自动对焦
+        os.system('adb shell settings put global tv_auto_focus_asu 1')
+        # 位移全向自动校正
+        os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+        # 开机相关
+        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+        os.system('adb shell settings put global tv_auto_focus_poweron 1')
 
 
 if __name__ == '__main__':

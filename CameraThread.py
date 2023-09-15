@@ -25,7 +25,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.frameNum = 0
         self.mRunning = False
         self.mLaplace = 0
-        self.mEnLaplace = True
+        self.mEnLaplace = False
 
     def openCamera(self):
         pass
@@ -108,8 +108,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # print('Image size: ', size[0], size[1])
                 # dis = numpy_image.shape
 
-                laplacian = cv2.Laplacian(np.array(crop_img), cv2.CV_64F).var()
-                # laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
+                #laplacian = cv2.Laplacian(np.array(crop_img), cv2.CV_64F).var()
+                laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
                 la_list.append(laplacian)
                 sum_la = 0
                 for i in range(len(la_list)):
@@ -134,7 +134,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # show acquired image
                 img = Image.fromarray(numpy_image, 'L')
                 img.save(self.mImageName + '.bmp')
-                crop_img.save(self.mImageName + 'crop.bmp')
+                # crop_img.save(self.mImageName + 'crop.bmp')
                 print("TakePicture Frame ID: %d   Height: %d   Width: %d "
                       % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
                 print(self.mImageName + '.bmp')
