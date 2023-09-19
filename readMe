@@ -12,6 +12,8 @@ git push -u origin kst_cal
 adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService
 adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity
 adb shell am broadcast -a asu.intent.action.SaveData --ei position 0
+adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.KeystoneCalibration
+
 
 2023年4月27日统一整理代码，保存当前状态，后面创建两个分支，分别跟踪下面两个程序：
 

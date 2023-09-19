@@ -71,10 +71,11 @@ class AutoFocusCalThread(QThread):
                     self.dis_steps[1] = dic['POS11']['location']
             file.close()
         location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        location = location[9:-1]
-        print('TOF:' + str(self.dis_steps[0]) + ',位置:' + str(self.dis_steps[1]) + ',location:' + location)
+        if location != '':
+            location = location[9:-1]
         self.dis_steps[1] = int(location)
         self.win.ui.autoFocusLabel.setText(str(self.dis_steps))
+        print('TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + '马达location:' + location)
         # file_path = globalVar.get_value('CALIB_DATA_PATH')
         # file_pro_path1 = dir_pro_path + "pro_n11.txt"
         # file_pro_path2 = dir_pro_path + "pro_n12.txt"

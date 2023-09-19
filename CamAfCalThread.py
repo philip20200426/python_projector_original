@@ -34,7 +34,7 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         print('>>>>>>>>>> CamAfCalThread')
 
     def run(self):
-        self.work_test()
+        self.work2()
 
     def work1(self):
         relative_position = 36
@@ -112,7 +112,7 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         d = -7278.83032890080
         self.mRailPosition = Fmc4030.rail_position(self.ser)
         self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
-        distance = 901 + self.mRailPosition
+        distance = 1026 + self.mRailPosition
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
         steps = int(steps)
         print('投影仪位置:', distance, '马达初始化位置:', steps)

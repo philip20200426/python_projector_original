@@ -603,6 +603,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return False
 
     def write_to_nv(self):
+        create_dir_file()
         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
         print(cmd)
         os.system(cmd)
