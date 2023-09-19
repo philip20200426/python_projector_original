@@ -5,6 +5,8 @@ import cv2
 from PyQt5.QtCore import QThread
 import time
 
+from matplotlib import pyplot as plt
+
 import HuiYuanRotate
 import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
@@ -29,7 +31,8 @@ class AutoCalThread(QThread):
         self.CRC = CRC()
         print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
+        # self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
+        self.angle_list = [[0, 0], [7, 7], [7, 0], [13, 0], [7, -7], [0, -7], [13, -7], [13, 7]]
         self.pos_init_finished = False
 
     def run(self):
@@ -237,7 +240,7 @@ class AutoCalThread(QThread):
             if self.exit or (now_time - cur_time) > 300:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
-                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间:', now_time-cur_time)
+                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间:', now_time-cur_time, self.exit)
                 break
             if self.enableAlgo:
                 if len(self.positionList) == 1 and self.positionList[0] == -1:
@@ -292,7 +295,6 @@ class AutoCalThread(QThread):
             HuiYuanRotate.hy_control(self.ser, self.angle_list[int(self.positionList[self.position])-1][0],
                                      self.angle_list[int(self.positionList[self.position])-1][1])
             time.sleep(self.delay1)
-
             print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
             cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
             cmd1 = str(self.positionList[self.position] - 1)

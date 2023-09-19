@@ -26,67 +26,79 @@ def init(ser):
 
 
 def rail_forward(ser, direction, rel_dis):
-    cmd_list = [[], []]
-    # 距离
-    cmd_list[0] = ['01', '10', '00', '4C', '00', '02', '04']
-    # 正反转
-    cmd_list[1] = ['01', '05', '00', '00', 'FF', '00']
-    rel_dis_char = float_to_hex(rel_dis)
-    cmd_list[0].append(rel_dis_char[0:2])
-    cmd_list[0].append(rel_dis_char[2:4])
-    cmd_list[0].append(rel_dis_char[4:6])
-    cmd_list[0].append(rel_dis_char[6:8])
-    if direction == 0:
-        cmd_list[1][3] = '00'
-    if direction == 1:
-        cmd_list[1][3] = '03'
-    # print(cmd_list[0])
-    # print(cmd_list[1])
-    start = time.time()
-    i = 0
-    while i < len(cmd_list):
-        data_list = rail_send(ser, cmd_list[i])
-        if data_list[0:3] == cmd_list[i][0:3]:
-            i += 1
-        cur = time.time()
-        if (cur - start) > 5.6:
-            print('>>>>>>>>>> 导轨操作超时:', (cur - start))
-            return -100
+    if not ser is None:
+        cmd_list = [[], []]
+        # 距离
+        cmd_list[0] = ['01', '10', '00', '4C', '00', '02', '04']
+        # 正反转
+        cmd_list[1] = ['01', '05', '00', '00', 'FF', '00']
+        rel_dis_char = float_to_hex(rel_dis)
+        cmd_list[0].append(rel_dis_char[0:2])
+        cmd_list[0].append(rel_dis_char[2:4])
+        cmd_list[0].append(rel_dis_char[4:6])
+        cmd_list[0].append(rel_dis_char[6:8])
+        if direction == 0:
+            cmd_list[1][3] = '00'
+        if direction == 1:
+            cmd_list[1][3] = '03'
+        # print(cmd_list[0])
+        # print(cmd_list[1])
+        start = time.time()
+        i = 0
+        while i < len(cmd_list):
+            print('++++++++++++++++', i)
+            data_list = rail_send(ser, cmd_list[i])
+            print(cmd_list[i])
+            if data_list[0:3] == cmd_list[i][0:3]:
+                i += 1
+            cur = time.time()
+            if (cur - start) > 5.6:
+                print('>>>>>>>>>> 导轨操作超时:', (cur - start))
+                return -100
+    else:
+        print('请先打开串口')
 
 
 def rail_forward_pos(ser, rel_dis):
-    cmd_list = [[], []]
-    # 位移值
-    cmd_list[0] = ['01', '10', '00', '4C', '00', '02', '04']
-    # 绝对位移
-    cmd_list[1] = ['01', '05', '00', '06', 'FF', '00']
-    rel_dis_char = float_to_hex(rel_dis)
-    cmd_list[0].append(rel_dis_char[0:2])
-    cmd_list[0].append(rel_dis_char[2:4])
-    cmd_list[0].append(rel_dis_char[4:6])
-    cmd_list[0].append(rel_dis_char[6:8])
+    if not ser is None:
+        cmd_list = [[], []]
+        # 位移值
+        cmd_list[0] = ['01', '10', '00', '4C', '00', '02', '04']
+        # 绝对位移
+        cmd_list[1] = ['01', '05', '00', '06', 'FF', '00']
+        rel_dis_char = float_to_hex(rel_dis)
+        cmd_list[0].append(rel_dis_char[0:2])
+        cmd_list[0].append(rel_dis_char[2:4])
+        cmd_list[0].append(rel_dis_char[4:6])
+        cmd_list[0].append(rel_dis_char[6:8])
 
-    start = time.time()
-    i = 0
-    while i < len(cmd_list):
-        data_list = rail_send(ser, cmd_list[i])
-        if data_list[0:3] == cmd_list[i][0:3]:
-            i += 1
-        cur = time.time()
-        if (cur - start) > 3:
-            print('>>>>>>>>>> rail_forward_pos timeout:', (cur - start))
-            return -100
+        start = time.time()
+        i = 0
+        while i < len(cmd_list):
+            data_list = rail_send(ser, cmd_list[i])
+            if data_list[0:3] == cmd_list[i][0:3]:
+                i += 1
+            cur = time.time()
+            if (cur - start) > 3:
+                print('>>>>>>>>>> rail_forward_pos timeout:', (cur - start))
+                return -100
+    else:
+        print('请先打开串口')
 
 
 def rail_position(ser):
-    cmd_list = ['01', '03', '00', '3E', '00', '02']
-    data_list = rail_send(ser, cmd_list)
-    if data_list[0:2] == cmd_list[0:2]:
-        pos = int(hex_to_float(''.join(data_list[3:7])))
-        # print(pos)
+    if not ser is None:
+        cmd_list = ['01', '03', '00', '3E', '00', '02']
+        data_list = rail_send(ser, cmd_list)
+        print(data_list)
+        if data_list[0:2] == cmd_list[0:2]:
+            pos = int(hex_to_float(''.join(data_list[3:7])))
+            # print(pos)
+        else:
+            pos = -100
+        return pos
     else:
-        pos = -100
-    return pos
+        print('请先打开串口')
 
 
 def rail_stop(ser):
@@ -101,34 +113,41 @@ def rail_stop(ser):
 
 
 def rail_send(ser, cmd_list):
-    cmd_char = ' '.join(cmd_list)
-    crc, crc_h, crc_l = CRC().CRC16(cmd_char)
-    cmd_list.append(crc_l)
-    cmd_list.append(crc_h)
-    cmd_char = ' '.join(cmd_list)
-    # print('rail_send,发送数据:', cmd_char)
-    cmd_hex = bytes.fromhex(cmd_char)
-    if ser is not None:
-        ser.write(cmd_hex)
-    else:
-        print('rail_send:串口异常')
-
-    start = time.time()
-    data = b''
-    ret = b''
-    while True:
-        cur = time.time()
-        if (cur - start) > 2:
-            print('rail_send, 串口读数据超时:', (cur - start))
-            return -100
-        ret = ser.read()
-        if len(ret):
-            data += ret
+    if not ser is None:
+        cmd_lit_cp = cmd_list.copy()
+        cmd_char = ' '.join(cmd_lit_cp)
+        crc, crc_h, crc_l = CRC().CRC16(cmd_char)
+        cmd_lit_cp.append(crc_l)
+        cmd_lit_cp.append(crc_h)
+        cmd_char = ' '.join(cmd_lit_cp)
+        print('rail_send,发送数据:', cmd_char)
+        cmd_hex = bytes.fromhex(cmd_char)
+        if ser is not None:
+            ser.write(cmd_hex)
         else:
-            cur_data = data.hex()
-            data_list = re.findall('.{2}', cur_data)
-            # print('rail_send,返回数据:', data_list)
-            return data_list
+            print('rail_send:串口写异常', ser)
+
+        start = time.time()
+        data = b''
+        ret = b''
+        while True:
+            cur = time.time()
+            if (cur - start) > 2:
+                print('rail_send, 串口读数据超时:', (cur - start))
+                return -100
+            if ser is not None:
+                ret = ser.read()
+            else:
+                print('rail_send:串口读异常', ser)
+            if len(ret):
+                data += ret
+            else:
+                cur_data = data.hex()
+                data_list = re.findall('.{2}', cur_data)
+                # print('rail_send,返回数据:', data_list)
+                return data_list
+    else:
+        print('请先打开串口')
 
 
 def float_to_hex(f):

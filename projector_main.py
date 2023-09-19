@@ -45,7 +45,7 @@ from ctypes import *
 import os
 import shutil
 import socket
-
+import matplotlib.pyplot as plt
 
 # class AutoCalThread(QThread):
 #

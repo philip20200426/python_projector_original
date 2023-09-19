@@ -4,6 +4,7 @@ import os
 import cv2
 from PyQt5.QtCore import Qt, QThread, pyqtSignal  # 缩放
 from PyQt5.QtWidgets import QMessageBox
+from matplotlib import pyplot as plt
 
 import Fmc4030
 import gxipy as gx
@@ -160,15 +161,15 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             # plt.show()
 
     def work_test(self):
+        rail_speed = 200  # mm/s
         if not os.path.exists('asuFiles/interRefFiles'):
             os.mkdir('asuFiles/interRefFiles')
         self.clear()
         position = 0
         self.mRailPosition = Fmc4030.rail_position(self.ser)
-        print('导轨位置:', self.mRailPosition, '导轨移动初始位置:', position, abs(position - self.mRailPosition))
+        # print('导轨位置:', self.mRailPosition, '导轨移动初始位置:', position, abs(position - self.mRailPosition))
         self.motor_reset_steps(1700)
-        time.sleep(2)
-
+        time.sleep(1)
         while True:
             self.mRailPosition = Fmc4030.rail_position(self.ser)
             self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
@@ -177,13 +178,14 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
             location = location[9:-1]
             self.win.ui.posValueLabel.setText(location)
 
+            # 保存数据
+            print('保存数据')
             times = datetime.datetime.now(tz=None)
             file_path = 'asuFiles/interRefFiles' + '/' + str(position) + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
             self.win.cameraThread.takePicture(file_path)
-
             self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mLaplaceList2.append(self.win.cameraThread.mLaplace2)
             self.mPositionList.append(self.mRailPosition)
-
             if not self.mRunning or position > 1900:
                 print(self.mPositionList)
                 print(self.mLaplaceList)
@@ -191,9 +193,12 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                 print("退出对焦自动标定线程,最清晰的导轨位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
                 self.mRunning = True
                 return
-            position += 100
+            time.sleep(3)
+            # 上面延时是为了保证数据保存完成后，再移动导轨
+            position += 200
             Fmc4030.rail_forward(self.ser, 0, position)
-            time.sleep(10)
+            time.sleep(200/rail_speed)
+            print('导轨移动结束')
 
     def clear(self):
         self.mLaplaceList.clear()
@@ -213,7 +218,8 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         # os.system(cmd)
         # 5 2
         location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        location = int(location[9:-1])
+        if location != '':
+            location = int(location[9:-1])
 
         cmd1 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
         cmd2 = str(direction)
@@ -230,12 +236,13 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                 print('马达执行步数，超时处理', steps)
                 return -1
             new_location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-            new_location = int(new_location[9:-1])
-            if abs(abs(new_location - location) - steps) < 5:
-                print(steps, location, new_location)
-                print('马达执行' + str(steps) + '步')
-                time.sleep(0.2)
-                return steps
+            if new_location != '':
+                new_location = int(new_location[9:-1])
+                if abs(abs(new_location - location) - steps) < 5:
+                    print(steps, location, new_location)
+                    print('马达执行' + str(steps) + '步')
+                    time.sleep(0.2)
+                    return steps
 
     def motor_reset_steps(self, steps):
         count = 0
@@ -252,10 +259,11 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                     break
                 location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
                 location = location[9:-1]
-                if (abs(int(location) - 0)) < 3:
-                    print('马达复位完成', location)
-                    count = 3
-                    break
+                if location != '':
+                    if (abs(int(location) - 0)) < 3:
+                        print('马达复位完成', location)
+                        count = 3
+                        break
         time.sleep(0.3)
         motor_pos = self.motor_forward(2, steps)
         if abs(motor_pos - steps) < 5:
