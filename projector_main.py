@@ -352,6 +352,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system('adb uninstall com.nbd.tofmodule')
 
     def open_external_camera(self):
+        if self.ui.enableMTF.isChecked():
+            self.cameraThread.mEnLaplace = True
+        else:
+            self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
             self.ui.previewCameraLabel.show()
@@ -603,6 +607,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return False
 
     def write_to_nv(self):
+        if not self.sn_changed():
+            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+            return
+        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        time.sleep(2.9)
         create_dir_file()
         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
         print(cmd)
@@ -618,8 +627,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def auto_focus_motor(self):
         print(self.autofocus_cal_thread.dis_steps)
-        self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
-            float(self.ui.pos11StepsEdit.text()) * 50)
+        # self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
+        #     float(self.ui.pos11StepsEdit.text()) * 50)
         print(self.autofocus_cal_thread.dis_steps)
         file_path = globalVar.get_value('CALIB_DATA_PATH')
         print(file_path)
@@ -690,6 +699,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
+        self.cameraThread.mEnLaplace = True
         motor_position = os.popen('adb shell getprop persist.motor.position').read()
         # print('马达位置：', motor_position, self.ui.positionLabel.text())
         create_dir_file()
@@ -698,8 +708,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.autoFocusLabel.setAutoFillBackground(True)
         # self.ui.autoFocusLabel.setPalette(palette)
         self.ui.autoFocusLabel.setStyleSheet("color:blue")
-        self.ui.autoFocusLabel.setText('开始标定')
+        self.ui.autoFocusLabel.setText('>>>>>>>>>> 开始标定')
         self.close_ai_feature()
+        self.open_external_camera()
+        self.cameraThread.mEnLaplace = True
+        self.autofocus_cal_thread.ser = self.hui_yuan
         self.autofocus_cal_thread.start()
 
     def kst_auto_calibrate(self):

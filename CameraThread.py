@@ -3,6 +3,7 @@ import numpy as np
 from PyQt5.QtCore import Qt, QThread, pyqtSignal  # 缩放
 from PyQt5.QtWidgets import QMessageBox
 
+import MTF_measure3
 import gxipy as gx
 from PyQt5.QtGui import QImage, QPixmap
 from PIL import Image
@@ -28,7 +29,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.mRunning = False
         self.mLaplace = 0
         self.mLaplace2 = 0
-        self.mEnLaplace = False
+        self.mEnLaplace = True
 
     def openCamera(self):
         pass
@@ -92,52 +93,73 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 print("Get raw image failed.")
                 continue
             # create numpy array with data from raw image
-            numpy_image = raw_image.get_numpy_array()
-            numpy_image_cp = numpy_image.copy()
+            numpy_image_preview = raw_image.get_numpy_array()
+            numpy_image_picture = numpy_image_preview.copy()
+
             if self.mEnLaplace:
-                # 计算拉普拉斯值
-                orig_img = Image.fromarray(numpy_image)
-                # crop_img = orig_img.crop((510, 280, 940, 820))
-                crop_img = orig_img.crop((960, 860, 1400, 1390))
-                o_h, o_w = crop_img.size
-                #print(type(numpy_image), type(crop_img), o_h, o_w)
-                size = numpy_image.shape
-                # print('Image size: ', size[0], size[1])
-                # dis = numpy_image.shape
-
-                #laplacian = cv2.Laplacian(np.array(crop_img), cv2.CV_64F).var()
-                laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
-                la_list.append(laplacian)
-                sum_la = 0
-                for i in range(len(la_list)):
-                    sum_la += la_list[i]
-                if len(la_list) > 3:
-                    la_list.pop(0)
-                # print(la_list, len(la_list))
-                self.mLaplace = round(sum_la / (len(la_list)+1), 2)
+                # 2048, 2448
+                orig_img = Image.fromarray(numpy_image_preview)
+                crop_img = orig_img.crop((600, 600, 1900, 1460))
+                # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
+                numpy_image_preview = np.array(crop_img)
+                # print('++++++++++++++++++++++++++++++', numpy_image_preview.shape)
+                img, la = MTF_measure3.mtf_measure(numpy_image_preview)
+                if len(la) > 2:
+                    self.mLaplace = la[2]
+                # print('==================================>>> ', self.mLaplace)
                 now_time = time.time()
-                view = str(round(int((now_time - last_time) * 1000), 2)) + ' Laplace:' + str(self.mLaplace)
-                # 在图片添加文字，参数为，图片，绘制文字，位置，字体类型，字体大小，颜色，线条类型
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                img = cv2.putText(numpy_image, view, (500, 100), font, 3, (255, 255, 255), 8)
-                # img = cv2.putText(numpy_image, view, (200, 200), font, 3, (255, 255, 255), 8)
+                # 单位ms
+                str_time = str(round(int((now_time - last_time) * 1000), 2))
                 last_time = now_time
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(numpy_image_preview, str_time, (500, 800), font, 3, (255, 255, 255), 8)
+                # 计算拉普拉斯值
+                # orig_img = Image.fromarray(numpy_image)
+                # # crop_img = orig_img.crop((510, 280, 940, 820))
+                # # 非梯形相机,1.6m,右转15
+                # crop_img = orig_img.crop((690, 820, 1700, 1360))
+                # o_h, o_w = crop_img.size
+                # crop_img.save('asuFiles/interRefFiles/crop.bmp')
+                # #print(type(numpy_image), type(crop_img), o_h, o_w)
+                # size = numpy_image.shape
+                # # print('Image size: ', size[0], size[1])
+                # # dis = numpy_image.shape
+                #
+                # #laplacian = cv2.Laplacian(np.array(crop_img), cv2.CV_64F).var()
+                # laplacian = cv2.Laplacian(numpy_image, cv2.CV_64F).var()
+                # self.mLaplace = round(laplacian, 2)
 
-            if numpy_image is None:
+                # la_list.append(laplacian)
+                # sum_la = 0
+                # for i in range(len(la_list)):
+                #     sum_la += la_list[i]
+                # if len(la_list) > 3:
+                #     la_list.pop(0)
+                # # print(la_list, len(la_list))
+                # self.mLaplace = round(sum_la / (len(la_list)+1), 2)
+                # now_time = time.time()
+                # view = str(round(int((now_time - last_time) * 1000), 2)) + ' Laplace:' + str(self.mLaplace)
+                # # 在图片添加文字，参数为，图片，绘制文字，位置，字体类型，字体大小，颜色，线条类型
+                # font = cv2.FONT_HERSHEY_SIMPLEX
+                # img = cv2.putText(numpy_image, view, (500, 100), font, 3, (255, 255, 255), 8)
+                # # img = cv2.putText(numpy_image, view, (200, 200), font, 3, (255, 255, 255), 8)
+                # last_time = now_time
+
+            if numpy_image_preview is None:
                 print("numpy_image is None.")
                 continue
             if self.mTakePicture:
-                self.mLaplace2 = auto_focus_cam(numpy_image)
+                self.mLaplace2 = auto_focus_cam(numpy_image_picture)
                 self.mTakePicture = False
                 # show acquired image
-                img = Image.fromarray(numpy_image_cp, 'L')
+                img = Image.fromarray(numpy_image_picture, 'L')
                 img.save(self.mImageName + '.bmp')
-                # crop_img.save(self.mImageName + 'crop.bmp')
+
                 print("TakePicture Frame ID: %d   Height: %d   Width: %d "
                       % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
                 print(self.mImageName + '.bmp')
 
-            q_img = QImage(numpy_image.data, numpy_image.shape[1], numpy_image.shape[0], QImage.Format_Grayscale8)
+            q_img = QImage(numpy_image_preview.data, numpy_image_preview.shape[1], numpy_image_preview.shape[0], QImage.Format_Grayscale8)
             pix = QPixmap(q_img).scaled(720, 540)
             # pix = QPixmap(q_img).scaled(430, 540)
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

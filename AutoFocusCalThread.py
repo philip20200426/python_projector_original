@@ -5,6 +5,7 @@ import cv2
 from PyQt5.QtCore import QThread
 import time
 
+import HuiYuanRotate
 import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
 from math_utils import CRC
@@ -32,20 +33,83 @@ class AutoFocusCalThread(QThread):
         self.dis_steps = [-1, -1]
 
     def run(self):
-        print('开始保存数据：')
         start_time = time.time()
-        pos11_steps = self.win.ui.pos11StepsEdit.text()
+        self.init()
+        time.sleep(2.6)
+        if not self.win.ui.getTofCheckBox.isChecked():
+            print('开始自动化标定：')
+            self.win.showWritePattern()
+            # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
+            # self.win.ui.autoFocusLabel.setText('启动TOF校准')
+            # time.sleep(1)
 
+            # 控制转台左转15度
+            HuiYuanRotate.hy_control(self.ser, 15, 0)
+            time.sleep(4.6)
+            # 触发全向 触发对焦
+            self.auto_ai_feature()
+            time.sleep(11)
+
+            print('开始读取投影自动对焦后的马达位置')
+            left_para_auto = self.read_para()
+            print('自动对焦后的马达数据：', left_para_auto)
+            left_steps = left_para_auto[1]
+
+            # 基于外部CAM对焦，返回当前马达位置
+            self.win.auto_cam_af_cal()
+            time.sleep(39)
+            print('开始读取外部CAM对焦后的马达位置')
+            left_para_cam = self.read_para()
+            left_ex_steps = left_para_cam[1]
+            print('左投外部对焦：', left_para_cam)
+            gap = left_ex_steps - left_steps
+            print('GAP:', gap)
+
+            # 控制转台到0度
+            HuiYuanRotate.hy_control(self.ser, 0, 0)
+            time.sleep(3)
+            # 触发自动梯形和自动对焦
+            # 触发全向
+            self.auto_ai_feature()
+            time.sleep(5)
+            center_para_auto = self.read_para()
+            print('中心：', center_para_auto)
+            target_dis = center_para_auto[1] + gap
+            self.dis_steps[1] = target_dis
+            print(self.dis_steps, target_dis, center_para_auto, gap)
+            self.win.auto_focus_motor()
+            self.win.write_to_nv()
+            self.win.removePattern()
+        else:
+            print('开始保存数据：')
+            left_para_auto = self.read_para()
+            print(left_para_auto)
+
+    def init(self):
         # self.win.ui.autoFocusLabel.setText('安装标定APK')
         # os.system('adb install -r app-debug.apk')
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         self.win.ui.autoFocusLabel.setText('启动标定服务')
-        time.sleep(2.6)
-        # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
-        # self.win.ui.autoFocusLabel.setText('启动TOF校准')
-        # time.sleep(1)
+
+    def auto_ai_feature(self):
+        # 触发自动梯形和自动对焦
+        # 触发全向
+        # os.system(
+        #    'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
+        # 触发对焦
+        os.system(
+            'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
+        # # 触发自动梯形和自动对焦
+        # # 触发全向
+        # os.system(
+        #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 2 flag 0')
+        # # 触发对焦
+        # os.system(
+        #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+
+    def read_para(self):
         self.win.ui.autoFocusLabel.setText('保存位置数据')
         cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
         cmd1 = '11'
@@ -74,57 +138,10 @@ class AutoFocusCalThread(QThread):
         if location != '':
             location = location[9:-1]
         self.dis_steps[1] = int(location)
-        self.win.ui.autoFocusLabel.setText(str(self.dis_steps))
-        print('TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + '马达location:' + location)
-        # file_path = globalVar.get_value('CALIB_DATA_PATH')
-        # file_pro_path1 = dir_pro_path + "pro_n11.txt"
-        # file_pro_path2 = dir_pro_path + "pro_n12.txt"
-        # if os.path.exists(file_pro_path1):
-        #     tof_list = []
-        #     file = open(file_pro_path1)
-        #     row = 0
-        #     while row < 4:  # 直到读取完文件
-        #         line = file.readline().strip()  # 读取一行文件，包括换行符
-        #         if row == 1:
-        #             tof_list += line.split(',')
-        #             dis_steps[0] = tof_list[0]
-        #             break
-        #         row += 1
-        #     file.close()  # 关闭文件
-
-            # prefix = 'FocusA: [ '
-            # suffix = ' ]\n'
-            # da = prefix + ",".join(dis_steps) + suffix
-            # print(da)
-            # with open(file_path, "a") as f1:
-            #     f1.write('%YAML:1.0\n')
-            #     f1.write('---\n')
-            #     f1.write(da)
-            # self.win.ui.autoFocusLabel.setText('开始写入数据')
-            # cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
-            # print(cmd)
-            # os.system(cmd)
-            # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-        # self.win.ui.autoFocusLabel.setText('标定完成')
-        # else:
-        #     self.win.ui.autoFocusLabel.setText('数据异常')
-        #     print(file_pro_path1, '文件不存在')
-
-        # os.system('adb shell settings put global tv_auto_focus_asu 1')
-        # # os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
-        # os.system('adb shell setprop persist.sys.keystone.type 0')
-        # ksd_para = os.popen('adb shell cat sys/devices/platform/asukey/ksdpara').read()
-        # index = ksd_para.find('FocusA')
-        # print(ksd_para)
-        # result = ksd_para[index+8: index+21]
-        # print(len(ksd_para), index, result)
-        # self.win.ui.autoFocusLabel.setText(result)
-        # os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.txt"')
-        # os.system('adb shell "rm -rf /sdcard/DCIM/projectionFiles/pro_n11.bmp"')
-
-        # print(index)
-
-        # os.system('adb reboot ')
+        para = 'TOF: ' + str(self.dis_steps[0]) + '  马达: ' + str(self.dis_steps[1])
+        self.win.ui.autoFocusLabel.setText(para)
+        print('TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + ',马达location:' + location)
+        return self.dis_steps
 
     def parse_projector_data(self):
         pos_error = [0] * 8

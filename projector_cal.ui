@@ -32,7 +32,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -454,6 +454,22 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="enableMTF">
+             <property name="maximumSize">
+              <size>
+               <width>20</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="eCloseCameraButton">
              <property name="text">
               <string>关闭</string>
@@ -803,6 +819,208 @@
             </property>
             <property name="text">
              <string>清除</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+       <widget class="QFrame" name="frame_6">
+        <property name="geometry">
+         <rect>
+          <x>910</x>
+          <y>580</y>
+          <width>461</width>
+          <height>181</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <property name="lineWidth">
+         <number>2</number>
+        </property>
+        <widget class="QWidget" name="layoutWidget_8">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>13</y>
+           <width>431</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="0,2,0">
+          <item>
+           <widget class="QPushButton" name="openRotateButton">
+            <property name="text">
+             <string>打开转台</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="rotateButton">
+            <property name="text">
+             <string>调整角度</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="closeRotateButton">
+            <property name="text">
+             <string>关闭转台</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="layoutWidget_9">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>73</y>
+           <width>431</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Yaw：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="xyEdit">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_15">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Pitch:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="yzEdit">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Roll：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="xzEdit">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="layoutWidget_10">
+         <property name="geometry">
+          <rect>
+           <x>14</x>
+           <y>135</y>
+           <width>431</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QPushButton" name="positionButton">
+            <property name="text">
+             <string>位置</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="positionEdit">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>9</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="enAutoTofKstCheckBox">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -1642,208 +1860,6 @@
          </property>
         </widget>
        </widget>
-       <widget class="QFrame" name="frame_6">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>120</y>
-          <width>461</width>
-          <height>181</height>
-         </rect>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::Box</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <property name="lineWidth">
-         <number>2</number>
-        </property>
-        <widget class="QWidget" name="layoutWidget">
-         <property name="geometry">
-          <rect>
-           <x>13</x>
-           <y>13</y>
-           <width>431</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="0,2,0">
-          <item>
-           <widget class="QPushButton" name="openRotateButton">
-            <property name="text">
-             <string>打开转台</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="rotateButton">
-            <property name="text">
-             <string>调整角度</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="closeRotateButton">
-            <property name="text">
-             <string>关闭转台</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="layoutWidget">
-         <property name="geometry">
-          <rect>
-           <x>13</x>
-           <y>73</y>
-           <width>431</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_11">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Yaw：</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="xyEdit">
-            <property name="maximumSize">
-             <size>
-              <width>80</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_15">
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Pitch:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="yzEdit">
-            <property name="maximumSize">
-             <size>
-              <width>80</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_3">
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Roll：</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="xzEdit">
-            <property name="maximumSize">
-             <size>
-              <width>80</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="layoutWidget">
-         <property name="geometry">
-          <rect>
-           <x>14</x>
-           <y>135</y>
-           <width>431</width>
-           <height>31</height>
-          </rect>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <item>
-           <widget class="QPushButton" name="positionButton">
-            <property name="text">
-             <string>位置</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="positionEdit">
-            <property name="maximumSize">
-             <size>
-              <width>80</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>9</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="enAutoTofKstCheckBox">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="checkable">
-             <bool>false</bool>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </widget>
        <widget class="QFrame" name="frame_5">
         <property name="geometry">
          <rect>
@@ -1895,12 +1911,12 @@
          <rect>
           <x>60</x>
           <y>170</y>
-          <width>161</width>
+          <width>211</width>
           <height>31</height>
          </rect>
         </property>
         <property name="text">
-         <string>标定文件写入到投影设备</string>
+         <string>写入标定文件到投影设备</string>
         </property>
        </widget>
        <widget class="QPushButton" name="autoFocusMotorButton">
@@ -1908,22 +1924,27 @@
          <rect>
           <x>60</x>
           <y>120</y>
-          <width>161</width>
+          <width>211</width>
           <height>31</height>
          </rect>
         </property>
         <property name="text">
-         <string>标定数据写入标定文件</string>
+         <string>写入标定数据到标定文件</string>
         </property>
        </widget>
        <widget class="QLabel" name="autoFocusLabel">
         <property name="geometry">
          <rect>
-          <x>220</x>
+          <x>340</x>
           <y>69</y>
-          <width>151</width>
+          <width>341</width>
           <height>31</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>16</pointsize>
+         </font>
         </property>
         <property name="text">
          <string/>
@@ -1932,7 +1953,7 @@
        <widget class="QLineEdit" name="pos11StepsEdit">
         <property name="geometry">
          <rect>
-          <x>170</x>
+          <x>220</x>
           <y>70</y>
           <width>51</width>
           <height>31</height>
@@ -1956,12 +1977,25 @@
          <rect>
           <x>60</x>
           <y>70</y>
-          <width>101</width>
+          <width>151</width>
           <height>31</height>
          </rect>
         </property>
         <property name="text">
          <string>读取标定数据</string>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="getTofCheckBox">
+        <property name="geometry">
+         <rect>
+          <x>290</x>
+          <y>70</y>
+          <width>21</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </widget>

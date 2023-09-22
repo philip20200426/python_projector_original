@@ -112,9 +112,71 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         d = -7278.83032890080
         self.mRailPosition = Fmc4030.rail_position(self.ser)
         self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
-        distance = 1026 + self.mRailPosition
+        # distance = 1026 + self.mRailPosition
+        distance = 1626
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
         steps = int(steps)
+        print('投影仪位置:', distance, '马达初始化位置:', steps)
+        motor_init_pos = self.motor_reset_steps(steps)
+        print('移动马达到初始位置, motor_init_pos', motor_init_pos)
+        while True:
+            location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+            location = int(location[9:-1])
+            self.win.ui.posValueLabel.setText(str(location))
+            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mPositionList.append(int(location))
+            if len(self.mLaplaceList) > 1:
+                gap = self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2]
+                if gap < 0:
+                    if direction == 5:
+                        direction = 2
+                    elif direction == 2:
+                        direction = 5
+                    step_size = step_size * 0.618
+                # print('>>>>>>>>>>>>>>>>>>>> 切换方向：', gap, direction, step_size)
+
+            if not self.mRunning or step_size < 30:
+                print('马达位置:', self.mPositionList)
+                print('清晰度值:', self.mLaplaceList)
+                absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+                # dif = absolute_position - location
+                # if dif > 0:
+                #     self.motor_forward(5, abs(dif))
+                # elif dif < 0:
+                #     self.motor_forward(2, abs(dif))
+                print('已找到最清晰的马达位置:', absolute_position, max(self.mLaplaceList))
+                self.motor_reset_steps(absolute_position)
+                print("退出对焦自动标定线程,最清晰的马达位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
+                self.mRunning = True
+                return
+
+            time.sleep(1)
+            self.motor_forward(direction, step_size)
+            # wait_time = step_size / motor_speed
+            # if wait_time < 0.5:
+            #     wait_time = 0.5
+            # print('延时等待：', wait_time)
+            wait_time = int(self.win.ui.exTimeSpinBox.text())/1000/1000*6
+            time.sleep(wait_time)
+            print('延时等待完成,', wait_time)
+            # plt.plot(self.mPositionList, self.mLaplaceList)
+            # plt.show()
+
+    # 控制马达找到最清晰的点,细搜
+    def work2_detailed_search(self):
+        step_size = 160
+        motor_speed = 3.6/2589  # s/step
+        direction = 2
+        self.clear()
+        a = 6.47681438841663e-07
+        b = -0.00449064062802631
+        c = 11.0460386267558
+        d = -7278.83032890080
+        self.mRailPosition = Fmc4030.rail_position(self.ser)
+        self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
+        distance = 1026 + self.mRailPosition
+        steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
+        steps = int(steps)-150
         print('投影仪位置:', distance, '马达初始化位置:', steps)
         motor_init_pos = self.motor_reset_steps(steps)
         print('移动马达到初始位置, motor_init_pos', motor_init_pos)
@@ -220,6 +282,8 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
         if location != '':
             location = int(location[9:-1])
+        else:
+            print('马达异常')
 
         cmd1 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
         cmd2 = str(direction)
@@ -243,6 +307,8 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                     print('马达执行' + str(steps) + '步')
                     time.sleep(0.2)
                     return steps
+            else:
+                print('马达异常')
 
     def motor_reset_steps(self, steps):
         count = 0
