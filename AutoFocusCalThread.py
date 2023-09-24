@@ -6,6 +6,7 @@ from PyQt5.QtCore import QThread
 import time
 
 import HuiYuanRotate
+import ProjectorDev
 import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
 from math_utils import CRC
@@ -37,26 +38,25 @@ class AutoFocusCalThread(QThread):
         self.init()
         time.sleep(2.6)
         if not self.win.ui.getTofCheckBox.isChecked():
-            print('开始自动化标定：')
-            self.win.showWritePattern()
+            print('开始对焦自动化标定')
+            ProjectorDev.pro_show_pattern_af()
             # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
-            # self.win.ui.autoFocusLabel.setText('启动TOF校准')
+            # self..win.ui.autoFocusLabel.setText('启动TOF校准')
             # time.sleep(1)
 
             # 控制转台左转15度
             HuiYuanRotate.hy_control(self.ser, 15, 0)
-            time.sleep(4.6)
-            # 触发全向 触发对焦
-            self.auto_ai_feature()
-            time.sleep(11)
-
+            time.sleep(3.6)
+            # 触发全向和自动对焦
+            ProjectorDev.pro_trigger_auto_ai()
+            time.sleep(8)
             print('开始读取投影自动对焦后的马达位置')
             left_para_auto = self.read_para()
             print('自动对焦后的马达数据：', left_para_auto)
             left_steps = left_para_auto[1]
 
             # 基于外部CAM对焦，返回当前马达位置
-            self.win.auto_cam_af_cal()
+            self.win.ex_cam_af()
             time.sleep(39)
             print('开始读取外部CAM对焦后的马达位置')
             left_para_cam = self.read_para()
@@ -69,8 +69,7 @@ class AutoFocusCalThread(QThread):
             HuiYuanRotate.hy_control(self.ser, 0, 0)
             time.sleep(3)
             # 触发自动梯形和自动对焦
-            # 触发全向
-            self.auto_ai_feature()
+            ProjectorDev.pro_trigger_auto_ai()
             time.sleep(5)
             center_para_auto = self.read_para()
             print('中心：', center_para_auto)
@@ -92,22 +91,6 @@ class AutoFocusCalThread(QThread):
         os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
         os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         self.win.ui.autoFocusLabel.setText('启动标定服务')
-
-    def auto_ai_feature(self):
-        # 触发自动梯形和自动对焦
-        # 触发全向
-        # os.system(
-        #    'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
-        # 触发对焦
-        os.system(
-            'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
-        # # 触发自动梯形和自动对焦
-        # # 触发全向
-        # os.system(
-        #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 2 flag 0')
-        # # 触发对焦
-        # os.system(
-        #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
 
     def read_para(self):
         self.win.ui.autoFocusLabel.setText('保存位置数据')

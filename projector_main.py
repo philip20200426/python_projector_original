@@ -11,9 +11,10 @@ from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor, QPixmap
 
 import Fmc4030
 import HuiYuanRotate
+import ProjectorDev
 import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
-from CamAfCalThread import CamAfCalThread
+from ExCamAfThread import ExCamAfThread
 from Fmc4030 import rail_forward, rail_position, init, rail_forward_pos, rail_stop
 from math_utils import CRC
 from pathlib import Path
@@ -118,7 +119,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.railForewardButton.clicked.connect(self.rail_forward)
         self.ui.railReversalButton.clicked.connect(self.rail_reversal)
         self.ui.railPositionButton.clicked.connect(self.rail_absolute_position)
-        self.ui.camAutoAfCalButton.clicked.connect(self.auto_cam_af_cal)
+        self.ui.exCamAfButton.clicked.connect(self.ex_cam_af)
         self.ui.autoFocusMotorButton.clicked.connect(self.auto_focus_motor)
         self.ui.autoFocusCalButton.clicked.connect(self.auto_focus_cal)
         self.ui.rotateButton.clicked.connect(self.rotating_platform_angle)
@@ -180,9 +181,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.autofocus_cal_thread = None
         self.autofocus_cal_thread = AutoFocusCalThread(self.current_port, self)
-        self.auto_cam_af_cal_thread = None
-        self.auto_cam_af_cal_thread = CamAfCalThread(self.current_port, self)
-        # self.auto_cam_af_cal_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
+        self.ex_cam_af_thread = ExCamAfThread(self.current_port, self)
+        # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
         # self.update_data_timer = QTimer()
         # self.update_data_timer.timeout.connect(self.update_data)
@@ -265,7 +265,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
         try:
-            if self.cameraThread.mRunning or self.auto_cam_af_cal_thread.mRunning:
+            if self.cameraThread.mRunning or self.ex_cam_af_thread.mRunning:
                 self.ui.previewCameraLabel.setPixmap(image)
             else:
                 self.ui.previewCameraLabel.setPixmap(QPixmap(""))
@@ -669,7 +669,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def save_laplace(self):
         pass
-        # self.lap_list.append(self.auto_cam_af_cal_thread.mLaplace)
+        # self.lap_list.append(self.ex_cam_af_thread.mLaplace)
         # print(self.lap_list, len(self.lap_list))
         # total = 0
         # for i in range(len(self.lap_list)):
@@ -680,20 +680,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def clean_laplace(self):
         self.lap_list.clear()
-        self.auto_cam_af_cal_thread.clear()
-        # self.auto_cam_af_cal_thread.mLaplaceList.clear()
-        # self.auto_cam_af_cal_thread.mRailPosition.clear()
+        self.ex_cam_af_thread.clear()
+        # self.ex_cam_af_thread.mLaplaceList.clear()
+        # self.ex_cam_af_thread.mRailPosition.clear()
 
-    def auto_cam_af_cal(self):
-        # rail_position(self.current_port)
-        # rail_forward(self.current_port, 0, 300)
-        # rail_forward_pos(self.current_port, 1200)
-        # init(self.current_port)
-        # print('+++++++++++++++++++++++++ 自动对焦标定')
-        self.cameraThread.mEnLaplace = True
+    def ex_cam_af(self):
+        print('>>>>>>>>>> 外置CAM自动对焦')
         self.open_external_camera()
-        self.auto_cam_af_cal_thread.ser = self.current_port
-        self.auto_cam_af_cal_thread.start()
+        self.cameraThread.mEnLaplace = True
+        self.ex_cam_af_thread.ser = self.current_port
+        self.ex_cam_af_thread.start()
 
     def auto_focus_cal(self):
         if not self.sn_changed():
@@ -769,7 +765,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
         # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-        self.auto_cam_af_cal_thread.mRunning = False
+        self.ex_cam_af_thread.mRunning = False
         print('+++++++++++++++++++++++++++++++++++++++++++++')
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.exit = True
@@ -1032,56 +1028,24 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def showWritePattern(self):
         os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
 
-        self.ui.getMotorPosButton.clicked.connect(self.get_motor_position)
-        self.ui.doMotorPosButton.clicked.connect(self.execute_motor_position)
-
     def get_motor_position(self):
-        location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        location = location[9:-1]
-        self.ui.posValueLabel.setText(location)
+        self.ui.posValueLabel.setText(str(ProjectorDev.pro_get_motor_position()))
 
     def execute_motor_position(self):
-        self.auto_cam_af_cal_thread.motor_reset_steps(int(self.ui.motorPosition2Edit.text()))
+        ProjectorDev.pro_motor_reset_steps(int(self.ui.motorPosition2Edit.text()))
 
     def motorReset(self):
+        ProjectorDev.pro_motor_reset_steps(0)
         # os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
-        os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
+        # os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
 
     def motorForward(self):
-        # inputCmd = 'adb shell "echo 5 $hello > /sys/devices/platform/customer-AFmotor/step_set"'
-        # execute_adb_command(inputCmd, 0)
-        # subprocess.Popen('adb shell "echo 5 2000 > /sys/devices/platform/customer-AFmotor/step_set"', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # cmd1 = "adb shell "
-        # cmd2 = '"echo 5 '
-        # cmd3 = self.ui.motorPositionEdit.text()
-        # cmd4 = '> /sys/devices/platform/customer-AFmotor/step_set"'
-        # cmd = cmd1 + cmd2 + cmd3 + cmd4
-        # print(cmd)
-        # os.system(cmd)
-        cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value "
-        cmd2 = self.ui.motorPositionEdit.text()
-        # mylog.logger.debug("-" + cmd2)
-        cmd = cmd1 + cmd2
-        print(cmd)
-        os.system(cmd)
+        steps = int(self.ui.motorPositionEdit.text())
+        ProjectorDev.pro_motor_forward2(5, steps)
 
     def motorBack(self):
-        # inputCmd = 'adb shell "echo 5 $hello > /sys/devices/platform/customer-AFmotor/step_set"'
-        # execute_adb_command(inputCmd, 0)
-        # subprocess.Popen('adb shell "echo 5 2000 > /sys/devices/platform/customer-AFmotor/step_set"', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # cmd1 = "adb shell "
-        # cmd2 = '"echo 2 '
-        # cmd3 = self.ui.motorPositionEdit.text()
-        # cmd4 = '> /sys/devices/platform/customer-AFmotor/step_set"'
-        # cmd = cmd1 + cmd2 + cmd3 + cmd4
-        # print(cmd)
-        # os.system(cmd)
-        cmd1 = "adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value "
-        cmd2 = self.ui.motorPositionEdit.text()
-        # mylog.logger.debug("+" + cmd2)
-        cmd = cmd1 + cmd2
-        print(cmd)
-        os.system(cmd)
+        steps = int(self.ui.motorPositionEdit.text())
+        ProjectorDev.pro_motor_forward2(2, steps)
 
     def init_status_bar(self):
         # 状态栏显示软件版本

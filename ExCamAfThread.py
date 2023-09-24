@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox
 from matplotlib import pyplot as plt
 
 import Fmc4030
+import ProjectorDev
 import gxipy as gx
 from PyQt5.QtGui import QImage, QPixmap
 from PIL import Image
@@ -18,11 +19,11 @@ from math_utils import CRC
 # import matplotlib.pyplot as plt
 
 # 多线程类
-class CamAfCalThread(QThread):  # 建立一个任务线程类
+class ExCamAfThread(QThread):  # 建立一个任务线程类
     camera_arrive_signal = pyqtSignal(QPixmap)  # 设置触发信号传递的参数数据类型,传递信号必须事先定义好数据类型
 
     def __init__(self, ser=None, win=None):
-        super(CamAfCalThread, self).__init__()
+        super(ExCamAfThread, self).__init__()
         self.ser = ser
         self.win = win
         self.mRunning = True
@@ -103,7 +104,6 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
     # 控制马达找到最清晰的点
     def work2(self):
         step_size = 160
-        motor_speed = 3.6/2589  # s/step
         direction = 2
         self.clear()
         a = 6.47681438841663e-07
@@ -117,11 +117,10 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
         steps = int(steps)
         print('投影仪位置:', distance, '马达初始化位置:', steps)
-        motor_init_pos = self.motor_reset_steps(steps)
+        motor_init_pos = ProjectorDev.pro_motor_reset_steps(steps)
         print('移动马达到初始位置, motor_init_pos', motor_init_pos)
         while True:
-            location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-            location = int(location[9:-1])
+            location = ProjectorDev.pro_get_motor_position()
             self.win.ui.posValueLabel.setText(str(location))
             self.mLaplaceList.append(self.win.cameraThread.mLaplace)
             self.mPositionList.append(int(location))
@@ -139,24 +138,15 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
                 print('马达位置:', self.mPositionList)
                 print('清晰度值:', self.mLaplaceList)
                 absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
-                # dif = absolute_position - location
-                # if dif > 0:
-                #     self.motor_forward(5, abs(dif))
-                # elif dif < 0:
-                #     self.motor_forward(2, abs(dif))
                 print('已找到最清晰的马达位置:', absolute_position, max(self.mLaplaceList))
-                self.motor_reset_steps(absolute_position)
+                ProjectorDev.pro_motor_reset_steps(absolute_position)
                 print("退出对焦自动标定线程,最清晰的马达位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
                 self.mRunning = True
                 return
 
-            time.sleep(1)
-            self.motor_forward(direction, step_size)
-            # wait_time = step_size / motor_speed
-            # if wait_time < 0.5:
-            #     wait_time = 0.5
-            # print('延时等待：', wait_time)
-            wait_time = int(self.win.ui.exTimeSpinBox.text())/1000/1000*6
+            wait_time = float(self.win.ui.exTimeSpinBox.text())/1000/1000*2
+            time.sleep(wait_time)
+            ProjectorDev.pro_motor_forward(direction, step_size)
             time.sleep(wait_time)
             print('延时等待完成,', wait_time)
             # plt.plot(self.mPositionList, self.mLaplaceList)
@@ -266,74 +256,3 @@ class CamAfCalThread(QThread):  # 建立一个任务线程类
         self.mLaplaceList.clear()
         self.mPositionList.clear()
         print('清除队列:', len(self.mLaplaceList), len(self.mPositionList))
-
-    def motor_forward(self, direction, steps):
-        # inputCmd = 'adb shell "echo 5 $hello > /sys/devices/platform/customer-AFmotor/step_set"'
-        # execute_adb_command(inputCmd, 0)
-        # subprocess.Popen('adb shell "echo 5 2000 > /sys/devices/platform/customer-AFmotor/step_set"', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # cmd1 = "adb shell "
-        # cmd2 = '"echo 5 '
-        # cmd3 = self.ui.motorPositionEdit.text()
-        # cmd4 = '> /sys/devices/platform/customer-AFmotor/step_set"'
-        # cmd = cmd1 + cmd2 + cmd3 + cmd4
-        # print(cmd)
-        # os.system(cmd)
-        # 5 2
-        location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        if location != '':
-            location = int(location[9:-1])
-        else:
-            print('马达异常')
-
-        cmd1 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
-        cmd2 = str(direction)
-        cmd3 = ' --ei value '
-        cmd4 = str(int(steps))
-        # mylog.logger.debug("-" + cmd2)
-        cmd = cmd1 + cmd2 + cmd3 + cmd4
-        print(cmd)
-        os.system(cmd)
-        start = time.time()
-        while True:
-            cur = time.time()
-            if abs(cur - start) > 6:
-                print('马达执行步数，超时处理', steps)
-                return -1
-            new_location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-            if new_location != '':
-                new_location = int(new_location[9:-1])
-                if abs(abs(new_location - location) - steps) < 5:
-                    print(steps, location, new_location)
-                    print('马达执行' + str(steps) + '步')
-                    time.sleep(0.2)
-                    return steps
-            else:
-                print('马达异常')
-
-    def motor_reset_steps(self, steps):
-        count = 0
-        location = 0
-        motor_pos = 0
-        while count < 3:
-            self.win.motorReset()
-            start = time.time()
-            while True:
-                cur = time.time()
-                if abs(cur - start) > 6:
-                    print('马达复位超时')
-                    count += 1
-                    break
-                location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-                location = location[9:-1]
-                if location != '':
-                    if (abs(int(location) - 0)) < 3:
-                        print('马达复位完成', location)
-                        count = 3
-                        break
-        time.sleep(0.3)
-        motor_pos = self.motor_forward(2, steps)
-        if abs(motor_pos - steps) < 5:
-            print('马达运行到位置:', motor_pos, steps)
-        else:
-            print('马达运行到位置:' + str(motor_pos) + '时,发生错误')
-        return motor_pos

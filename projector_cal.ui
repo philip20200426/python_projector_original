@@ -768,7 +768,7 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_16">
           <item>
-           <widget class="QPushButton" name="camAutoAfCalButton">
+           <widget class="QPushButton" name="exCamAfButton">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -776,7 +776,7 @@
              </size>
             </property>
             <property name="text">
-             <string>视觉对焦标定</string>
+             <string>外视觉对焦</string>
             </property>
            </widget>
           </item>
