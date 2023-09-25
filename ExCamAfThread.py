@@ -32,10 +32,12 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         self.mLaplaceList = []
         self.mLaplaceList2 = []
         self.mPositionList = []
+        self.motor_position = 0
         print('>>>>>>>>>> CamAfCalThread')
 
     def run(self):
-        self.work2()
+        self.work2_detailed_search()
+        # self.work2()
 
     def work1(self):
         relative_position = 36
@@ -137,14 +139,14 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             if not self.mRunning or step_size < 30:
                 print('马达位置:', self.mPositionList)
                 print('清晰度值:', self.mLaplaceList)
-                absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
-                print('已找到最清晰的马达位置:', absolute_position, max(self.mLaplaceList))
-                ProjectorDev.pro_motor_reset_steps(absolute_position)
-                print("退出对焦自动标定线程,最清晰的马达位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
+                self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+                print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
+                ProjectorDev.pro_motor_reset_steps(self.motor_position)
+                print("退出对焦自动标定线程,最清晰的马达位置:", self.motor_position, ',清晰度:', max(self.mLaplaceList))
                 self.mRunning = True
                 return
 
-            wait_time = float(self.win.ui.exTimeSpinBox.text())/1000/1000*2
+            wait_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
             time.sleep(wait_time)
             ProjectorDev.pro_motor_forward(direction, step_size)
             time.sleep(wait_time)
@@ -154,63 +156,32 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
 
     # 控制马达找到最清晰的点,细搜
     def work2_detailed_search(self):
-        step_size = 160
-        motor_speed = 3.6/2589  # s/step
+        sta = time.time()
+        ProjectorDev.pro_motor_forward(5, 180)
         direction = 2
-        self.clear()
-        a = 6.47681438841663e-07
-        b = -0.00449064062802631
-        c = 11.0460386267558
-        d = -7278.83032890080
-        self.mRailPosition = Fmc4030.rail_position(self.ser)
-        self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
-        distance = 1026 + self.mRailPosition
-        steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
-        steps = int(steps)-150
-        print('投影仪位置:', distance, '马达初始化位置:', steps)
-        motor_init_pos = self.motor_reset_steps(steps)
-        print('移动马达到初始位置, motor_init_pos', motor_init_pos)
-        while True:
-            location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-            location = int(location[9:-1])
-            self.win.ui.posValueLabel.setText(str(location))
-            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
-            self.mPositionList.append(int(location))
-            if len(self.mLaplaceList) > 1:
-                gap = self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2]
-                if gap < 0:
-                    if direction == 5:
-                        direction = 2
-                    elif direction == 2:
-                        direction = 5
-                    step_size = step_size * 0.618
-                # print('>>>>>>>>>>>>>>>>>>>> 切换方向：', gap, direction, step_size)
+        pos = [[90, 90, 90, 90], [60, 60, 60, 60, 60], [90, 60, 60]]
+        for i in range(len(pos)):
+            for j in range(len(pos[i])):
+                location = ProjectorDev.pro_get_motor_position()
+                self.win.ui.posValueLabel.setText(str(location))
+                self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+                self.mPositionList.append(int(location))
 
-            if not self.mRunning or step_size < 30:
-                print('马达位置:', self.mPositionList)
-                print('清晰度值:', self.mLaplaceList)
-                absolute_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
-                # dif = absolute_position - location
-                # if dif > 0:
-                #     self.motor_forward(5, abs(dif))
-                # elif dif < 0:
-                #     self.motor_forward(2, abs(dif))
-                print('已找到最清晰的马达位置:', absolute_position, max(self.mLaplaceList))
-                self.motor_reset_steps(absolute_position)
-                print("退出对焦自动标定线程,最清晰的马达位置:", absolute_position, ',清晰度:', max(self.mLaplaceList))
-                self.mRunning = True
-                return
-
-            self.motor_forward(direction, step_size)
-            # wait_time = step_size / motor_speed
-            # if wait_time < 0.5:
-            #     wait_time = 0.5
-            # print('延时等待：', wait_time)
-            wait_time = int(self.win.ui.exTimeSpinBox.text())/1000/1000*8
-            time.sleep(wait_time)
-            print('延时等待完成,', wait_time)
-            # plt.plot(self.mPositionList, self.mLaplaceList)
-            # plt.show()
+                wait_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+                time.sleep(wait_time)
+                ProjectorDev.pro_motor_forward(direction, pos[i][j])
+                time.sleep(wait_time)
+            if direction == 2:
+                direction = 5
+            elif direction == 5:
+                direction = 2
+        if len(self.mPositionList) > 5:
+            self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+            print('耗时：', time.time() - sta)
+            ProjectorDev.pro_motor_reset_steps(self.motor_position)
+            print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
+            print(self.mLaplaceList, self.mPositionList)
+            print('耗时：', time.time() - sta)
 
     def work_test(self):
         rail_speed = 200  # mm/s
@@ -233,7 +204,8 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             # 保存数据
             print('保存数据')
             times = datetime.datetime.now(tz=None)
-            file_path = 'asuFiles/interRefFiles' + '/' + str(position) + '_' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+            file_path = 'asuFiles/interRefFiles' + '/' + str(position) + '_' + times.strftime(
+                "%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
             self.win.cameraThread.takePicture(file_path)
             self.mLaplaceList.append(self.win.cameraThread.mLaplace)
             self.mLaplaceList2.append(self.win.cameraThread.mLaplace2)
@@ -249,7 +221,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             # 上面延时是为了保证数据保存完成后，再移动导轨
             position += 200
             Fmc4030.rail_forward(self.ser, 0, position)
-            time.sleep(200/rail_speed)
+            time.sleep(200 / rail_speed)
             print('导轨移动结束')
 
     def clear(self):
