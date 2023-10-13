@@ -8,6 +8,7 @@ import time
 from matplotlib import pyplot as plt
 
 import HuiYuanRotate
+import ProjectorDev
 import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
 from math_utils import CRC
@@ -93,23 +94,25 @@ class AutoCalThread(QThread):
                         if len(line.split(',')) == 5:
                             imu_list += line.split(',')
                         else:
-                            pos_error[i] = -1
+                            #pos_error[i] = -1
+                            pos_error[i] = 0
                     row += 1
                 file.close()  # 关闭文件
             else:
                 pos_error[i] = -1
 
-            if os.path.exists(img_name):
-                imageSize = os.path.getsize(img_name)
-                if imageSize == 2764854:
-                    img_list.append(img_name)
-                else:
-                    print('图片尺寸不对')
-                    pos_error[i] = -1
-            else:
-                pos_error[i] = -1
+            # if os.path.exists(img_name):
+            #     imageSize = os.path.getsize(img_name)
+            #     if imageSize == 2764854:
+            #         img_list.append(img_name)
+            #     else:
+            #         print('图片尺寸不对')
+            #         pos_error[i] = -1
+            # else:
+            #     pos_error[i] = -1
         tof_list = list(map(float, tof_list))
-        imu_list = list(map(float, imu_list))
+        # imu_list = list(map(float, imu_list))
+        imu_list = [-0.35637358, -0.058934387, -9.621797, -2.1211205, -0.35069707, -1.5607239, -0.06814104, -9.396643, -9.430139, -0.40986606, 0.16314575, -0.041536115, -9.477646, 0.98616785, -0.25106198, 0.17572004, -0.053791054, -9.482669, 1.0615896, -0.32495475, 1.8895739, -0.028401155, -9.26852,11.52293, -0.17202999, 1.5429159, -0.027392864, -9.337974, 9.382189, -0.16582781, -1.2138578, -0.06935661, -9.435228, -7.330732, -0.41772044, 0.15215015, 1.6623696, -9.330419, 0.9197521, 10.100882]
         # print(len(tof_list), tof_list)
         # print(len(imu_list), imu_list)
         # print(len(img_list), img_list)
@@ -226,21 +229,22 @@ class AutoCalThread(QThread):
             os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
-            os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+            os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
             time.sleep(2.9)
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
+            ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
             os.system('adb shell am broadcast -a asu.intent.action.TofCal')
             # self.win.showWritePattern()
             time.sleep(1.9)
             self.win.showCheckerPattern()
             self.pos_init_finished = True
-            cur_time = time.time()
+        lst_time = time.time()
         while len(self.positionList) > 0:
             now_time = time.time()
-            if self.exit or (now_time - cur_time) > 300:
+            if self.exit or (now_time-lst_time) > 300:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
-                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间:', now_time-cur_time, self.exit)
+                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间:', now_time-lst_time, self.exit)
                 break
             if self.enableAlgo:
                 if len(self.positionList) == 1 and self.positionList[0] == -1:

@@ -32,7 +32,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -85,7 +85,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>400</y>
+          <y>430</y>
           <width>501</width>
           <height>181</height>
          </rect>
@@ -243,7 +243,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>620</y>
+          <y>640</y>
           <width>501</width>
           <height>131</height>
          </rect>
@@ -464,8 +464,11 @@
              <property name="text">
               <string/>
              </property>
-             <property name="checked">
+             <property name="checkable">
               <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -560,7 +563,7 @@
           <x>10</x>
           <y>160</y>
           <width>500</width>
-          <height>131</height>
+          <height>171</height>
          </rect>
         </property>
         <property name="maximumSize">
@@ -731,13 +734,20 @@
            </item>
           </layout>
          </item>
+         <item>
+          <widget class="QPushButton" name="evalCorrectButton">
+           <property name="text">
+            <string>全向梯形结果评估</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QFrame" name="frame_10">
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>310</y>
+          <y>350</y>
           <width>500</width>
           <height>71</height>
          </rect>
@@ -1037,8 +1047,8 @@
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>311</width>
-          <height>471</height>
+          <width>281</width>
+          <height>511</height>
          </rect>
         </property>
         <property name="frameShape">
@@ -1050,99 +1060,135 @@
         <property name="lineWidth">
          <number>2</number>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QPushButton" name="rootButton">
-           <property name="text">
-            <string>打开投影</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="startTestActivityButton">
-           <property name="text">
-            <string>启动测试界面</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="startServiceButton">
-           <property name="text">
-            <string>启动后台服务</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="installAppButton">
-           <property name="text">
-            <string>安装程序</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="uninstallAppButton">
-           <property name="text">
-            <string>卸载程序</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pullDataButton">
-           <property name="text">
-            <string>提取数据</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="cleanButton">
-           <property name="text">
-            <string>清除数据</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="showCheckerPatternButton">
-           <property name="text">
-            <string>显示棋盘图片</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="showWritePatternButton">
-           <property name="text">
-            <string>显示白色图片</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="removePatternButton">
-           <property name="text">
-            <string>清除显示图片</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="openCamButton">
-           <property name="text">
-            <string>打开相机</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="takePictureButton">
-           <property name="text">
-            <string>相机拍照</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="closeCamButton">
-           <property name="text">
-            <string>关闭相机</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>13</y>
+           <width>251</width>
+           <height>481</height>
+          </rect>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_17">
+            <item>
+             <widget class="QPushButton" name="rootButton">
+              <property name="maximumSize">
+               <size>
+                <width>90</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>连接设备</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="ip_addr">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>192.168.11.157</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="startTestActivityButton">
+            <property name="text">
+             <string>启动测试界面</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="startServiceButton">
+            <property name="text">
+             <string>启动后台服务</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="installAppButton">
+            <property name="text">
+             <string>安装程序</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="uninstallAppButton">
+            <property name="text">
+             <string>卸载程序</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pullDataButton">
+            <property name="text">
+             <string>提取数据</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="cleanButton">
+            <property name="text">
+             <string>清除数据</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="showCheckerPatternButton">
+            <property name="text">
+             <string>显示棋盘图片</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="showWritePatternButton">
+            <property name="text">
+             <string>显示白色图片</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="removePatternButton">
+            <property name="text">
+             <string>清除显示图片</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="openCamButton">
+            <property name="text">
+             <string>打开相机</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="takePictureButton">
+            <property name="text">
+             <string>相机拍照</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="closeCamButton">
+            <property name="text">
+             <string>关闭相机</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
        <widget class="QFrame" name="frame_left_up">
         <property name="geometry">

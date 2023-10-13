@@ -12,6 +12,7 @@ from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor, QPixmap
 import Fmc4030
 import HuiYuanRotate
 import ProjectorDev
+import evaluate_correct_wrapper
 import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
 from ExCamAfThread import ExCamAfThread
@@ -112,6 +113,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.openRailButton.clicked.connect(self.open_rail)
         self.ui.closeRailButton.clicked.connect(self.close_rail)
         self.ui.currentPositionButton.clicked.connect(self.get_rail_position)
+        self.ui.evalCorrectButton.clicked.connect(self.evaluate_kst_correct)
 
         self.ui.getMotorPosButton.clicked.connect(self.get_motor_position)
         self.ui.doMotorPosButton.clicked.connect(self.execute_motor_position)
@@ -326,6 +328,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.stepsLabel.setEnabled(True)
         self.ui.sumStepsLabel.setEnabled(True)
 
+    def evaluate_kst_correct(self):
+        if not self.cameraThread.mRunning:
+            self.open_external_camera()
+            time.sleep(1)
+        img = self.cameraThread.get_img()
+        dst = [0] * 12
+        #img_size = (img.shape[0], img.shape[1])
+        img_size = img.shape
+        print('Load EvaluateCorrectionRst:', img_size, dst)
+        rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
+        print('返回参数:', dst)
+
     def get_rail_position(self):
         self.ui.currentPositionLabel.setText(str(Fmc4030.rail_position(self.current_port)))
 
@@ -401,7 +415,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.count += 1
             else:
                 times = datetime.datetime.now(tz=None)
-                filePath = inter_path + '/' + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
+                filePath = inter_path + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
             print('external_take_picture:', filePath)
             self.cameraThread.takePicture(filePath)
         else:
@@ -548,13 +562,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
 
     def auto_keystone_tof(self):
-        create_dir_file()
         if len(self.ui.snEdit.text()) >= 19:
             print(self.ui.snEdit.text())
             set_sn(str(self.ui.snEdit.text()).replace('/', ''))
         else:
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
+        create_dir_file()
+        os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
+        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json')
         os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
         time.sleep(float(self.ui.delay2Edit.text()))
         self.pull_data()
@@ -783,6 +799,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
 
     def kst_reset(self):
+        print('----------------------')
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
         # os.system(cmd)
         # os.system("adb shell service call SurfaceFlinger 1006")
@@ -799,15 +816,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def refresh_keystone(self):
         ksdPoint = [0] * 8
-        ksdPoint[0] = self.ui.ksdLeftDownEdit_x.text()
-        ksdPoint[1] = self.ui.ksdLeftDownEdit_y.text()
-        ksdPoint[6] = self.ui.ksdLeftUpEdit_x.text()
-        ksdPoint[7] = self.ui.ksdLeftUpEdit_y.text()
-        ksdPoint[4] = self.ui.ksdRightUpEdit_x.text()
-        ksdPoint[5] = self.ui.ksdRightUpEdit_y.text()
-        ksdPoint[2] = self.ui.ksdRightDownEdit_x.text()
-        ksdPoint[3] = self.ui.ksdRightDownEdit_y.text()
-        set_point(ksdPoint)
+        ksdPoint[0] = int(self.ui.ksdLeftDownEdit_x.text())
+        ksdPoint[1] = int(self.ui.ksdLeftDownEdit_y.text())
+        ksdPoint[6] = int(self.ui.ksdLeftUpEdit_x.text())
+        ksdPoint[7] = int(self.ui.ksdLeftUpEdit_y.text())
+        ksdPoint[4] = int(self.ui.ksdRightUpEdit_x.text())
+        ksdPoint[5] = int(self.ui.ksdRightUpEdit_y.text())
+        ksdPoint[2] = int(self.ui.ksdRightDownEdit_x.text())
+        ksdPoint[3] = int(self.ui.ksdRightDownEdit_y.text())
+        ProjectorDev.pro_set_kst_point(ksdPoint)
 
     def update_data(self):
         position = os.popen("adb shell getprop persist.motor.position").read()
@@ -829,28 +846,29 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar_4.setText(fmt)
 
     def start_test_activity(self):
-        os.system('adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity')
+        os.system('adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.MainActivity')
 
     def start_service(self):
         os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
 
     def root_device(self):
-        devices = os.popen("adb devices").read()
-        if len(devices) > 30:
-            os.system(
-                'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
-            # os.system("adb root")
-            # os.system("adb remount")
-            # os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
-            self.open_ui()
-            # self.update_data_timer.start(1000)
-        else:
-            self.close_ui()
-        get_sn()
-        print("devices ", devices[::-1])
-        print("len ", len(devices))
-        self.ui.rootButton.setEnabled(True)
+        ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
+        # devices = os.popen("adb devices").read()
+        # if len(devices) > 30:
+        #     os.system(
+        #         'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+        #     # os.system("adb root")
+        #     # os.system("adb remount")
+        #     # os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
+        #     self.open_ui()
+        #     # self.update_data_timer.start(1000)
+        # else:
+        #     self.close_ui()
+        # get_sn()
+        # print("devices ", devices[::-1])
+        # print("len ", len(devices))
+        # self.ui.rootButton.setEnabled(True)
 
     def clean_data(self):
         localSN = get_sn()
@@ -1035,7 +1053,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         ProjectorDev.pro_motor_reset_steps(int(self.ui.motorPosition2Edit.text()))
 
     def motorReset(self):
-        ProjectorDev.pro_motor_reset_steps(0)
+        ProjectorDev.motor_reset()
+        # ProjectorDev.pro_motor_reset_steps(0)
         # os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
         # os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
 

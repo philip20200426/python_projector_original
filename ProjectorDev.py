@@ -13,6 +13,12 @@ MIN_MOTOR_TIME = 0.38
 motor_speed = 7.6 / 2589  # s/step
 motor_steps_pos = 0
 
+# 0: hisi, 1: amlogic
+PLATFORM_HISI = 0
+PLATFORM_AMLOGIC =1
+PLATFORM_HW = PLATFORM_HISI
+PRO_MOTOR_RES = False
+
 
 def pro_show_pattern_af():
     os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
@@ -33,23 +39,30 @@ def pro_get_motor_position():
 # 这个函数一定会让马达走到指定位置，除非马达坏了
 # 返回值：实际走的步数
 def pro_motor_forward2(direction, steps):
-    location = pro_get_motor_position()
-    ret_steps = pro_motor_forward(direction, steps)
-    while abs(ret_steps - steps) > STEPS_GAP:
-        if pro_motor_forward(direction, steps) < STEPS_GAP*2:
-            print('>>>>>>>>>>>>>>>>>>>> 马达到头了,当前位置:' + str(pro_get_motor_position()) + ',实际执行步数:' + str(ret_steps))
-            break
-        else:
-            print('!!!!!!!!!!!!!!!!!!!! 马达丢步了，需要重新复位')
-            if direction == MOTOR_BACKUP:
-                location -= steps
-                if location < 0:
-                    location = 0
-            elif direction == MOTOR_FORWARD:
-                location += steps
-            ret_steps = abs(pro_motor_reset_steps(location) - location)
-            print('>>>>>>>>>>>>>>>>>>>> 当前位置:' + str(pro_get_motor_position()) + ',实际执行步数:' + str(ret_steps))
-    return ret_steps
+    if not PRO_MOTOR_RES:
+        motor_forward(direction, steps)
+        return steps
+    else:
+        location = pro_get_motor_position()
+        ret_steps = pro_motor_forward(direction, steps)
+        while abs(ret_steps - steps) > STEPS_GAP:
+            if pro_motor_forward(direction, steps) < STEPS_GAP * 2:
+                print('>>>>>>>>>>>>>>>>>>>> 马达到头了,当前位置:' + str(
+                    pro_get_motor_position()) + ',实际执行步数:' + str(
+                    ret_steps))
+                break
+            else:
+                print('!!!!!!!!!!!!!!!!!!!! 马达丢步了，需要重新复位')
+                if direction == MOTOR_BACKUP:
+                    location -= steps
+                    if location < 0:
+                        location = 0
+                elif direction == MOTOR_FORWARD:
+                    location += steps
+                ret_steps = abs(pro_motor_reset_steps(location) - location)
+                print('>>>>>>>>>>>>>>>>>>>> 当前位置:' + str(pro_get_motor_position()) + ',实际执行步数:' + str(
+                    ret_steps))
+        return ret_steps
 
 
 def pro_motor_forward(direction, steps):
@@ -158,3 +171,98 @@ def pro_trigger_auto_ai():
     # # 触发对焦
     # os.system(
     #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+
+
+def connect_dev(ip_addr):
+    cmd0 = 'adb connect '
+    cmd1 = ip_addr
+    cmd2 = ':5555'
+    cmd = cmd0 + cmd1 + cmd2
+    os.system(cmd)
+    print(cmd)
+    os.system('adb root')
+    os.system('adb remount')
+
+
+def pro_get_kst_point():
+    points = 0
+    if PLATFORM_HW == PLATFORM_HISI:
+        lb = os.popen('adb shell getprop persist.hisi.keystone.lb').read().strip()
+        rb = os.popen('adb shell getprop persist.hisi.keystone.rb').read().strip()
+        rt = os.popen('adb shell getprop persist.hisi.keystone.rt').read().strip()
+        lt = os.popen('adb shell getprop persist.hisi.keystone.lt').read().strip()
+        if len(lb) > 0 and len(rb) > 0 and len(rt) > 0 and len(lt) > 0:
+            lb = list(lb.split(','))
+            rb = list(rb.split(','))
+            rt = list(rt.split(','))
+            lt = list(lt.split(','))
+            points = list(map(int, lb+rb+rt+lt))
+            # print(lb, rb, rt, lt)
+            print('ori:', points)
+    elif PLATFORM_HW == PLATFORM_AMLOGIC:
+        points = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
+        if len(points) > 0:
+            source_points = points.strip().split(',')
+            source_points = list(map(float, source_points))
+            source_points = list(map(int, source_points))
+        else:
+            print('>>>>>>>>>>>>>>>>>>>> 未获取到投影仪的原始坐标')
+            source_points = [0, 0, 1920, 0, 1920, 1080, 0, 1080]
+        print('原始坐标 ', source_points)
+
+    return points
+
+
+def pro_set_kst_point(point):
+    for i in range(len(point)):
+        if point[i] < 0:
+            point[i] = 0
+        if i % 2 == 0:
+            if point[i] > 1919:
+                point[i] = 1919
+        if i % 2 == 1:
+            if point[i] > 1079:
+                point[i] = 1079
+    pro_get_kst_point()
+    print('set point : ', point)
+    if PLATFORM_HW == 0:
+        N = 2
+        dst = ['lb ', 'rb ', 'rt ', 'lt ']
+        sub_list = [point[i:i + N] for i in range(0, len(point), N)]
+        print(sub_list)
+        for i in range(4):
+            cmd0 = 'adb shell setprop persist.hisi.keystone.'
+            cmd1 = dst[i]
+            cmd2 = ','.join(map(str, sub_list[i]))
+            cmd = cmd0 + cmd1 + cmd2
+            print(cmd)
+            os.system(cmd)
+
+            cmd0 = 'adb shell setprop persist.sys.keystone.'
+            cmd1 = dst[i]
+            cmd2 = ','.join(map(str, sub_list[i]))
+            cmd = cmd0 + cmd1 + cmd2
+            print(cmd)
+            os.system(cmd)
+        cmd = 'adb shell setprop persist.sys.keystone.update true'
+        print(cmd)
+        os.system(cmd)
+
+    elif PLATFORM_HW == 1:
+        # int列表转字符串列表
+        point = ','.join(map(str, point))
+        print('set point : ', point)
+        # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
+        cmd = "adb shell setprop persist.vendor.hwc.keystone "
+        cmd = cmd + point
+        print('set point : ', cmd)
+        os.system(cmd)
+        # time.sleep(1)
+
+        cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
+        cmd1 = '"' + point + '"'
+        cmd = cmd0 + cmd1
+        print(cmd)
+        os.system(cmd)
+    os.system("adb shell service call SurfaceFlinger 1006")
+    os.system("adb shell service call SurfaceFlinger 1006")

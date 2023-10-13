@@ -1,14 +1,12 @@
 import cv2
 import numpy as np
 from PyQt5.QtCore import Qt, QThread, pyqtSignal  # 缩放
-from PyQt5.QtWidgets import QMessageBox
-
 import MTF_measure3
+import evaluate_correct_wrapper
 import gxipy as gx
 from PyQt5.QtGui import QImage, QPixmap
 from PIL import Image
 import time
-
 from pro_correct_wrapper import auto_focus_cam
 
 
@@ -29,7 +27,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.mRunning = False
         self.mLaplace = 0
         self.mLaplace2 = 0
-        self.mEnLaplace = True
+        self.mEnLaplace = False
+        self.raw_img = None
 
     def openCamera(self):
         pass
@@ -44,6 +43,20 @@ class CameraThread(QThread):  # 建立一个任务线程类
         self.mImageName = name
         self.mTakePicture = True
 
+    def get_mtf(self):
+        if self.mEnLaplace:
+            pre_frame_num = self.frameNum
+            cur = time.time()
+            while self.frameNum > pre_frame_num:
+                now = time.time()
+                print('==========>>', now-cur)
+                return self.mEnLaplace
+        else:
+            print('未打开图像清晰度计算功能')
+
+    def get_img(self):
+        return  self.raw_img
+
     def run(self):  # 在启动线程后任务从这个函数里面开始执行
         print("Open Camera")
         # create a device manager
@@ -53,7 +66,11 @@ class CameraThread(QThread):  # 建立一个任务线程类
             print("Number of enumerated devices is 0")
             return
         # open the first device
-        self.cam = device_manager.open_device_by_index(1)
+        print(dev_num, dev_info_list)
+        if self.mEnLaplace and dev_num > 1:
+            self.cam = device_manager.open_device_by_index(2)
+        else:
+            self.cam = device_manager.open_device_by_index(1)
         # exit when the camera is a color camera
         if self.cam.PixelColorFilter.is_implemented() is True:
             print("This sample does not support color camera.")
@@ -84,7 +101,6 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 self.cam.stream_off()
                 self.cam.close_device()
                 return
-            self.frameNum += 1
             self.cam.ExposureTime.set(self.exposureTime)
             # get raw image
             raw_image = self.cam.data_stream[0].get_image()
@@ -95,7 +111,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
             # create numpy array with data from raw image
             numpy_image_preview = raw_image.get_numpy_array()
             numpy_image_picture = numpy_image_preview.copy()
-
+            self.raw_img = numpy_image_picture
             if self.mEnLaplace:
                 # 2048, 2448
                 orig_img = Image.fromarray(numpy_image_preview)
@@ -138,12 +154,11 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # self.mLaplace = round(sum_la / (len(la_list)+1), 2)
                 # now_time = time.time()
                 # view = str(round(int((now_time - last_time) * 1000), 2)) + ' Laplace:' + str(self.mLaplace)
-
             if numpy_image_preview is None:
                 print("numpy_image is None.")
                 continue
             if self.mTakePicture:
-                self.mLaplace2 = auto_focus_cam(numpy_image_picture)
+                # self.mLaplace2 = auto_focus_cam(numpy_image_picture)
                 self.mTakePicture = False
                 # show acquired image
                 img = Image.fromarray(numpy_image_picture, 'L')
@@ -153,7 +168,9 @@ class CameraThread(QThread):  # 建立一个任务线程类
                       % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
                 print(self.mImageName + '.bmp')
 
-            q_img = QImage(numpy_image_preview.data, numpy_image_preview.shape[1], numpy_image_preview.shape[0], QImage.Format_Grayscale8)
+            q_img = QImage(numpy_image_preview.data, numpy_image_preview.shape[1], numpy_image_preview.shape[0],
+                           QImage.Format_Grayscale8)
+            self.frameNum += 1
             pix = QPixmap(q_img).scaled(720, 540)
             # pix = QPixmap(q_img).scaled(430, 540)
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

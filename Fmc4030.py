@@ -15,14 +15,16 @@ def init(ser):
     i = 0
     while i < len(cmd_list):
         data_list = rail_send(ser, cmd_list[i])
-        if data_list[0:3] == cmd_list[i][0:3]:
-            i += 1
-        else:
-            print('返回数据错误，重新发送')
-        cur = time.time()
-        if (cur - start) > 6:
-            print('>>>>>>>>>> 导轨操作超时:', (cur - start))
-            return -100
+        print('+++++++++++++++ ', data_list)
+        if data_list != '' and len(data_list) > 2:
+            if data_list[0:3] == cmd_list[i][0:3]:
+                i += 1
+            else:
+                print('返回数据错误，重新发送')
+            cur = time.time()
+            if (cur - start) > 6:
+                print('>>>>>>>>>> 导轨操作超时:', (cur - start))
+                return -100
 
 
 def rail_forward(ser, direction, rel_dis):

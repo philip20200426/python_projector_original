@@ -6,11 +6,16 @@ from ctypes import *
 import cv2
 import numpy as np
 
+import ProjectorDev
 import globalVar
 
 try:
-    dll = CDLL("pro_correction.dll", winmode=0)
-    print('load pro_correction.dll')
+    if os.path.exists("pro_correction.dll"):
+        dll = CDLL("pro_correction.dll", winmode=0)
+        print('load pro_correction.dll')
+    else:
+        dll = None
+        print('no found pro_correction.dll')
 except OSError:
     print('Cannot find pro_correction.dll.')
 
@@ -255,6 +260,7 @@ if hasattr(dll, 'AutofocusTOFRL'):
                                  byref(steps))
         return steps.value
 
+# 基于TOF数据做梯形校正
 if hasattr(dll, 'KeystoneCorrectTOF'):
     def keystone_correct_tof_api(calib_data_path,
                                  tof_data_size, imu_data_size,
@@ -507,16 +513,8 @@ def auto_focus_tof():
 def keystone_correct_tof():
     imu_data_list = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
     correct_points = [0] * 8
-    source_points = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
-    if len(source_points) > 0:
-        source_points = source_points.strip().split(',')
-        source_points = list(map(float, source_points))
-        source_points = list(map(int, source_points))
-    else:
-        print('>>>>>>>>>>>>>>>>>>>> 未获取到投影仪的原始坐标')
-        source_points = [0, 0, 1920, 0, 1920, 1080, 0, 1080]
-    print('原始坐标 ', source_points)
-
+    source_points = ProjectorDev.pro_get_kst_point()
+    print('+++++++++++++++++++++++++>', source_points)
     lastTime = time.time()
     while not os.path.exists(FILE_AUTO_KEYSTONE):
         currentTime = time.time()
@@ -542,6 +540,8 @@ def keystone_correct_tof():
             imu_data_list = tof_data[2].split(',')
             imu_data_list = list(map(float, imu_data_list))
             print('IMU : ', imu_data_list)
+        else:
+            imu_data_list = [0, 0, -9.8, 0, 0]
         # TOF Data
         if len(tof_data[1]) > 3:
             depth_data = tof_data[1].split(',')
@@ -556,7 +556,7 @@ def keystone_correct_tof():
             for i in range(len(correct_points)):
                 correct_points[i] = points[i]
             print('>>>>>>>>>>>>>>>>>>>> 校正算法返回坐标 ', correct_points)
-            set_point(correct_points)
+            ProjectorDev.pro_set_kst_point(correct_points)
         else:
             print('TOF标定所需要的TOF数据错误')
     else:
@@ -823,35 +823,39 @@ def auto_keystone_calib2(pro_data):
                 ref_file_list.append(DIR_NAME_REF + file)
                 ret["bmp"] = ret["bmp"] + 1
 
-    ret = {"jpg": 0, "png": 0, "bmp": 0}
-    for root, dirs, files in os.walk(DIR_NAME_PRO):
-        for file in files:
-            ext = os.path.splitext(file)[-1].lower()
-            head = os.path.splitext(file)[0].lower()[:3]
-            if ext == '.bmp' and head == 'pro':
-                ret["bmp"] = ret["bmp"] + 1
-                pro_file_list.append(DIR_NAME_PRO + file)
-            if ext == ".png" and head == 'pro':
-                ret["png"] = ret["png"] + 1
+    # ret = {"jpg": 0, "png": 0, "bmp": 0}
+    # for root, dirs, files in os.walk(DIR_NAME_PRO):
+    #     for file in files:
+    #         ext = os.path.splitext(file)[-1].lower()
+    #         head = os.path.splitext(file)[0].lower()[:3]
+    #         if ext == '.bmp' and head == 'pro':
+    #             ret["bmp"] = ret["bmp"] + 1
+    #             pro_file_list.append(DIR_NAME_PRO + file)
+    #         if ext == ".png" and head == 'pro':
+    #             ret["png"] = ret["png"] + 1
     print('参考图片 ', len(ref_file_list), ref_file_list)
-    print('相机图片 ', len(pro_file_list), pro_file_list)
+    # print('相机图片 ', len(pro_file_list), pro_file_list)
     # if len(ref_file_list) == len(pro_file_list) and len(pro_file_list) > 0:
     #     print('>>>>>>>>>>>>>>>>>>>> 图片数量正确')
     # else:
     #     print('>>>>>>>>>>>>>>>>>>>> 外部相机与投影内部相机照片数量不一致', len(pro_file_list), len(ref_file_list))
     #     return False
+    ref_img_size = ()
+    pro_img_size = ()
     if len(ref_file_list) > 0:
         ref_img = cv2.imread(ref_file_list[-1])
         ref_img_size = (ref_img.shape[0], ref_img.shape[1])
+        pro_img_size = ref_img_size
         print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
-    if len(pro_file_list) > 0:
-        pro_img = cv2.imread(pro_file_list[-1])
-        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-        print(pro_img_size[0], pro_img_size[1])
+    # if len(pro_file_list) > 0:
+    #     pro_img = cv2.imread(pro_file_list[-1])
+    #     pro_img_size = (pro_img.shape[0], pro_img.shape[1])
+    #     print(pro_img_size[0], pro_img_size[1])
 
     depth_data_list = pro_data[1]
     imu_data_list = pro_data[2]
     pro_file_list = pro_data[3]
+    pro_file_list = ref_file_list
     # 保存Tof数据
     with open('asuFiles/tof.csv', 'a+', newline='') as file:
         print('------------------保存到csv： ', depth_data_list)
@@ -860,6 +864,7 @@ def auto_keystone_calib2(pro_data):
         writer = csv.writer(file)
         writer.writerow(data_csv)
 
+    print(ref_file_list, pro_file_list, depth_data_list, imu_data_list)
     error_list = [0] * len(ref_file_list)
     ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,
                                     len(ref_file_list), ref_img_size, pro_img_size,

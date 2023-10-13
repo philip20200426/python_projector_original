@@ -36,7 +36,9 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         print('>>>>>>>>>> CamAfCalThread')
 
     def run(self):
+        self.mRunning = True
         self.work2_detailed_search()
+        self.mRunning = False
         # self.work2()
 
     def work1(self):
@@ -154,6 +156,33 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             # plt.plot(self.mPositionList, self.mLaplaceList)
             # plt.show()
 
+    def work2_coarse_search(self):
+        step_size = 360
+        direction = 2
+        self.clear()
+        self.mRailPosition = Fmc4030.rail_position(self.ser)
+        self.win.ui.currentPositionLabel.setText(str(self.mRailPosition))
+        while True:
+            location = ProjectorDev.pro_get_motor_position()
+            self.win.ui.posValueLabel.setText(str(location))
+            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mPositionList.append(int(location))
+            if len(self.mLaplaceList) > 1:
+                gap = self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2]
+                if gap < 0:
+                    if step_size < 90:
+                        print('粗搜结束：', self.mPositionList)
+                        break
+                    if direction == 5:
+                        direction = 2
+                    elif direction == 2:
+                        direction = 5
+                    step_size = step_size / 2
+            wait_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+            ProjectorDev.pro_motor_forward(direction, step_size)
+            time.sleep(wait_time)
+            print('延时等待完成,', wait_time)
+
     # 控制马达找到最清晰的点,细搜
     def work2_detailed_search(self):
         sta = time.time()
@@ -228,3 +257,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         self.mLaplaceList.clear()
         self.mPositionList.clear()
         print('清除队列:', len(self.mLaplaceList), len(self.mPositionList))
+
+    def get_result(self):
+        while not self.mRunning:
+            return self.motor_position

@@ -56,14 +56,16 @@ class AutoFocusCalThread(QThread):
             left_steps = left_para_auto[1]
 
             # 基于外部CAM对焦，返回当前马达位置
+            lst = time.time()
+            print('外部CAM对焦开始:', lst)
             self.win.ex_cam_af()
-            time.sleep(39)
-            print('开始读取外部CAM对焦后的马达位置')
-            left_para_cam = self.read_para()
-            left_ex_steps = left_para_cam[1]
-            print('左投外部对焦：', left_para_cam)
+            left_ex_steps = self.win.ex_cam_af.get_result()
+            # left_para_cam = self.read_para()
+            # left_ex_steps = left_para_cam[1]
+            # print('左投外部对焦：', left_para_cam)
             gap = left_ex_steps - left_steps
-            print('GAP:', gap)
+            print('外部CAM对焦结束，GAP:', gap)
+            print('外部CAM对焦结束，GAP:%d,马达位置:%d,耗时:%f' % (gap, left_ex_steps, (time.time() - lst)))
 
             # 控制转台到0度
             HuiYuanRotate.hy_control(self.ser, 0, 0)
@@ -89,7 +91,7 @@ class AutoFocusCalThread(QThread):
         # os.system('adb install -r app-debug.apk')
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
-        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
         self.win.ui.autoFocusLabel.setText('启动标定服务')
 
     def read_para(self):
@@ -117,9 +119,10 @@ class AutoFocusCalThread(QThread):
                     # print(dic['POS11']['location'])
                     self.dis_steps[1] = dic['POS11']['location']
             file.close()
-        location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        if location != '':
-            location = location[9:-1]
+        # location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
+        # if location != '':
+        #     location = location[9:-1]
+        location = '100'
         self.dis_steps[1] = int(location)
         para = 'TOF: ' + str(self.dis_steps[0]) + '  马达: ' + str(self.dis_steps[1])
         self.win.ui.autoFocusLabel.setText(para)
