@@ -111,8 +111,8 @@ class AutoCalThread(QThread):
             # else:
             #     pos_error[i] = -1
         tof_list = list(map(float, tof_list))
-        # imu_list = list(map(float, imu_list))
-        imu_list = [-0.35637358, -0.058934387, -9.621797, -2.1211205, -0.35069707, -1.5607239, -0.06814104, -9.396643, -9.430139, -0.40986606, 0.16314575, -0.041536115, -9.477646, 0.98616785, -0.25106198, 0.17572004, -0.053791054, -9.482669, 1.0615896, -0.32495475, 1.8895739, -0.028401155, -9.26852,11.52293, -0.17202999, 1.5429159, -0.027392864, -9.337974, 9.382189, -0.16582781, -1.2138578, -0.06935661, -9.435228, -7.330732, -0.41772044, 0.15215015, 1.6623696, -9.330419, 0.9197521, 10.100882]
+        imu_list = list(map(float, imu_list))
+        # imu_list = [-0.35637358, -0.058934387, -9.621797, -2.1211205, -0.35069707, -1.5607239, -0.06814104, -9.396643, -9.430139, -0.40986606, 0.16314575, -0.041536115, -9.477646, 0.98616785, -0.25106198, 0.17572004, -0.053791054, -9.482669, 1.0615896, -0.32495475, 1.8895739, -0.028401155, -9.26852,11.52293, -0.17202999, 1.5429159, -0.027392864, -9.337974, 9.382189, -0.16582781, -1.2138578, -0.06935661, -9.435228, -7.330732, -0.41772044, 0.15215015, 1.6623696, -9.330419, 0.9197521, 10.100882]
         # print(len(tof_list), tof_list)
         # print(len(imu_list), imu_list)
         # print(len(img_list), img_list)
@@ -346,7 +346,7 @@ class AutoCalThread(QThread):
             os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
-            os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+            ProjectorDev.pro_kst_cal_service()
             time.sleep(2.9)
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
             os.system('adb shell am broadcast -a asu.intent.action.TofCal')

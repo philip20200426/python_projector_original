@@ -626,7 +626,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+        ProjectorDev.pro_kst_cal_service()
         time.sleep(2.9)
         create_dir_file()
         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
@@ -781,8 +781,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
         # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-        self.ex_cam_af_thread.mRunning = False
-        print('+++++++++++++++++++++++++++++++++++++++++++++')
+        self.ex_cam_af_thread.mExit = True
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.exit = True
         if self.timer1.isActive():
@@ -854,6 +853,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def root_device(self):
         ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
+        ProjectorDev.pro_kst_cal_service()
         # devices = os.popen("adb devices").read()
         # if len(devices) > 30:
         #     os.system(

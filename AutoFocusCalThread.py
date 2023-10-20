@@ -59,7 +59,8 @@ class AutoFocusCalThread(QThread):
             lst = time.time()
             print('外部CAM对焦开始:', lst)
             self.win.ex_cam_af()
-            left_ex_steps = self.win.ex_cam_af.get_result()
+            time.sleep(1)
+            left_ex_steps = self.win.ex_cam_af_thread.get_result()
             # left_para_cam = self.read_para()
             # left_ex_steps = left_para_cam[1]
             # print('左投外部对焦：', left_para_cam)
@@ -122,11 +123,11 @@ class AutoFocusCalThread(QThread):
         # location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
         # if location != '':
         #     location = location[9:-1]
-        location = '100'
+        location = ProjectorDev.pro_get_motor_position()
         self.dis_steps[1] = int(location)
         para = 'TOF: ' + str(self.dis_steps[0]) + '  马达: ' + str(self.dis_steps[1])
         self.win.ui.autoFocusLabel.setText(para)
-        print('TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + ',马达location:' + location)
+        print('TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + ',马达location:' + str(location))
         return self.dis_steps
 
     def parse_projector_data(self):

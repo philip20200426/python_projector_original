@@ -116,18 +116,22 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # 2048, 2448
                 orig_img = Image.fromarray(numpy_image_preview)
                 # 投影距离墙1.6m
-                crop_img = orig_img.crop((600, 600, 1900, 1460))
+                # 帮到相机上的尺寸
+                #ccrop_img = orig_img.crop((600, 600, 1900, 1460))
                 # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
+                crop_img = orig_img.crop((700, 600, 2260, 1860))
                 numpy_image_preview = np.array(crop_img)
                 img, la = MTF_measure3.mtf_measure(numpy_image_preview)
                 # 这里有风险需要先判定区域才可以
                 if len(la) > 2:
                     self.mLaplace = la[2]
+                elif len(la) == 1:
+                    self.mLaplace = la[0]
                 now_time = time.time()
                 # 单位ms
                 str_time = 'T:' + str(round(int((now_time - last_time) * 1000), 2))
                 last_time = now_time
-                cv2.putText(numpy_image_preview, str_time, (500, 800), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 8)
+                #cv2.putText(numpy_image_preview, str_time, (500, 800), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 8)
                 # 计算拉普拉斯值
                 # orig_img = Image.fromarray(numpy_image)
                 # # crop_img = orig_img.crop((510, 280, 940, 820))

@@ -15,9 +15,13 @@ motor_steps_pos = 0
 
 # 0: hisi, 1: amlogic
 PLATFORM_HISI = 0
-PLATFORM_AMLOGIC =1
+PLATFORM_AMLOGIC = 1
 PLATFORM_HW = PLATFORM_HISI
-PRO_MOTOR_RES = False
+PRO_MOTOR_RES = True
+
+
+def pro_kst_cal_service():
+    os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
 
 
 def pro_show_pattern_af():
@@ -181,6 +185,7 @@ def connect_dev(ip_addr):
     os.system(cmd)
     print(cmd)
     os.system('adb root')
+    time.sleep(1)
     os.system('adb remount')
 
 
@@ -196,7 +201,7 @@ def pro_get_kst_point():
             rb = list(rb.split(','))
             rt = list(rt.split(','))
             lt = list(lt.split(','))
-            points = list(map(int, lb+rb+rt+lt))
+            points = list(map(int, lb + rb + rt + lt))
             # print(lb, rb, rt, lt)
             print('ori:', points)
     elif PLATFORM_HW == PLATFORM_AMLOGIC:
