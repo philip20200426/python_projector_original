@@ -260,9 +260,11 @@ class AutoTestThread(QThread):
                 if key == 'FAN1-LED' or key == 'FAN2-LCD':
                     self.win.open_pgu_led()
                     print('风扇异常，自动关闭光机显示')
-            if result[1] == 'fail':
-                print(result)
-                self.win.ui.resultLabel.setPixmap(failPix)
+            # if result[1] == 'fail':
+            #     print(result)
+            #     self.win.ui.resultLabel.setPixmap(failPix)
+            # elif result[1] == 'pass':
+            #     passPix
             print('>>>>>>>>>>>>>>>>>>>>>>>>>> ', self.win.dictAutoTestResult)
             # self.win.write_result_csv('a', result)
             print(result)
@@ -270,9 +272,13 @@ class AutoTestThread(QThread):
         # self.win.write_result_csv('a', result)
         print('>>>>>>>>>>>>>>>>>>>> 马达回到清晰位置')
         self.win.motor_back()
-        self.win.ui.snLineEdit.setText('')
-        self.win.ui.snLineEdit.setFocus()
-        self.win.ui.snLineEdit.setEnabled(True)
+        # print('------------------------- 1')
+        # self.win.ui.snLineEdit.setText('')
+        # print('------------------------- 2')
+        # self.win.ui.snLineEdit.setFocus()
+        # print('------------------------- 3')
+        # self.win.ui.snLineEdit.setEnabled(True)
+        print('------------------------- 4')
         # if allRight:
         #     img_bgr = cv2.imread('pic/pass.png')
         # else:
@@ -288,7 +294,16 @@ class AutoTestThread(QThread):
         # cv2.setWindowProperty("myImage", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         # cv2.imshow("myImage", img_bgr)
         # cv2.waitKey(0)
-
+        all_pass = True
+        for k in self.win.dictAutoTestResult:
+            print(k, self.win.dictAutoTestResult[k])
+            if self.win.dictAutoTestResult[k] != self.circle:
+                all_pass = False
+        if all_pass:
+            self.win.ui.resultLabel.setPixmap(passPix)
+        else:
+            self.win.ui.resultLabel.setPixmap(failPix)
+        print('>>>>>>>>>> 测试完成，耗时！！！')
         print('>>>>>>>>>> 测试完成，耗时：', totalTime)
         self.win.ui.autoTestButton.setEnabled(True)
 
@@ -588,18 +603,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "提示", "保存失败")
 
     def slot_lcd_mirror(self, index):
-        print("lcd mirror ", index)
-        data = [2]
-        if index == 0:
-            data[0] = 2
-        elif index == 1:
-            data[0] = 10
-        elif index == 2:
-            data[0] = 18
-        else:
-            data[0] = 26
-        strHex = asu_pdu_build_one_frame('CMD_SET_LCD_MIRROR', len(data), data)
-        self.serial_write(strHex)
+        pass
+        # print("lcd mirror ", index)
+        # data = [2]
+        # if index == 0:
+        #     data[0] = 2
+        # elif index == 1:
+        #     data[0] = 10
+        # elif index == 2:
+        #     data[0] = 18
+        # else:
+        #     data[0] = 26
+        # strHex = asu_pdu_build_one_frame('CMD_SET_LCD_MIRROR', len(data), data)
+        # self.serial_write(strHex)
 
     def mouseDoubleClickEvent(self, event):
         print(event.button)
@@ -620,6 +636,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         show_img(4)
 
     def test_finished(self):
+        self.ui.snLineEdit.setText('')
+        self.ui.snLineEdit.setFocus()
+        self.ui.snLineEdit.setEnabled(True)
+
         cur_time = datetime.datetime.now()
         # print(cur_time, self.ui.snLineEdit.text())
         all_pass = True
@@ -968,7 +988,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_test_ui_switch(False)
             self.ui.open_port.setEnabled(False)
             self.ui.refresh_port.setEnabled(False)
-            self.slot_lcd_mirror(2)
+            # self.slot_lcd_mirror(2)
             self.ui.mirrorComboBox.setCurrentIndex(2)
             self.ui.hwLabel.setText('')
             self.ui.statusbar.addPermanentWidget(self.ui.hwLabel, stretch=0)
@@ -1175,6 +1195,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                         print("返回错误", dataList[0])
                     self.ui.actualStepsLabel.setText(str(actualSteps))
                 self.ui.port_status.setText('数据设置状态: 成功')
+                print('马达实际步数：', str(actualSteps))
             else:
                 print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! cmd %d is not found' % cmd)
                 self.ui.port_status.setText('数据设置失败')
