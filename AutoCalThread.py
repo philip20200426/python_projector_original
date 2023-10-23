@@ -33,14 +33,14 @@ class AutoCalThread(QThread):
         print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6, 7, 8]
         # self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
-        self.angle_list = [[0, 0], [7, 7], [7, 0], [13, 0], [7, -7], [0, -7], [13, -7], [13, 7]]
+        self.angle_list = [[0, 0], [15, 0], [15, 10], [0, 10], [-15, 10], [-15, 0], [-15, -12], [0, -12], [15, -12]]
         self.pos_init_finished = False
 
     def run(self):
         self.work0()
 
     def parse_projector_data(self):
-        pos_error = [0] * 8
+        pos_error = [0] * len(self.positionList)
         startTime = time.time()
 
         self.win.pull_data()
@@ -73,7 +73,7 @@ class AutoCalThread(QThread):
             name = "pro_n" + str(i)
             print('============================= ', name)
             print('++++++++++++++++++++++++++ ', "".join(list(filter(str.isdigit, name))))
-            if int("".join(list(filter(str.isdigit, name)))) > 7:
+            if int("".join(list(filter(str.isdigit, name)))) > (len(self.positionList)-1):
                 break
 
             file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'

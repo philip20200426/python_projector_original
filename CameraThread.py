@@ -119,8 +119,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # 帮到相机上的尺寸
                 #ccrop_img = orig_img.crop((600, 600, 1900, 1460))
                 # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
-                crop_img = orig_img.crop((700, 600, 2260, 1860))
-                numpy_image_preview = np.array(crop_img)
+                # crop_img = orig_img.crop((700, 600, 2260, 1860))
+                # numpy_image_preview = np.array(crop_img)
                 img, la = MTF_measure3.mtf_measure(numpy_image_preview)
                 # 这里有风险需要先判定区域才可以
                 if len(la) > 2:

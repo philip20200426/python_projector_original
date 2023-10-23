@@ -105,6 +105,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar.addWidget(self.statusBar_4, 1)
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
+
+        self.ui.openTangSengButton.clicked.connect(self.start_mtf_test_activity)
         self.ui.writeDataNv.clicked.connect(self.write_to_nv)
         self.ui.saveLa.clicked.connect(self.save_laplace)
         self.ui.cleanLa.clicked.connect(self.clean_laplace)
@@ -327,6 +329,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.positionLabel.setEnabled(True)
         self.ui.stepsLabel.setEnabled(True)
         self.ui.sumStepsLabel.setEnabled(True)
+
+    def start_mtf_test_activity(self):
+        ProjectorDev.pro_mtf_test_activity()
 
     def evaluate_kst_correct(self):
         if not self.cameraThread.mRunning:

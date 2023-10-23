@@ -76,7 +76,9 @@ def mtf_measure(image):
         font_size = 3
         font_color = (255, 255, 255)
         thickness = 6
-        cv2.putText(image, str(round(MTF, 2)), (600, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 8)
+        #cv2.putText(image, str(round(MTF, 2)), (600, 100), cv2.FONT_HERSHEY_SIMPLEX, 9, (255, 255, 255), 8)
+        # 下面尺寸适用于汽车尾门，远焦镜头
+        cv2.putText(image, str(round(MTF, 2)), (500, 500), cv2.FONT_HERSHEY_SIMPLEX, 10, (255, 255, 255), 8)
         return image,laplace_list
         #print(MTF)
     # now_time = time.time()

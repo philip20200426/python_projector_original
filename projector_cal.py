@@ -707,6 +707,15 @@ class Ui_MainWindow(object):
         self.getTofCheckBox.setGeometry(QtCore.QRect(290, 70, 21, 31))
         self.getTofCheckBox.setText("")
         self.getTofCheckBox.setObjectName("getTofCheckBox")
+        self.openTangSengButton = QtWidgets.QPushButton(self.tab_4)
+        self.openTangSengButton.setGeometry(QtCore.QRect(60, 220, 211, 31))
+        self.openTangSengButton.setObjectName("openTangSengButton")
+        self.anglesEdit = QtWidgets.QLineEdit(self.tab_4)
+        self.anglesEdit.setGeometry(QtCore.QRect(60, 270, 429, 31))
+        self.anglesEdit.setMinimumSize(QtCore.QSize(0, 0))
+        self.anglesEdit.setMaximumSize(QtCore.QSize(600, 16777215))
+        self.anglesEdit.setAlignment(QtCore.Qt.AlignCenter)
+        self.anglesEdit.setObjectName("anglesEdit")
         self.tabWidget.addTab(self.tab_4, "")
         self.gridLayout_2.addWidget(self.tabWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -722,7 +731,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(3)
         self.exTimesHorizontalSlider.valueChanged['int'].connect(self.exTimeSpinBox.setValue) # type: ignore
         self.exTimeSpinBox.valueChanged['int'].connect(self.exTimesHorizontalSlider.setValue) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -840,5 +849,7 @@ class Ui_MainWindow(object):
         self.autoFocusMotorButton.setText(_translate("MainWindow", "写入标定数据到标定文件"))
         self.pos11StepsEdit.setText(_translate("MainWindow", "2"))
         self.autoFocusCalButton.setText(_translate("MainWindow", "读取标定数据"))
+        self.openTangSengButton.setText(_translate("MainWindow", "打开唐曾图界面"))
+        self.anglesEdit.setText(_translate("MainWindow", "[[0, 0], [15, 0], [15, 12], [0, 12], [-15, 12], [-15, 0], [-15, -12], [0, -12], [15, -12]]"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Tab 3"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))

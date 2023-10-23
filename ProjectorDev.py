@@ -24,6 +24,10 @@ def pro_kst_cal_service():
     os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
 
 
+def pro_mtf_test_activity():
+    os.system('adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration')
+
+
 def pro_show_pattern_af():
     os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
 
@@ -201,7 +205,7 @@ def pro_get_kst_point():
             rb = list(rb.split(','))
             rt = list(rt.split(','))
             lt = list(lt.split(','))
-            points = list(map(int, lb + rb + rt + lt))
+            points = list(map(float, lb + rb + rt + lt))
             # print(lb, rb, rt, lt)
             print('ori:', points)
     elif PLATFORM_HW == PLATFORM_AMLOGIC:

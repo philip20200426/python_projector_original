@@ -269,7 +269,7 @@ if hasattr(dll, 'KeystoneCorrectTOF'):
                                  correct_points):
         dll.KeystoneCorrectTOF.argtypes = [c_char_p,
                                            c_int, c_int,
-                                           POINTER(c_int),
+                                           POINTER(c_float),
                                            POINTER(c_double),
                                            POINTER(c_double),
                                            POINTER(c_int)]
@@ -278,7 +278,7 @@ if hasattr(dll, 'KeystoneCorrectTOF'):
         calib_data_path = create_string_buffer(calib_data_path.encode('utf-8'))
         tof_data_size = c_int(tof_data_size)
         imu_data_size = c_int(imu_data_size)
-        source_points = (c_int * len(source_points))(*source_points)
+        source_points = (c_float * len(source_points))(*source_points)
         depth_data = (c_double * len(depth_data))(*depth_data)
         imu_data = (c_double * len(imu_data))(*imu_data)
         correct_points = (c_int * len(correct_points))(*list(map(int, correct_points)))
