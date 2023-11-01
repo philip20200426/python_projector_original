@@ -91,23 +91,25 @@ class AutoFocusCalThread(QThread):
         # self.win.ui.autoFocusLabel.setText('安装标定APK')
         # os.system('adb install -r app-debug.apk')
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
-        os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
-        os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+        # os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
+        # ProjectorDev.pro_kst_cal_service()
+        ProjectorDev.pro_tof_cal()
         self.win.ui.autoFocusLabel.setText('启动标定服务')
 
     def read_para(self):
         self.win.ui.autoFocusLabel.setText('保存位置数据')
-        cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
-        cmd1 = '11'
-        cmd = cmd0 + cmd1
-        os.system(cmd)
+        # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
+        # cmd1 = '11'
+        # cmd = cmd0 + cmd1
+        # os.system(cmd)
+        ProjectorDev.pro_save_pos_data(6, 11, "0a15a15a0")
 
         time.sleep(2.9)
         self.win.ui.autoFocusLabel.setText('开始分析数据')
         self.win.pull_data()
 
         dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
-        file_pro_path = dir_pro_path + "AsuProjectorPara.json"
+        file_pro_path = dir_pro_path + "AsuProData.json"
         if os.path.isfile(file_pro_path):
             file = open(file_pro_path, )
             dic = json.load(file)

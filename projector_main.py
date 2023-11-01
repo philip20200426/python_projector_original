@@ -575,8 +575,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         create_dir_file()
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
-        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json')
-        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
+        # os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json')
+        # os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
+        ProjectorDev.pro_save_pos_data(7)
         time.sleep(float(self.ui.delay2Edit.text()))
         self.pull_data()
         # coordinate = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
@@ -853,8 +854,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system('adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.MainActivity')
 
     def start_service(self):
-        os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-        os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+        ProjectorDev.pro_kst_cal_service()
 
     def root_device(self):
         ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
@@ -1042,14 +1042,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system(cmd)
 
     def removePattern(self):
-        os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+        # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+        ProjectorDev.pro_show_pattern(0)
 
     def showCheckerPattern(self):
         os.system('adb push show_pattern.png sdcard/DCIM/show_pattern.png')
-        os.system('adb shell am broadcast -a asu.intent.action.ShowPattern2')
+        # os.system('adb shell am broadcast -a asu.intent.action.ShowPattern2')
+        ProjectorDev.pro_show_pattern(2)
 
     def showWritePattern(self):
-        os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
+        # os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
+        os.system('adb push show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
+        ProjectorDev.pro_show_pattern(1)
 
     def get_motor_position(self):
         self.ui.posValueLabel.setText(str(ProjectorDev.pro_get_motor_position()))

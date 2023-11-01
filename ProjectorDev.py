@@ -21,7 +21,27 @@ PRO_MOTOR_RES = True
 
 
 def pro_kst_cal_service():
+    os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
     os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
+
+
+def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0", mode=1, loop=2,
+                      timing_budget=160000):
+    cmd0 = "adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a " \
+           "com.nbd.autofocus.TofService --ei type 2 --ei flag "
+    cmd1 = str(flag)
+    cmd2 = " --ei pos "
+    cmd3 = str(pos)
+    cmd4 = ' --es rois "'
+    cmd5 = str(rois)
+    cmd6 = '"'
+    cmd = cmd0 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6
+    # print(cmd)
+    os.system(cmd)
+    # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
+    # cmd1 = '11'
+    # cmd = cmd0 + cmd1
+    # os.system(cmd)
 
 
 def pro_mtf_test_activity():
@@ -29,7 +49,22 @@ def pro_mtf_test_activity():
 
 
 def pro_show_pattern_af():
-    os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
+    # os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
+    os.system(
+        'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a '
+        '"com.nbd.autofocus.TofService" --ei type 7 --ei flag 1')
+
+
+def pro_show_pattern(mode=1):
+    cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a com.nbd.autofocus.TofService" --ei type 7 --ei flag '
+    cmd1 = str(mode)
+    os.system(cmd0 + cmd1)
+
+
+def pro_tof_cal():
+    cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
+           'com.nbd.autofocus.TofService" --ei type 7 --ei flag 6'
+    os.system(cmd0)
 
 
 def pro_get_motor_position():
@@ -140,19 +175,24 @@ def pro_motor_reset_steps(steps):
 
 def motor_reset():
     if PRO_SYS_APP:
-        os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
+        # os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
+        cmd = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
+              'com.nbd.autofocus.TofService --ei type 8 --es operate 5 --ei value 3000'
+        os.system(cmd)
     else:
         os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
 
 
 def motor_forward(dir, steps):
     if PRO_SYS_APP:
-        cmd1 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
-        cmd2 = str(dir)
-        cmd3 = ' --ei value '
-        cmd4 = str(int(steps))
-        cmd = cmd1 + cmd2 + cmd3 + cmd4
-        print(cmd)
+        # cmd1 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
+        cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
+               'com.nbd.autofocus.TofService --ei type 8 --es operate '
+        cmd1 = str(dir)
+        cmd2 = ' --ei value '
+        cmd3 = str(int(steps))
+        cmd = cmd0 + cmd1 + cmd2 + cmd3
+        # print(cmd)
     else:
         cmd1 = "adb shell "
         cmd2 = 'echo 5 '

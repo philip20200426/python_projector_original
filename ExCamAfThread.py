@@ -232,6 +232,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             print('耗时：', time.time() - sta)
 
     def work2_detailed_search2(self):
+        ProjectorDev.pro_show_pattern(1)
         sta = time.time()
         # 先粗搜
         self.mPositionList.clear()
@@ -240,7 +241,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         self.dis_to_steps()
         # 再细搜
         steps = 50
-        steps_range = 200
+        steps_range = 300
         count = steps_range/steps*2
         print('后退%d步' % steps_range)
         motor_speed = 7.6 / 2589  # s/step
@@ -276,10 +277,14 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
 
     def dis_to_steps(self):
         motor_speed = 7.6 / 2589  # s/step
-        a = 6.47681438841663e-07
-        b = -0.00449064062802631
-        c = 11.0460386267558
-        d = -7278.83032890080
+        # a = 6.47681438841663e-07
+        # b = -0.00449064062802631
+        # c = 11.0460386267558
+        # d = -7278.83032890080
+        a = 4.0721e-07
+        b = -0.00302
+        c = 7.9745
+        d = -5345.0431
         # distance = 1626
         distance = 1686
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d

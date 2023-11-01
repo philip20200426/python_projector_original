@@ -1,4 +1,5 @@
 import csv
+import datetime
 import json
 import os
 import time
@@ -77,7 +78,7 @@ def create_dir_file():
     # os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
     # get_sn()
     global SN, IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE, DIR_NAME_REF, DIR_NAME_PRO, FILE_NAME_CSV, CALIB_DATA_PATH
-    print('SN: ', SN)
+    # print('SN: ', SN)
     IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.bmp'
     FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
     DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
@@ -93,10 +94,10 @@ def create_dir_file():
     globalVar.set_value('DIR_NAME_INTER_REF', DIR_NAME_INTER_REF)
     globalVar.set_value('SN', SN)
 
-    print(SN)
-    print(IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE)
-    print(DIR_NAME_REF, DIR_NAME_PRO)
-    print(CALIB_DATA_PATH)
+    # print(SN)
+    # print(IMG_AUTO_KEYSTONE, FILE_AUTO_KEYSTONE)
+    # print(DIR_NAME_REF, DIR_NAME_PRO)
+    # print(CALIB_DATA_PATH)
     ex = os.path.isdir(DIR_NAME)
     if not ex:
         os.makedirs(DIR_NAME)
@@ -790,7 +791,7 @@ def auto_keystone_calib():
         print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
     return True
 
-
+# 当前标定算法使用函数：auto_keystone_calib2
 def auto_keystone_calib2(pro_data):
     # 拿到所有数据 n组，每组两个照片，imu，tof
     # file_list_ref = os.listdir(DIR_NAME_E)
@@ -808,7 +809,7 @@ def auto_keystone_calib2(pro_data):
             print('>>>>>>>>>>>>>>>>>>>> 投影仪采集的图片数据不够 ', DIR_NAME_PRO, len(files))
             return False
 
-    print('>>>>>>>>>>>>>>>>>>>> 启动全向自动标定')
+    print('>>>>>>>>>>>>>>>>>>>> 准备调用全向自动标定算法')
     # 分析图片
     ref_file_list = []
     pro_file_list = []
@@ -857,10 +858,13 @@ def auto_keystone_calib2(pro_data):
     pro_file_list = pro_data[3]
     pro_file_list = ref_file_list
     # 保存Tof数据
-    with open('asuFiles/tof.csv', 'a+', newline='') as file:
-        print('------------------保存到csv： ', depth_data_list)
-        data_csv = depth_data_list[:]
+    with open('asuFiles/cal_data.csv', 'a+', newline='') as file:
+        times = datetime.datetime.now(tz=None)
+        date_time = times.strftime("%Y-%m-%d %H:%M:%S").strip()
+        print('------------------保存到csv： ', depth_data_list, date_time)
+        data_csv = depth_data_list[:] + imu_data_list[:]
         data_csv.insert(0, SN)
+        data_csv.insert(0, date_time)
         writer = csv.writer(file)
         writer.writerow(data_csv)
 
@@ -880,50 +884,6 @@ def auto_keystone_calib2(pro_data):
         print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
     return True
 
-
-def auto_keystone_calib3(pro_data):
-    # 拿到所有数据 n组，每组两个照片，imu，tof
-    # file_list_ref = os.listdir(DIR_NAME_E)
-    # file_list_pro = os.listdir(DIR_NAME_P)
-    # print(len(file_list_ref), file_list_ref, len(file_list_pro), file_list_pro)
-    imu_data_list = [0.0, 1.0, 2.0, 3.0, 4.0]
-    robot_pose_list = [0, 0, 0, -15, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, -15, -15, 0, 15, -15, 0, -15, 15, 0, -15, 15, 0,
-                       15]
-    # error_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 10, 11, 12, 13]
-    if len(ref_file_list) > 0:
-        ref_img = cv2.imread(ref_file_list[-1])
-        ref_img_size = (ref_img.shape[0], ref_img.shape[1])
-        print('行Row: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
-    if len(pro_file_list) > 0:
-        pro_img = cv2.imread(pro_file_list[-1])
-        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-        print(pro_img_size[0], pro_img_size[1])
-
-    depth_data_list = pro_data[1]
-    imu_data_list = pro_data[2]
-    pro_file_list = pro_data[3]
-    # 保存Tof数据
-    with open('asuFiles/tof.csv', 'a+', newline='') as file:
-        print('------------------保存到csv： ', depth_data_list)
-        data_csv = depth_data_list[:]
-        data_csv.insert(0, SN)
-        writer = csv.writer(file)
-        writer.writerow(data_csv)
-
-    error_list = [0] * len(ref_file_list)
-    ret = keystone_correct_cam_libs(CALIB_CONFIG_PARA, CALIB_DATA_PATH,
-                                    len(ref_file_list), ref_img_size, pro_img_size,
-                                    len(depth_data_list) / len(ref_file_list), len(imu_data_list) / len(ref_file_list),
-                                    ref_file_list, pro_file_list, depth_data_list, imu_data_list, robot_pose_list,
-                                    error_list)
-    for i in range(len(ret)):
-        error_list[i] = ret[i]
-    print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
-    if os.path.exists(CALIB_DATA_PATH):
-        print('>>>>>>>>>>>>>>>>>>>> 标定算法生成文件 ', CALIB_DATA_PATH)
-    else:
-        print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
-    return True
 # auto_keystone_calib()
 # auto_keystone_cam()
 # keystone_correct_tof()

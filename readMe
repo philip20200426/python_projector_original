@@ -9,10 +9,12 @@ pyinstaller .\projector_lcos_main.spec
 git push -u origin kst_cal
 
 
-adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService
+adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService
 adb shell am start -n com.nbd.tofmodule/com.nbd.autofocus.MainActivity
 adb shell am broadcast -a asu.intent.action.SaveData --ei position 0
 adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration
+
+adb shell am stopservice  com.nbd.autofocus/com.nbd.autofocus.TofService
 
 
 2023年4月27日统一整理代码，保存当前状态，后面创建两个分支，分别跟踪下面两个程序：
@@ -21,7 +23,9 @@ adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration
 全向梯形算法标定开发总结：
 线程的释放需要再研究下，尤其是camera的线程
 设置按钮时没有按照面向对象的思路去设计
+"0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0"
 
+shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a "com.nbd.autofocus.TofService" --ei mode 2 --ei loop 2 --el time 300 --es rois "0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0"
 
 
 

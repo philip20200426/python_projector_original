@@ -40,6 +40,7 @@ class AutoCalThread(QThread):
         self.work0()
 
     def parse_projector_data(self):
+        # self.parse_projector_json()
         pos_error = [0] * len(self.positionList)
         startTime = time.time()
 
@@ -71,9 +72,12 @@ class AutoCalThread(QThread):
         txt_list = []
         for i in range(max(len(pro_img_list), len(pro_file_list))):
             name = "pro_n" + str(i)
-            print('============================= ', name)
-            print('++++++++++++++++++++++++++ ', "".join(list(filter(str.isdigit, name))))
+            # print('============================= ', name)
+            # print('++++++++++++++++++++++++++ ', "".join(list(filter(str.isdigit, name))))
+            # print(int("".join(list(filter(str.isdigit, name)))))
+            # print(len(self.positionList)-1)
             if int("".join(list(filter(str.isdigit, name)))) > (len(self.positionList)-1):
+                print('只解析指定位置范围以内的数据：', int("".join(list(filter(str.isdigit, name)))), len(self.positionList)-1)
                 break
 
             file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'
@@ -86,16 +90,27 @@ class AutoCalThread(QThread):
                     line = file.readline().strip()  # 读取一行文件，包括换行符
                     if row == 1:
                         if len(line.split(',')) == 6:
+                            tof_data = line.split(',')
                             tof_list += line.split(',')
-                            print('+++++++++++++++++', tof_list)
+                            print('TOF 数据；', tof_list)
+                            tof_data = list(map(float, tof_data))[0:-2]
+                            print('TOF 数据；', i, tof_data, max(tof_data), min(tof_data))
+                            if max(tof_data) > 1900 or min(tof_data) < 1500:
+                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：', max(tof_data), min(tof_list), i)
+                                pos_error[i] = -1
                         else:
                             pos_error[i] = -1
                     if row == 2:
                         if len(line.split(',')) == 5:
+                            imu_data = line.split(',')
+                            imu_data = list(map(float, imu_data))
                             imu_list += line.split(',')
+                            gap = abs(abs(imu_data[3]) - abs(self.angle_list[i][1]))
+                            if gap > 5:
+                                print('!!!!!!!!!!!!!!!!!!!! IMU数据与转台角度差异超过限值：', imu_data[3], self.angle_list[i][1], gap)
+                                pos_error[i] = -1
                         else:
-                            #pos_error[i] = -1
-                            pos_error[i] = 0
+                            pos_error[i] = -1
                     row += 1
                 file.close()  # 关闭文件
             else:
@@ -135,7 +150,7 @@ class AutoCalThread(QThread):
         pro_img_list = []
 
         # 分析json数据
-        file_pro_path = dir_pro_path + "AsuProjectorPara.json"
+        file_pro_path = dir_pro_path + "AsuProData.json"
         if os.path.isfile(file_pro_path):
             file = open(file_pro_path, )
             dic = json.load(file)
@@ -153,6 +168,9 @@ class AutoCalThread(QThread):
                             pos_error[i] = -1
                         if 'imu' in dic[pos].keys():
                             data = list(map(float, dic[pos]['imu'].split(',')))
+                            print('888888888888888888888888888')
+                            print(data)
+                            print(i)
                             if len(data) == 5:
                                 imu_list += data
                             else:
@@ -180,23 +198,6 @@ class AutoCalThread(QThread):
                         ref_list.append(file)
                         ret["bmp"] = ret["bmp"] + 1
 
-            # 分析内部相机图片
-            pro_list = []
-            ret = {"jpg": 0, "png": 0, "bmp": 0}
-            for root, dirs, files in os.walk(dir_pro_path):
-                for file in files:
-                    ext = os.path.splitext(file)[-1].lower()
-                    head = os.path.splitext(file)[0].lower()[:3]
-                    if ext == '.png':
-                        ret["jpg"] = ret["jpg"] + 1
-                    if ext == ".bmp" and head == 'pro':
-                        # ref_img_list.append(dir_ref_path + file)
-                        pro_img = cv2.imread(dir_pro_path + file)
-                        pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-                        print('内部相机尺寸: ', pro_img_size[0], ' 列Col:', pro_img_size[1])
-                        pro_list.append(file)
-                        ret["bmp"] = ret["bmp"] + 1
-
             for i in range(pos_count):
                 img = 'ref_n' + str(i) + '.bmp'
                 print(pro_list)
@@ -215,8 +216,9 @@ class AutoCalThread(QThread):
         return pos_error, tof_list, imu_list, ref_img_list, pro_img_list
 
     def work0(self):
-        print('自动全向梯形标定 开始：', self.positionList)
-        self.win.showCheckerPattern()
+        print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
+        ProjectorDev.pro_show_pattern(2)
+        time.sleep(3)
         start_time = time.time()
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
@@ -226,17 +228,17 @@ class AutoCalThread(QThread):
             # 只有自动标定会走到这里
             # os.system('adb install -r app-debug.apk')
             print('启动投影仪校准服务')
-            os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
-            os.system("adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+            # ProjectorDev.pro_kst_cal_service()
             time.sleep(2.9)
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
             ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
             os.system('adb shell am broadcast -a asu.intent.action.TofCal')
+            ProjectorDev.pro_tof_cal()
             # self.win.showWritePattern()
             time.sleep(1.9)
-            self.win.showCheckerPattern()
+            ProjectorDev.pro_show_pattern(2)
             self.pos_init_finished = True
         lst_time = time.time()
         while len(self.positionList) > 0:
@@ -271,7 +273,7 @@ class AutoCalThread(QThread):
                 self.position = 0
                 if len(self.positionList) == 0:
                     self.win.pv += 5
-                    os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+                    ProjectorDev.pro_show_pattern(0)
                     end0_time = time.time()
                     print('数据抓取及解析耗时：' + str((end0_time - start_time)))
                     print(proj_data)
@@ -287,8 +289,8 @@ class AutoCalThread(QThread):
                             self.win.pv += 5
                             print('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
                             self.win.restore_ai_feature()
-                            os.system('adb reboot')
-                            # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
+                            # os.system('adb reboot')
+                            os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
                             # set_point(point)
                         else:
                             print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
@@ -300,9 +302,10 @@ class AutoCalThread(QThread):
                                      self.angle_list[int(self.positionList[self.position])-1][1])
             time.sleep(self.delay1)
             print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
-            cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
-            cmd1 = str(self.positionList[self.position] - 1)
-            os.system(cmd0 + cmd1)
+            # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
+            # cmd1 = str(self.positionList[self.position] - 1)
+            # os.system(cmd0 + cmd1)
+            ProjectorDev.pro_save_pos_data(6, str(self.positionList[self.position] - 1))
             time.sleep(self.delay2)
             self.win.cal = True
             self.win.external_take_picture(self.positionList[self.position] - 1)
