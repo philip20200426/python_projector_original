@@ -227,11 +227,12 @@ class AutoCalThread(QThread):
             # time.sleep(2)
             # 只有自动标定会走到这里
             # os.system('adb install -r app-debug.apk')
-            print('启动投影仪校准服务')
+            # print('启动投影仪校准服务')
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
             # ProjectorDev.pro_kst_cal_service()
             time.sleep(2.9)
+            print('0点位置准备：投影显示复位，TOF校准')
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
             ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
             os.system('adb shell am broadcast -a asu.intent.action.TofCal')
@@ -242,18 +243,14 @@ class AutoCalThread(QThread):
             self.pos_init_finished = True
         lst_time = time.time()
         while len(self.positionList) > 0:
+            # 超时处理
             now_time = time.time()
             if self.exit or (now_time-lst_time) > 300:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
-                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间:', now_time-lst_time, self.exit)
+                self.positionList.remove(0)
+                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间超时:', now_time-lst_time, self.exit)
                 break
-            if self.enableAlgo:
-                if len(self.positionList) == 1 and self.positionList[0] == -1:
-                    self.position = 1
-                    print('>>>>>>>>>>>>>>>>>>> 跳过数据采集，直接运行算法')
-            else:
-                print(' >>>>>>>>>>>>>>>>>>> 算法未使能')
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
                 print('>>>>>>>>>>>>>>>>>>> 开始解析数据')

@@ -25,6 +25,12 @@
       <property name="enabled">
        <bool>true</bool>
       </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>20</height>
+       </size>
+      </property>
       <property name="maximumSize">
        <size>
         <width>2000</width>
@@ -32,7 +38,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1620,31 +1626,77 @@
          </property>
         </widget>
        </widget>
-       <widget class="QPushButton" name="camInterCalButton">
+       <widget class="QFrame" name="frame_7">
         <property name="geometry">
          <rect>
-          <x>390</x>
-          <y>550</y>
+          <x>360</x>
+          <y>390</y>
           <width>451</width>
-          <height>21</height>
+          <height>121</height>
          </rect>
         </property>
-        <property name="text">
-         <string>CAM内参标定</string>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
         </property>
-       </widget>
-       <widget class="QPushButton" name="kstCalButton">
-        <property name="geometry">
-         <rect>
-          <x>390</x>
-          <y>590</y>
-          <width>451</width>
-          <height>21</height>
-         </rect>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
         </property>
-        <property name="text">
-         <string>解析投影仪和外部相机数据，生成全向标定所需的参数</string>
-        </property>
+        <widget class="QWidget" name="">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>-20</y>
+           <width>441</width>
+           <height>141</height>
+          </rect>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="camInterCalButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>440</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>CAM内参标定</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="kstCalButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>440</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>解析投影仪和外部相机数据，生成全向标定所需的参数</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </widget>
       <widget class="QWidget" name="tab_3">

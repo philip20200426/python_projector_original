@@ -604,8 +604,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "警告", "相机内参标定失败")
 
     def kst_calibrate(self):
-        pass
-        # auto_keystone_calib()
+        # create_dir_file()
+        # proj_data = self.auto_cal_thread.parse_projector_data()
+        # auto_keystone_calib2(proj_data)
+        if self.sn_changed():
+            print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
+            create_dir_file()
+            proj_data = self.auto_cal_thread.parse_projector_data()
+            print(proj_data)
+            auto_keystone_calib2(proj_data)
+        else:
+            print('请输入20位SN号!!!')
+            # auto_keystone_calib()
 
     # timerEvent 关联定时器  self.timer1 = QBasicTimer()
     def timerEvent(self, e):
