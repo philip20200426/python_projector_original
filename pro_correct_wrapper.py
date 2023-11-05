@@ -791,6 +791,7 @@ def auto_keystone_calib():
         print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
     return True
 
+
 # 当前标定算法使用函数：auto_keystone_calib2
 def auto_keystone_calib2(pro_data):
     # 拿到所有数据 n组，每组两个照片，imu，tof

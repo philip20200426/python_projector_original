@@ -61,7 +61,7 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-
+VERSION = 'Version: 0.01 202311051350'
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -90,7 +90,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle('调试工具')
+        self.setWindowTitle('全向梯形标定工具')
         self.initialize_ui()
 
         # 实例化状态栏
@@ -105,6 +105,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar.addWidget(self.statusBar_4, 1)
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
+        self.statusBar_1.setText(VERSION)
 
         self.ui.openTangSengButton.clicked.connect(self.start_mtf_test_activity)
         self.ui.writeDataNv.clicked.connect(self.write_to_nv)
@@ -138,6 +139,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.autoTofKsdButton.clicked.connect(self.auto_keystone_tof)
         self.ui.autoCamKstButton.clicked.connect(self.auto_keystone_cam)
         self.ui.kstCalButton.clicked.connect(self.kst_calibrate)
+        self.ui.parceCalDataButton.clicked.connect(self.parce_cal_data)
         self.ui.kstAutoCalButton.clicked.connect(self.kst_auto_calibrate)
         self.ui.refreshKsdButton.clicked.connect(self.refresh_keystone)
         self.ui.motorForwardButton.clicked.connect(self.motorForward)
@@ -603,10 +605,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             QMessageBox.warning(self, "警告", "相机内参标定失败")
 
+    def parce_cal_data(self):
+        create_dir_file()
+        data = self.auto_cal_thread.parse_projector_json()
+        print(data)
+        if self.ui.enCalAlgoCheckBox.isChecked():
+            auto_keystone_calib2(data)
+
     def kst_calibrate(self):
-        # create_dir_file()
-        # proj_data = self.auto_cal_thread.parse_projector_data()
-        # auto_keystone_calib2(proj_data)
         if self.sn_changed():
             print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
             create_dir_file()
@@ -615,7 +621,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             auto_keystone_calib2(proj_data)
         else:
             print('请输入20位SN号!!!')
-            # auto_keystone_calib()
 
     # timerEvent 关联定时器  self.timer1 = QBasicTimer()
     def timerEvent(self, e):
@@ -757,10 +762,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoCalProgressBar.setValue(0)
             self.ui.stopAutoCalButton.setText("停止")
             self.ui.kstAutoCalButton.setText("测试中")
-        self.statusBar_3.setText(self.ui.snEdit.text())
+        self.statusBar_3.setText('SN:' + self.ui.snEdit.text())
         # self.ui.snEdit.setText('')
         # self.ui.snEdit.clear()
-        self.statusBar_1.setText('SN:' + self.ui.snEdit.text())
 
         create_dir_file()
         # 拉取对焦标定文件
@@ -771,7 +775,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # print(cmd)
         # os.system(cmd)
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
-        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json')
+        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
         self.close_ai_feature()
 
         self.ui.kstCalButton.setEnabled(False)
@@ -779,10 +783,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print(cmd)
         if cmd != '':
             self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
-        if len(self.auto_cal_thread.positionList) == 1 and self.auto_cal_thread.positionList[0] == -1:
-            pass
-        else:
-            self.open_external_camera()
+        self.open_external_camera()
         self.auto_cal_thread.delay1 = float(self.ui.delay1Edit.text())
         self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
         self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
@@ -792,7 +793,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             self.auto_cal_thread.ser = self.current_port
         self.auto_cal_thread.start()
-        # os.system('adb uninstall com.nbd.tofmodule')
 
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
@@ -931,49 +931,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         cmd = "adb shell am broadcast -a asu.intent.action.TakePicture --ei value 2 "
         os.system(cmd)
         self.statusBar_2.setText("投影内部相机状态：关闭")
-
-    def parse_position_data(self):
-        startTime = time.time()
-        # os.system("adb shell am broadcast -a asu.intent.action.SaveData")
-        # time.sleep(2)
-        # self.cal = True
-        # self.external_take_picture()
-        # self.cal = False
-        # time.sleep(2.5)
-        self.pull_data()
-        # parse data
-        pro_file_list = []
-        ret = {"jpg": 0, "png": 0, "bmp": 0}
-        for root, dirs, files in os.walk(globalVar.get_value('DIR_NAME_PRO')):
-            for file in files:
-                ext = os.path.splitext(file)[-1].lower()
-                head = os.path.splitext(file)[0].lower()[:5]
-                print(file, ext, head)
-                if ext == '.bmp' and head == 'pro_n':
-                    ret["bmp"] = ret["bmp"] + 1
-                    pro_file_list.append(file)
-                if ext == ".png" and head == 'pro_n':
-                    ret["png"] = ret["png"] + 1
-        if len(pro_file_list) > 0:
-            pro_img = cv2.imread(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
-            pro_img_size = (pro_img.shape[0], pro_img.shape[1])
-            imageSize = os.path.getsize(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
-            print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
-            if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
-                # 图片的大小
-                endTime = time.time()
-                print('分析数据耗时：', (endTime - startTime))
-                # os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
-                return True
-                # self.statusBar_3.setText('当前姿态下数据保存完成')
-            else:
-                # self.statusBar_3.setText('当前姿态下数据保存失败')
-                return False
-        else:
-            print('没有发现投影设备返回的图片数据 ', pro_file_list)
-            return False
-            # self.statusBar_3.setText('当前姿态下数据保存失败')
-        self.ui.saveDataButton.setEnabled(True)
 
     def save_data(self):
         # if os.path.exists(DIR_NAME_PRO):

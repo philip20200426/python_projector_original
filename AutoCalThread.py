@@ -76,8 +76,9 @@ class AutoCalThread(QThread):
             # print('++++++++++++++++++++++++++ ', "".join(list(filter(str.isdigit, name))))
             # print(int("".join(list(filter(str.isdigit, name)))))
             # print(len(self.positionList)-1)
-            if int("".join(list(filter(str.isdigit, name)))) > (len(self.positionList)-1):
-                print('只解析指定位置范围以内的数据：', int("".join(list(filter(str.isdigit, name)))), len(self.positionList)-1)
+            if int("".join(list(filter(str.isdigit, name)))) > (len(self.positionList) - 1):
+                print('！！！！！！只解析指定位置范围以内的数据：', int("".join(list(filter(str.isdigit, name)))),
+                      len(self.positionList) - 1)
                 break
 
             file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'
@@ -107,7 +108,8 @@ class AutoCalThread(QThread):
                             imu_list += line.split(',')
                             gap = abs(abs(imu_data[3]) - abs(self.angle_list[i][1]))
                             if gap > 5:
-                                print('!!!!!!!!!!!!!!!!!!!! IMU数据与转台角度差异超过限值：', imu_data[3], self.angle_list[i][1], gap)
+                                print('!!!!!!!!!!!!!!!!!!!! IMU数据与转台角度差异超过限值：', imu_data[3],
+                                      self.angle_list[i][1], gap)
                                 pos_error[i] = -1
                         else:
                             pos_error[i] = -1
@@ -134,12 +136,13 @@ class AutoCalThread(QThread):
         # print(pos_error)
         endTime = time.time()
         # 秒
-        print('解析投影文件耗时', endTime-startTime)
+        print('解析投影文件耗时', endTime - startTime)
         return pos_error, tof_list, imu_list, img_list
 
     def parse_projector_json(self):
-        pos_count = 8
-        pos_error = [0] * 8
+        print('开始解析Json数据 ')
+        pos_count = len(self.positionList)
+        pos_error = [0] * pos_count
 
         dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
         dir_ref_path = globalVar.get_value('DIR_NAME_REF')
@@ -147,7 +150,6 @@ class AutoCalThread(QThread):
         tof_list = []
         imu_list = []
         ref_img_list = []
-        pro_img_list = []
 
         # 分析json数据
         file_pro_path = dir_pro_path + "AsuProData.json"
@@ -160,18 +162,39 @@ class AutoCalThread(QThread):
                     if pos in dic.keys():
                         if 'tof' in dic[pos].keys():
                             data = list(map(float, dic[pos]['tof'].split(',')))
+                            # print('TOF数据：', data, i)
                             if len(data) == 4:
-                                tof_list += data
+                                if max(data) < 1900 or min(data) > 1500:
+                                    if i == 0 and ((data[0] - data[1]) > 15):
+                                        pos_error[i] = -1
+                                    elif (i == 1 or i == 2 or i == 8) and data.index(max(data)) != 2:
+                                        pos_error[i] = -1
+                                    elif i == 3 and data.index(max(data)) != 0:
+                                        pos_error[i] = -1
+                                    elif i == 7 and data.index(max(data)) != 3:
+                                        pos_error[i] = -1
+                                    elif (i == 4 or i == 5 or i == 6) and data.index(max(data)) != 1:
+                                        pos_error[i] = -1
+                                    tof_list += data
+                                else:
+                                    pos_error[i] = -1
                             else:
                                 pos_error[i] = -1
+                            if pos_error[i] == -1 and len(data) > 0:
+                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：', max(data), min(data), i)
                         else:
                             pos_error[i] = -1
+                            print('没有发现TOF数据')
+
                         if 'imu' in dic[pos].keys():
                             data = list(map(float, dic[pos]['imu'].split(',')))
-                            print('888888888888888888888888888')
-                            print(data)
-                            print(i)
                             if len(data) == 5:
+                                gap = abs(abs(data[3]) - abs(self.angle_list[i][1]))
+                                # print(data, gap)
+                                if gap > 4:
+                                    print('!!!!!!!!!!!!!!!!!!!! IMU数据异常：', data[3],
+                                          self.angle_list[i][1], gap)
+                                    pos_error[i] = -1
                                 imu_list += data
                             else:
                                 pos_error[i] = -1
@@ -197,23 +220,19 @@ class AutoCalThread(QThread):
                         print('外部相机尺寸: ', ref_img_size[0], ' 列Col:', ref_img_size[1])
                         ref_list.append(file)
                         ret["bmp"] = ret["bmp"] + 1
-
+                        # print(ref_list)
             for i in range(pos_count):
                 img = 'ref_n' + str(i) + '.bmp'
-                print(pro_list)
                 if img in ref_list:
                     ref_img_list.append(dir_ref_path + img)
                 else:
                     pos_error[i] = -1
-                img = 'pro_n' + str(i) + '.bmp'
-                if img in pro_list:
-                    pro_img_list.append(dir_pro_path + img)
-                else:
-                    pos_error[i] = -1
+            # print(ref_list)
+            # print(ref_img_list)
 
             if pos_count != ret["bmp"]:
-                print('图片数量不对')
-        return pos_error, tof_list, imu_list, ref_img_list, pro_img_list
+                print('!!!!!!!!!!图片数量不对')
+        return pos_error, tof_list, imu_list, ref_img_list
 
     def work0(self):
         print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
@@ -245,11 +264,11 @@ class AutoCalThread(QThread):
         while len(self.positionList) > 0:
             # 超时处理
             now_time = time.time()
-            if self.exit or (now_time-lst_time) > 300:
+            if self.exit or (now_time - lst_time) > 888:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
-                self.positionList.remove(0)
-                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间超时:', now_time-lst_time, self.exit)
+                ProjectorDev.pro_show_pattern(0)
+                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间超时:', now_time - lst_time, self.exit)
                 break
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
@@ -295,8 +314,8 @@ class AutoCalThread(QThread):
                         print('未使能算法')
                     break
             print('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 %d' % (self.positionList[self.position], self.position))
-            HuiYuanRotate.hy_control(self.ser, self.angle_list[int(self.positionList[self.position])-1][0],
-                                     self.angle_list[int(self.positionList[self.position])-1][1])
+            HuiYuanRotate.hy_control(self.ser, self.angle_list[int(self.positionList[self.position]) - 1][0],
+                                     self.angle_list[int(self.positionList[self.position]) - 1][1])
             time.sleep(self.delay1)
             print('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
             # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
@@ -308,7 +327,8 @@ class AutoCalThread(QThread):
             self.win.external_take_picture(self.positionList[self.position] - 1)
             time.sleep(self.delay3)
             self.win.cal = False
-            print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (len(self.positionList), self.positionList[self.position]))
+            print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
+                len(self.positionList), self.positionList[self.position]))
             self.position += 1
             self.win.pv += 10
         # 标定结束，转台归位
@@ -433,7 +453,7 @@ class AutoCalThread(QThread):
             time.sleep(self.delay3)
             self.win.cal = False
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
-            len(self.positionList), self.positionList[self.position]))
+                len(self.positionList), self.positionList[self.position]))
             self.position += 1
             self.win.pv += 10
         # 标定结束，转台归位
