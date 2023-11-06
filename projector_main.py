@@ -61,7 +61,8 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-VERSION = 'Version: 0.01 202311051350'
+VERSION = 'Version: 0.01 202311061326'
+
 
 class SerialThread(QThread):
     data_arrive_signal = pyqtSignal(name='serial_data')
@@ -341,7 +342,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             time.sleep(1)
         img = self.cameraThread.get_img()
         dst = [0] * 12
-        #img_size = (img.shape[0], img.shape[1])
+        # img_size = (img.shape[0], img.shape[1])
         img_size = img.shape
         print('Load EvaluateCorrectionRst:', img_size, dst)
         rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
@@ -607,18 +608,24 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def parce_cal_data(self):
         create_dir_file()
+        print('>>>>>>>>>>>>>>>>>>> 开始离线解析json数据')
         data = self.auto_cal_thread.parse_projector_json()
-        print(data)
-        if self.ui.enCalAlgoCheckBox.isChecked():
-            auto_keystone_calib2(data)
+        if data[0].count(-1) == 0:
+            if self.ui.enCalAlgoCheckBox.isChecked():
+                auto_keystone_calib2(data)
+        else:
+            print("数据异常，不调用算法!!!")
 
     def kst_calibrate(self):
         if self.sn_changed():
-            print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
+            print('>>>>>>>>>>>>>>>>>>> 开始离线解析txt数据')
             create_dir_file()
             proj_data = self.auto_cal_thread.parse_projector_data()
-            print(proj_data)
-            auto_keystone_calib2(proj_data)
+            print('数据解析：', proj_data)
+            if proj_data[0].count(-1) == 0:
+                auto_keystone_calib2(proj_data)
+            else:
+                print("数据异常，不调用算法!!!")
         else:
             print('请输入20位SN号!!!')
 

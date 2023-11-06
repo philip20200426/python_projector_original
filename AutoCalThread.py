@@ -44,7 +44,6 @@ class AutoCalThread(QThread):
         pos_error = [0] * len(self.positionList)
         startTime = time.time()
 
-        self.win.pull_data()
         # parse data
         pro_img_list = []
         pro_file_list = []
@@ -148,6 +147,7 @@ class AutoCalThread(QThread):
         dir_ref_path = globalVar.get_value('DIR_NAME_REF')
 
         tof_list = []
+        tof_central = []
         imu_list = []
         ref_img_list = []
 
@@ -157,6 +157,10 @@ class AutoCalThread(QThread):
             file = open(file_pro_path, )
             dic = json.load(file)
             if len(dic) > 0:
+                if 'TOF' in dic.keys():
+                    if 'central' in dic['TOF'].keys():
+                        print('>>>>>>>>>>>>>>>', dic['TOF']['central'])
+                        tof_central = list(map(float, list(map(float, dic['TOF']['central'].split(',')))))
                 for i in range(pos_count):
                     pos = 'POS' + str(i)
                     if pos in dic.keys():
@@ -176,12 +180,13 @@ class AutoCalThread(QThread):
                                     elif (i == 4 or i == 5 or i == 6) and data.index(max(data)) != 1:
                                         pos_error[i] = -1
                                     tof_list += data
+                                    tof_list += tof_central
                                 else:
                                     pos_error[i] = -1
                             else:
                                 pos_error[i] = -1
                             if pos_error[i] == -1 and len(data) > 0:
-                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：', max(data), min(data), i)
+                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：%d %d POS%d' % (max(data), min(data), i))
                         else:
                             pos_error[i] = -1
                             print('没有发现TOF数据')
@@ -203,6 +208,9 @@ class AutoCalThread(QThread):
                     else:
                         pos_error[i] = -1
             file.close()
+        else:
+            print('文件不存在：', file_pro_path)
+            pos_error[0:pos_count-1] = -1
 
             # 分析外部相机图片
             ref_list = []
@@ -273,8 +281,10 @@ class AutoCalThread(QThread):
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
                 print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
-                proj_data = self.parse_projector_data()
-                print(proj_data[0])
+                self.win.pull_data()
+                # proj_data = self.parse_projector_data()
+                proj_data = self.parse_projector_json()
+                print('Json:', proj_data[0])
                 for pos in range(len(self.positionList)):
                     if proj_data[0][pos] != -1:
                         self.positionList[pos] = 0

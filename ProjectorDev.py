@@ -1,6 +1,9 @@
 import os
 import time
 
+import globalVar
+from pro_correct_wrapper import get_sn
+
 PRO_SYS_APP = True
 MOTOR_ABNORMAL = -9999
 TIME_OUT = 8
@@ -23,6 +26,15 @@ PRO_MOTOR_RES = True
 def pro_kst_cal_service():
     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
     os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
+
+
+def pro_pull_data():
+    localSN = get_sn()
+    dir_pro_path = globalVar.get_value('DIR_NAME')
+    distDirName = dir_pro_path + '/' + localSN
+    cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
+    print('Pull files from PC : ', cmd)
+    os.system(cmd)
 
 
 def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0", mode=1, loop=2,
