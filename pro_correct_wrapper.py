@@ -515,7 +515,10 @@ def keystone_correct_tof():
     imu_data_list = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
     correct_points = [0] * 8
     source_points = ProjectorDev.pro_get_kst_point()
-    print('+++++++++++++++++++++++++>', source_points)
+    if len(source_points) != 8:
+        print('未连接到投影仪，请检查链接是否正常 ')
+        return False
+    print('+++++++++++++++++++++++++>', source_points, len(source_points))
     lastTime = time.time()
     while not os.path.exists(FILE_AUTO_KEYSTONE):
         currentTime = time.time()
@@ -548,7 +551,10 @@ def keystone_correct_tof():
             depth_data = tof_data[1].split(',')
             # del depth_data[-1]
             depth_data = list(map(float, depth_data))
-            print(depth_data)
+            print('!!!!!!!!!!!!!!!!', depth_data)
+            if min(depth_data) < 1000:
+                print('TOF 数据异常！！！')
+                return False
             points = keystone_correct_tof_api(CALIB_DATA_PATH,
                                               len(depth_data), len(imu_data_list),
                                               source_points,

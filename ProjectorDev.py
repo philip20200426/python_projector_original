@@ -246,7 +246,7 @@ def connect_dev(ip_addr):
 
 
 def pro_get_kst_point():
-    points = 0
+    points = []
     if PLATFORM_HW == PLATFORM_HISI:
         lb = os.popen('adb shell getprop persist.hisi.keystone.lb').read().strip()
         rb = os.popen('adb shell getprop persist.hisi.keystone.rb').read().strip()

@@ -35,6 +35,7 @@ class AutoCalThread(QThread):
         # self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
         self.angle_list = [[0, 0], [15, 0], [15, 10], [0, 10], [-15, 10], [-15, 0], [-15, -12], [0, -12], [15, -12]]
         self.pos_init_finished = False
+        self.pos_count = len(self.positionList)
 
     def run(self):
         self.work0()
@@ -139,9 +140,8 @@ class AutoCalThread(QThread):
         return pos_error, tof_list, imu_list, img_list
 
     def parse_projector_json(self):
-        print('开始解析Json数据 ')
-        pos_count = len(self.positionList)
-        pos_error = [0] * pos_count
+        print('开始解析Json数据, 一共有%d位置' % self.pos_count)
+        pos_error = [0] * self.pos_count
 
         dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
         dir_ref_path = globalVar.get_value('DIR_NAME_REF')
@@ -154,30 +154,35 @@ class AutoCalThread(QThread):
         # 分析json数据
         file_pro_path = dir_pro_path + "AsuProData.json"
         if os.path.isfile(file_pro_path):
+            file_size = os.path.getsize(file_pro_path)
+            if file_size < 1000:
+                print('文件异常，文件大小不对：', file_size, file_pro_path)
+                for i in range(self.pos_count):
+                    pos_error[i] = -1
+                return pos_error, tof_list, imu_list, ref_img_list
             file = open(file_pro_path, )
             dic = json.load(file)
+            print('解析文件：', file_pro_path)
             if len(dic) > 0:
                 if 'TOF' in dic.keys():
                     if 'central' in dic['TOF'].keys():
-                        print('>>>>>>>>>>>>>>>', dic['TOF']['central'])
+                        # print('>>>>>>>>>>>>>>>', dic['TOF']['central'])
                         tof_central = list(map(float, list(map(float, dic['TOF']['central'].split(',')))))
-                for i in range(pos_count):
+                for i in range(self.pos_count):
                     pos = 'POS' + str(i)
+                    print('POS:', pos)
                     if pos in dic.keys():
                         if 'tof' in dic[pos].keys():
                             data = list(map(float, dic[pos]['tof'].split(',')))
-                            # print('TOF数据：', data, i)
+                            # print('TOF数据：', data, i, max(data), min(data))
                             if len(data) == 4:
-                                if max(data) < 1900 or min(data) > 1500:
+                                if max(data) < 1900 and min(data) > 1500:
                                     if i == 0 and ((data[0] - data[1]) > 15):
                                         pos_error[i] = -1
-                                    elif (i == 1 or i == 2 or i == 8) and data.index(max(data)) != 2:
+                                    elif (i == 1 or i == 2 or i == 8) and data[1] > data[2]:
+                                        print(data)
                                         pos_error[i] = -1
-                                    elif i == 3 and data.index(max(data)) != 0:
-                                        pos_error[i] = -1
-                                    elif i == 7 and data.index(max(data)) != 3:
-                                        pos_error[i] = -1
-                                    elif (i == 4 or i == 5 or i == 6) and data.index(max(data)) != 1:
+                                    elif (i == 4 or i == 5 or i == 6) and data[1] < data[2]:
                                         pos_error[i] = -1
                                     tof_list += data
                                     tof_list += tof_central
@@ -186,11 +191,10 @@ class AutoCalThread(QThread):
                             else:
                                 pos_error[i] = -1
                             if pos_error[i] == -1 and len(data) > 0:
-                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：%d %d POS%d' % (max(data), min(data), i))
+                                print('!!!!!!!!!!!!!!!!!!!! TOF数据异常:', data)
                         else:
                             pos_error[i] = -1
-                            print('没有发现TOF数据')
-
+                            print('json文件中，没有发现TOF数据')
                         if 'imu' in dic[pos].keys():
                             data = list(map(float, dic[pos]['imu'].split(',')))
                             if len(data) == 5:
@@ -206,11 +210,14 @@ class AutoCalThread(QThread):
                         else:
                             pos_error[i] = -1
                     else:
+                        print('Json文件中未找到位置信息')
                         pos_error[i] = -1
             file.close()
         else:
-            print('文件不存在：', file_pro_path)
-            pos_error[0:pos_count-1] = -1
+            print('%s文件不存在：' % file_pro_path)
+            for i in range(self.pos_count):
+                pos_error[i] = -1
+            return pos_error, tof_list, imu_list, ref_img_list
 
             # 分析外部相机图片
             ref_list = []
@@ -229,23 +236,23 @@ class AutoCalThread(QThread):
                         ref_list.append(file)
                         ret["bmp"] = ret["bmp"] + 1
                         # print(ref_list)
-            for i in range(pos_count):
+            for i in range(self.pos_count):
                 img = 'ref_n' + str(i) + '.bmp'
                 if img in ref_list:
                     ref_img_list.append(dir_ref_path + img)
                 else:
                     pos_error[i] = -1
-            # print(ref_list)
-            # print(ref_img_list)
 
-            if pos_count != ret["bmp"]:
+            if self.pos_count != ret["bmp"]:
                 print('!!!!!!!!!!图片数量不对')
+
         return pos_error, tof_list, imu_list, ref_img_list
 
     def work0(self):
         print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
+        self.pos_count = len(self.positionList)
         ProjectorDev.pro_show_pattern(2)
-        time.sleep(3)
+        time.sleep(2.6)
         start_time = time.time()
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
@@ -258,7 +265,7 @@ class AutoCalThread(QThread):
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
             # ProjectorDev.pro_kst_cal_service()
-            time.sleep(2.9)
+            time.sleep(1.9)
             print('0点位置准备：投影显示复位，TOF校准')
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
             ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
@@ -272,7 +279,7 @@ class AutoCalThread(QThread):
         while len(self.positionList) > 0:
             # 超时处理
             now_time = time.time()
-            if self.exit or (now_time - lst_time) > 888:
+            if self.exit or (now_time - lst_time) > 333:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
                 ProjectorDev.pro_show_pattern(0)
@@ -282,20 +289,26 @@ class AutoCalThread(QThread):
                 time.sleep(1.5)  # 2
                 print('>>>>>>>>>>>>>>>>>>> 开始解析数据')
                 self.win.pull_data()
+                # time.sleep(3)
                 # proj_data = self.parse_projector_data()
                 proj_data = self.parse_projector_json()
-                print('Json:', proj_data[0])
-                for pos in range(len(self.positionList)):
+                print('解析Json结果，各位置状态：', proj_data[0])
+
+                position_list_bk = [1, 2, 3, 4, 5, 6, 7, 8]
+                for pos in range(self.pos_count):
                     if proj_data[0][pos] != -1:
-                        self.positionList[pos] = 0
-                print(self.positionList)
-                self.positionList = list(set(self.positionList))
-                print(self.positionList)
+                        position_list_bk[pos] = 0
+                position_list_bk = list(set(position_list_bk))
+                print(position_list_bk)
+
+                self.positionList = position_list_bk.copy()
+
                 if 0 in self.positionList:
                     self.positionList.remove(0)
                 self.win.pv -= len(self.positionList) * 10
                 print('>>>>>>>>>>>>>>>>>>> %d个姿态有错误, ' % len(self.positionList))
                 print(">>>>>>>>>>>>>>>>>>> ", self.positionList)
+
                 self.position = 0
                 if len(self.positionList) == 0:
                     self.win.pv += 5

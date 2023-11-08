@@ -61,7 +61,7 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-VERSION = 'Version: 0.01 202311061326'
+VERSION = 'Version: 0.01 202311081935'
 
 
 class SerialThread(QThread):
@@ -781,6 +781,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd = cmd0 + cmd1
         # print(cmd)
         # os.system(cmd)
+        self.clean_data()
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
         os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
         self.close_ai_feature()
