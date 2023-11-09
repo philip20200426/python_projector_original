@@ -609,6 +609,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def parce_cal_data(self):
         create_dir_file()
         print('>>>>>>>>>>>>>>>>>>> 开始离线解析json数据')
+        # 解析数据前，先判断位置数量
+        cmd = self.ui.kstAutoCalCountEdit.text().strip()
+        print(cmd)
+        if cmd != '':
+            self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
+            self.auto_cal_thread.pos_count = len(self.auto_cal_thread.positionList)
+        else:
+            print('缺少解析位置数据')
         data = self.auto_cal_thread.parse_projector_json()
         if data[0].count(-1) == 0:
             if self.ui.enCalAlgoCheckBox.isChecked():
