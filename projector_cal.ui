@@ -1100,7 +1100,7 @@
                </size>
               </property>
               <property name="text">
-               <string>192.168.8.200</string>
+               <string>192.168.8.223</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>

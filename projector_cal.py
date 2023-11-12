@@ -812,7 +812,7 @@ class Ui_MainWindow(object):
         self.positionEdit.setText(_translate("MainWindow", "9"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Tab 1"))
         self.rootButton.setText(_translate("MainWindow", "连接设备"))
-        self.ip_addr.setText(_translate("MainWindow", "192.168.8.200"))
+        self.ip_addr.setText(_translate("MainWindow", "192.168.8.223"))
         self.startTestActivityButton.setText(_translate("MainWindow", "启动测试界面"))
         self.startServiceButton.setText(_translate("MainWindow", "启动后台服务"))
         self.installAppButton.setText(_translate("MainWindow", "安装程序"))

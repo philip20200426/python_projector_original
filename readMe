@@ -1,4 +1,4 @@
-，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，，pyinstaller --noconsole -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
+pyinstaller --noconsole -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py
 pyinstaller --noconsole -p package -F .\projector_lcos_main.py .\projector_pdu.py .\serial_utils.py .\log_utils.py
 
 pyinstaller -p package -F .\projector_main.py .\projector_cal.py .\serial_utils.py .\log_utils.py

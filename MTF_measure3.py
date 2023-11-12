@@ -56,7 +56,7 @@ def mtf_measure(image):
             x, y, w, h = cv2.boundingRect(cnt) #目标的坐标和长宽
             # image1 = image[y:y + h, x:x + w]
             image1 = img_cp[y:y + h, x:x + w]
-            orig_img = Image.fromarray(image1)
+            #orig_img = Image.fromarray(image1)
             # orig_img.save('asuFiles/interRefFiles/crop.bmp')
             MTF = cv2.Laplacian(image1, cv2.CV_64F).var() #目标的清晰度值
             laplace_list.append(MTF)

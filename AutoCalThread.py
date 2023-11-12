@@ -32,6 +32,7 @@ class AutoCalThread(QThread):
         self.CRC = CRC()
         print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.position_list_bk = [1, 2, 3, 4, 5, 6, 7, 8]
         # self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
         self.angle_list = [[0, 0], [15, 0], [15, 10], [0, 10], [-15, 10], [-15, 0], [-15, -12], [0, -12], [15, -12]]
         self.pos_init_finished = False
@@ -250,7 +251,9 @@ class AutoCalThread(QThread):
 
     def work0(self):
         print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
+        print(self.angle_list)
         self.pos_count = len(self.positionList)
+        self.position_list_bk = self.positionList
         ProjectorDev.pro_show_pattern(2)
         time.sleep(2.6)
         start_time = time.time()
@@ -293,16 +296,15 @@ class AutoCalThread(QThread):
                 # proj_data = self.parse_projector_data()
                 proj_data = self.parse_projector_json()
                 print('解析Json结果，各位置状态：', proj_data[0])
-
-                position_list_bk = [1, 2, 3, 4, 5, 6, 7, 8]
+                # 这里的逻辑是把通过的位置设置成0，再删除掉。
+                cmd = self.win.ui.kstAutoCalCountEdit.text().strip()
+                self.position_list_bk = list(map(int, cmd.split(',')))
                 for pos in range(self.pos_count):
                     if proj_data[0][pos] != -1:
-                        position_list_bk[pos] = 0
-                position_list_bk = list(set(position_list_bk))
-                print(position_list_bk)
+                        self.position_list_bk[pos] = 0
+                self.position_list_bk = list(set(self.position_list_bk))
 
-                self.positionList = position_list_bk.copy()
-
+                self.positionList = self.position_list_bk.copy()
                 if 0 in self.positionList:
                     self.positionList.remove(0)
                 self.win.pv -= len(self.positionList) * 10
@@ -345,10 +347,15 @@ class AutoCalThread(QThread):
             # cmd1 = str(self.positionList[self.position] - 1)
             # os.system(cmd0 + cmd1)
             ProjectorDev.pro_save_pos_data(6, str(self.positionList[self.position] - 1))
+
             time.sleep(self.delay2)
             self.win.cal = True
             self.win.external_take_picture(self.positionList[self.position] - 1)
+            # dir_ref_path = globalVar.get_value('DIR_NAME_REF')
+            # file_path = dir_ref_path + 'ref_n' + str(self.positionList[self.position] - 1) + '.bmp'
+            # self.win.hk_win.save_cal_bmp(file_path)
             time.sleep(self.delay3)
+
             self.win.cal = False
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
                 len(self.positionList), self.positionList[self.position]))

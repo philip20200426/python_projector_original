@@ -1,3 +1,13 @@
+
+from PyQt5.QtWidgets import *
+
+
+from HkCamera import UiHkWindow
+
+import sys
+from PyQt5.QtWidgets import *
+import ctypes
+
 import binascii
 import csv
 import datetime
@@ -17,6 +27,8 @@ import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
 from ExCamAfThread import ExCamAfThread
 from Fmc4030 import rail_forward, rail_position, init, rail_forward_pos, rail_stop
+
+
 from math_utils import CRC
 from pathlib import Path
 
@@ -61,7 +73,7 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-VERSION = 'Version: 0.01 202311081935'
+VERSION = 'V0.01 2023_1112_1430'
 
 
 class SerialThread(QThread):
@@ -87,11 +99,17 @@ class SerialThread(QThread):
 class ProjectorWindow(QMainWindow, Ui_MainWindow):
     label_used_time_text = 0
 
-    def __init__(self):
+    def __init__(self, hk_win):
         super().__init__()
+        self.hk_win = hk_win
+        # self.hk_win.show()
+        # self.hk_win.enum_devices()
+        # self.hk_win.open_device()
+        # self.hk_win.start_grabbing()
+
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle('全向梯形标定工具')
+        self.setWindowTitle('全向梯形标定工具 ' + VERSION)
         self.initialize_ui()
 
         # 实例化状态栏
@@ -206,7 +224,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.cal = False
         self.ui.autoTofKsdButton.setEnabled(True)
 
-        self.cameraThread = CameraThread(1, "CameraThread", float(self.ui.exTimeSpinBox.text()))
+        self.cameraThread = CameraThread(self, float(self.ui.exTimeSpinBox.text()))
         self.cameraThread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
         self.mCount = 0
@@ -355,7 +373,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         init(self.current_port)
 
     def rail_forward(self):
-
+        # Fmc4030.test(self.current_port)
         direction = 1
         if float(self.ui.railForewardEdit.text()) > 0:
             direction = 0
@@ -380,6 +398,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
+            self.hk_win.show()
+            self.hk_win.enum_devices()
+            self.hk_win.open_device()
+            self.hk_win.start_grabbing()
             self.ui.previewCameraLabel.show()
             self.cameraThread.start()
             # time.sleep(1.5)
@@ -389,10 +411,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print("External camera already opened")
         self.ui.eOpenCameraButton.setEnabled(True)
 
+
     def close_external_camera(self):
         if self.cameraThread.mRunning:
             self.cameraThread.closeCamera()
             self.ui.previewCameraLabel.clear()
+            self.hk_win.stop_grabbing()
+            self.hk_win.close_device()
+            self.hk_win.hide()
+            self.hk_win.close()
+
         else:
             print("External camera is not opened")
 
@@ -426,6 +454,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 filePath = inter_path + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
             print('external_take_picture:', filePath)
             self.cameraThread.takePicture(filePath)
+
         else:
             print("External camera is not opened")
 
@@ -781,6 +810,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.snEdit.setText('')
         # self.ui.snEdit.clear()
 
+        ProjectorDev.pro_clear_data()
         create_dir_file()
         # 拉取对焦标定文件
         # calib_data_path = globalVar.get_value('CALIB_DATA_PATH')
@@ -789,7 +819,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd = cmd0 + cmd1
         # print(cmd)
         # os.system(cmd)
-        self.clean_data()
+
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
         os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
         self.close_ai_feature()
@@ -1292,13 +1322,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    w = ProjectorWindow()
+
+    whk = UiHkWindow()
+    w = ProjectorWindow(whk)
     globalVar._init()
 
     # width height
     # w.resize(600, 820)
     w.show()
     # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=DarkPalette()))
-    # mylog = Logger('motor.log', level='debug')
-    # mylog.logger.debug("-------------重新启动应用-------------")
+
     sys.exit(app.exec_())

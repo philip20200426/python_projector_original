@@ -23,6 +23,12 @@ PLATFORM_HW = PLATFORM_HISI
 PRO_MOTOR_RES = True
 
 
+def pro_clear_data():
+    os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
+    os.system("adb shell rm -rf /sdcard/kst_cal_data.yml ")
+    os.system("adb shell rm -rf /sdcard/kst_cal_data_bk.yml ")
+    os.system("adb shell am broadcast -a asu.intent.action.Clear")
+
 def pro_kst_cal_service():
     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
     os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
@@ -279,11 +285,11 @@ def pro_set_kst_point(point):
         if point[i] < 0:
             point[i] = 0
         if i % 2 == 0:
-            if point[i] > 1919:
-                point[i] = 1919
+            if point[i] > 1920:
+                point[i] = 1920
         if i % 2 == 1:
-            if point[i] > 1079:
-                point[i] = 1079
+            if point[i] > 1080:
+                point[i] = 1080
     pro_get_kst_point()
     print('set point : ', point)
     if PLATFORM_HW == 0:
