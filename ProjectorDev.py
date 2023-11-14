@@ -22,6 +22,8 @@ PLATFORM_AMLOGIC = 1
 PLATFORM_HW = PLATFORM_HISI
 PRO_MOTOR_RES = True
 
+def pro_start_factory_test_activity():
+    os.system('adb shell am start -n com.asu.projecttest/com.asu.projecttest.MainActivity')
 
 def pro_clear_data():
     os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")

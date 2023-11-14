@@ -222,7 +222,8 @@ class UiHkWindow(QMainWindow, UiHk_MainWindow):
             print("Save image success")
 
     def get_raw_numpy(self):
-        return obj_cam_operation.Get_Raw_Numpy()
+        if obj_cam_operation != 0:
+            return obj_cam_operation.Get_Raw_Numpy()
 
     def save_cal_bmp(self, name):
         ret = obj_cam_operation.Save_Cal_Bmp(name)
@@ -245,15 +246,16 @@ class UiHkWindow(QMainWindow, UiHk_MainWindow):
 
     # ch: 设置参数 | en:set param
     def set_param(self):
-        frame_rate = self.ui.edtFrameRate.text()
-        exposure = self.ui.edtExposureTime.text()
-        gain = self.ui.edtGain.text()
-        ret = obj_cam_operation.Set_parameter(frame_rate, exposure, gain)
-        if ret != MV_OK:
-            strError = "Set param failed ret:" + ToHexStr(ret)
-            QMessageBox.warning(self, "Error", strError, QMessageBox.Ok)
+        if obj_cam_operation != 0:
+            frame_rate = self.ui.edtFrameRate.text()
+            exposure = self.ui.edtExposureTime.text()
+            gain = self.ui.edtGain.text()
+            ret = obj_cam_operation.Set_parameter(frame_rate, exposure, gain)
+            if ret != MV_OK:
+                strError = "Set param failed ret:" + ToHexStr(ret)
+                QMessageBox.warning(self, "Error", strError, QMessageBox.Ok)
 
-        return MV_OK
+            return MV_OK
 
         # ch: 设置控件状态 | en:set enable status
 

@@ -252,6 +252,19 @@ class AutoCalThread(QThread):
     def work0(self):
         print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
         print(self.angle_list)
+        # 解析json中配置的云台角度
+        if os.path.isfile('res/para.json'):
+            file = open('res/para.json', )
+            dic = json.load(file)
+            if len(dic) > 0 and 'angle' in dic.keys():
+                ang = dic['angle']
+                n = 2
+                self.angle_list = [ang[i * n:(i + 1) * n] for i in range((len(ang) + n - 1) // n)]
+            print('使用json中的角度：', self.angle_list)
+            file.close()
+        else:
+            print('未找到json文件')
+
         self.pos_count = len(self.positionList)
         self.position_list_bk = self.positionList
         ProjectorDev.pro_show_pattern(2)

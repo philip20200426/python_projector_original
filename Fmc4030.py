@@ -10,25 +10,26 @@ def test(ser):
     print('串口测试:')
     if ser is not None:
         ser.write('xu 7411\n\r'.encode())
-        #ser.write('am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration\n\r'.encode())
-        ser.write('cat /sdcard/DCIM/projectionFiles/AsuProData.json\n\r'.encode())
-    s = ''
-    while True:
-        if ser is not None:
-            data = ser.readline().decode('utf-8')
-            #print(data)
-            if data == '':
-                print('结束读数据')
-                break
-            else:
-                s = s + data
-
-    print('>>>>>>>>>>>>>>>>>>>>>>>>')
-    print(s)
-    pattern = r'\{(.*?)\}'  # 匹配中括号中的内容
-    result = re.search(pattern, s)
-    print('!!!!!!!!!!!!!!!!!!!!!!')
-    print(result)
+        ser.write('am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration\n\r'.encode())
+        #ser.write('cat /sdcard/DCIM/projectionFiles/AsuProData.json\n\r'.encode())
+        ser.write('am startservice com.nbd.autofocus/com.nbd.autofocus.TofService'.encode())
+    # s = ''
+    # while True:
+    #     if ser is not None:
+    #         data = ser.readline().decode('utf-8')
+    #         #print(data)
+    #         if data == '':
+    #             print('结束读数据')
+    #             break
+    #         else:
+    #             s = s + data
+    #
+    # print('>>>>>>>>>>>>>>>>>>>>>>>>')
+    # print(s)
+    # pattern = r'\{(.*?)\}'  # 匹配中括号中的内容
+    # result = re.search(pattern, s)
+    # print('!!!!!!!!!!!!!!!!!!!!!!')
+    # print(result)
 
 def init(ser):
     # 归零，设置参数

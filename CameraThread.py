@@ -136,7 +136,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # hk
                 numpy_image_preview = self.win.hk_win.get_raw_numpy()
             if numpy_image_preview is None:
-                print("Get raw image failed.")
+                #print("Get raw image failed.")
                 continue
             # print(type(numpy_image_preview), numpy_image_preview.shape)
             numpy_image_picture = numpy_image_preview.copy()
@@ -201,6 +201,10 @@ class CameraThread(QThread):  # 建立一个任务线程类
             q_img = QImage(numpy_image_preview.data, numpy_image_preview.shape[1], numpy_image_preview.shape[0],
                            QImage.Format_Grayscale8)
             self.frameNum += 1
-            pix = QPixmap(q_img).scaled(720, 540)
+
+            # hk 3072 2048  768 512
+            pix = QPixmap(q_img).scaled(768, 512)
+            # gx
+            # pix = QPixmap(q_img).scaled(720, 540)
             # pix = QPixmap(q_img).scaled(430, 540)
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

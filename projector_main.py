@@ -73,7 +73,7 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-VERSION = 'V0.01 2023_1112_1430'
+VERSION = 'V0.01 2023_1113_2052'
 
 
 class SerialThread(QThread):
@@ -373,11 +373,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         init(self.current_port)
 
     def rail_forward(self):
-        # Fmc4030.test(self.current_port)
-        direction = 1
-        if float(self.ui.railForewardEdit.text()) > 0:
-            direction = 0
-        Fmc4030.rail_forward(self.current_port, direction, abs(float(self.ui.railForewardEdit.text())))
+        Fmc4030.test(self.current_port)
+        # direction = 1
+        # if float(self.ui.railForewardEdit.text()) > 0:
+        #     direction = 0
+        # Fmc4030.rail_forward(self.current_port, direction, abs(float(self.ui.railForewardEdit.text())))
 
     def rail_reversal(self):
         Fmc4030.rail_forward(self.current_port, 1, abs(float(self.ui.railForewardEdit.text())))
@@ -398,7 +398,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
-            self.hk_win.show()
+            # self.hk_win.show()
             self.hk_win.enum_devices()
             self.hk_win.open_device()
             self.hk_win.start_grabbing()
@@ -427,10 +427,27 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def set_exposure_time(self):
         if self.cameraThread is not None:
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
-        dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
-                    'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
-        with open('res/para.json', 'w') as file:
-            json.dump(dic_para, file)
+        # self.ui.edtExposureTime.setText("{0:.2f}".format(obj_cam_operation.exposure_time))
+            self.hk_win.ui.edtExposureTime.setText("{0:.2f}".format(float(self.ui.exTimeSpinBox.text())))
+            self.hk_win.set_param()
+        if os.path.isfile('res/para.json'):
+            file = open('res/para.json', )
+            dic = json.load(file)
+            file.close()
+            if len(dic) > 0 and 'ExposureTime' in dic.keys():
+                dic['ExposureTime'] = self.cameraThread.exposureTime
+                print(dic)
+                with open('res/para.json', 'w') as file:
+                    json.dump(dic, file)
+                file.close()
+            print(dic)
+        else:
+            dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
+                        'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
+            with open('res/para.json', 'w') as file:
+                json.dump(dic_para, file)
+            file.close()
+            print('未找到json文件，创建json文件')
 
     def external_take_picture(self, pos=0):
         if self.cameraThread.mRunning:
@@ -793,7 +810,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autofocus_cal_thread.start()
 
     def kst_auto_calibrate(self):
-
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
