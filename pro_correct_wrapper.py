@@ -415,7 +415,7 @@ if hasattr(dll, 'KeystoneCorrectCalibS'):
         robot_pose = (c_double * len(robot_pose_list))(*list(map(float, robot_pose_list)))
         error = (c_double * len(error))(*error)
         print('>>>>>>>>>>>>>>>>>>>> Load KeystoneCorrectCalibS')
-        status = dll.KeystoneCorrectCalibS(calib_config_para, calib_data_path,
+        ret = dll.KeystoneCorrectCalibS(calib_config_para, calib_data_path,
                                            list_size,
                                            ref_img_r, ref_img_c, pro_img_r, pro_img_c,
                                            tof_data_size, imu_data_size,
@@ -424,7 +424,7 @@ if hasattr(dll, 'KeystoneCorrectCalibS'):
                                            imu_data,
                                            robot_pose,
                                            error)
-        return error
+        return ret
 
 
 def reference_cam_calib():
@@ -788,14 +788,14 @@ def auto_keystone_calib():
                                     len(depth_data_list) / len(ref_file_list), len(imu_data_list) / len(ref_file_list),
                                     ref_file_list, pro_file_list, depth_data_list, imu_data_list, robot_pose_list,
                                     error_list)
-    for i in range(len(ret)):
-        error_list[i] = ret[i]
-    print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
+    # for i in range(len(ret)):
+    #     error_list[i] = ret[i]
+    # print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
     if os.path.exists(CALIB_DATA_PATH):
         print('>>>>>>>>>>>>>>>>>>>> 标定算法生成文件 ', CALIB_DATA_PATH)
     else:
         print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
-    return True
+    return ret
 
 
 # 当前标定算法使用函数：auto_keystone_calib2

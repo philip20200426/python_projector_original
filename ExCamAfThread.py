@@ -232,6 +232,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             print('耗时：', time.time() - sta)
 
     def work2_detailed_search2(self):
+        ProjectorDev.pro_show_pattern_af()
         ProjectorDev.pro_show_pattern(1)
         sta = time.time()
         # 先粗搜
@@ -245,7 +246,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         count = steps_range/steps*2
         print('后退%d步' % steps_range)
         motor_speed = 7.6 / 2589  # s/step
-        ProjectorDev.pro_motor_forward(5, steps_range)
+        ProjectorDev.pro_motor_forward(5, steps_range-150)
         direction = 2
         time.sleep(200*motor_speed)
         print('后退%d步完成' % steps_range)
@@ -264,6 +265,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             ProjectorDev.pro_motor_forward(direction, steps)
             time.sleep(exp_time * 2)
             time.sleep(motor_speed * 50 * 2)
+            time.sleep(6)
             count -= 1
 
         if len(self.mPositionList) > (count-1):
@@ -286,7 +288,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         c = 7.9745
         d = -5345.0431
         # distance = 1626
-        distance = 1686
+        distance = 1769
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
         steps = int(steps)
         print('投影仪当前距离:', distance, '马达初始化位置:', steps)

@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 
 import HuiYuanRotate
 import ProjectorDev
+import evaluate_correct_wrapper
 import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
 from math_utils import CRC
@@ -28,10 +29,12 @@ class AutoCalThread(QThread):
         # 外部相机保存时间
         self.delay3 = 1.6
         self.enableAlgo = True
-        self.exit = False
+        self.mExit = False
+        self.mRunning = False
         self.CRC = CRC()
-        print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread')
+        print('>>>>>>>>>>>>>>>>>>> Init AutoCalThread', self.mExit, self.mRunning)
         self.positionList = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.estimateAngelList = [[-15, -15], [15, -15]]
         self.position_list_bk = [1, 2, 3, 4, 5, 6, 7, 8]
         # self.angle_list = [[0, 0], [0, 7], [-7, 0], [7, 0], [0, -7], [-7, -7], [7, -7], [7, 7]]
         self.angle_list = [[0, 0], [15, 0], [15, 10], [0, 10], [-15, 10], [-15, 0], [-15, -12], [0, -12], [15, -12]]
@@ -174,21 +177,25 @@ class AutoCalThread(QThread):
                     print('POS:', pos)
                     if pos in dic.keys():
                         if 'tof' in dic[pos].keys():
-                            data = list(map(float, dic[pos]['tof'].split(',')))
-                            # print('TOF数据：', data, i, max(data), min(data))
-                            if len(data) == 4:
-                                if max(data) < 1900 and min(data) > 1500:
-                                    if i == 0 and ((data[0] - data[1]) > 15):
+                            if dic[pos]['tof'] != '':
+                                data = list(map(float, dic[pos]['tof'].split(',')))
+                                # print('TOF数据：', data, i, max(data), min(data))
+                                if len(data) == 4:
+                                    if max(data) < 1900 and min(data) > 1500:
+                                        if i == 0 and ((data[0] - data[1]) > 15):
+                                            pos_error[i] = -1
+                                        elif (i == 1 or i == 2 or i == 8) and data[1] > data[2]:
+                                            print(data)
+                                            pos_error[i] = -1
+                                        elif (i == 4 or i == 5 or i == 6) and data[1] < data[2]:
+                                            pos_error[i] = -1
+                                        tof_list += data
+                                        tof_list += tof_central
+                                    else:
                                         pos_error[i] = -1
-                                    elif (i == 1 or i == 2 or i == 8) and data[1] > data[2]:
-                                        print(data)
-                                        pos_error[i] = -1
-                                    elif (i == 4 or i == 5 or i == 6) and data[1] < data[2]:
-                                        pos_error[i] = -1
-                                    tof_list += data
-                                    tof_list += tof_central
                                 else:
                                     pos_error[i] = -1
+                                    print('Json中TOF数据为空！！！')
                             else:
                                 pos_error[i] = -1
                             if pos_error[i] == -1 and len(data) > 0:
@@ -249,9 +256,47 @@ class AutoCalThread(QThread):
 
         return pos_error, tof_list, imu_list, ref_img_list
 
+    def evaluate_kst_correct(self):
+        if not self.win.cameraThread.mRunning:
+            self.win.open_external_camera()
+            time.sleep(1)
+        img = self.win.cameraThread.get_img()
+        dst = [0] * 12
+        # img_size = (img.shape[0], img.shape[1])
+        img_size = img.shape
+        print('Load EvaluateCorrectionRst:', img_size, dst)
+        rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
+        print('返回参数:', dst)
+        return dst
+
+    def estimate_test(self):
+        result0 = []
+        result1 = []
+        ProjectorDev.pro_show_pattern(2)
+        for i in range(len(self.estimateAngelList)):
+            HuiYuanRotate.hy_control(self.ser, self.estimateAngelList[i][0],
+                                     self.estimateAngelList[i][1])
+            print('>>>>>>>>>>>>>>>>>>>>> 控制转台到%d %d' % (self.estimateAngelList[i][0], self.estimateAngelList[i][1]))
+            time.sleep(6)
+            ProjectorDev.pro_auto_kst()
+            time.sleep(6)
+            dst = self.evaluate_kst_correct()
+            print(dst)
+            result0.append(round(dst[0]*100, 1))
+            result0.append(round(dst[1]*100, 1))
+            for j in range(2, 6):
+                result1.append(dst[j])
+
+        print(result0)
+        print(result1)
+        if max(result0) > 2:
+            print('全乡标定失败', max(result0))
+        ProjectorDev.pro_show_pattern(0)
+
     def work0(self):
-        print('自动全向梯形标定 work0 开始：', self.positionList, len(self.positionList))
-        print(self.angle_list)
+        # from kst_auto_calibrate
+        print('>>>>>>>>>> 自动全向梯形标定 work0 开始')
+        self.mRunning = True
         # 解析json中配置的云台角度
         if os.path.isfile('res/para.json'):
             file = open('res/para.json', )
@@ -260,13 +305,16 @@ class AutoCalThread(QThread):
                 ang = dic['angle']
                 n = 2
                 self.angle_list = [ang[i * n:(i + 1) * n] for i in range((len(ang) + n - 1) // n)]
-            print('使用json中的角度：', self.angle_list)
+                print('使用json中的角度：', self.angle_list)
+            else:
+                print('json配置文件中未匹配到云台角度参数,使用默认角度配置')
             file.close()
         else:
-            print('未找到json文件')
+            print('未找到json文件,使用默认角度配置')
+        print('云台角度配置参数：', self.angle_list, len(self.angle_list))
 
         self.pos_count = len(self.positionList)
-        self.position_list_bk = self.positionList
+        # self.position_list_bk = self.positionList
         ProjectorDev.pro_show_pattern(2)
         time.sleep(2.6)
         start_time = time.time()
@@ -285,21 +333,21 @@ class AutoCalThread(QThread):
             print('0点位置准备：投影显示复位，TOF校准')
             os.system('adb shell am broadcast -a asu.intent.action.KstReset')
             ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
-            os.system('adb shell am broadcast -a asu.intent.action.TofCal')
-            ProjectorDev.pro_tof_cal()
-            # self.win.showWritePattern()
-            time.sleep(1.9)
-            ProjectorDev.pro_show_pattern(2)
-            self.pos_init_finished = True
+            # # 投影启动MikeySever时，会自动加载TOF校准参数，这里不再做TOF校准
+            # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
+            # ProjectorDev.pro_tof_cal()
+            time.sleep(1.6)
+            ProjectorDev.pro_auto_af()
+            # self.pos_init_finished = True
         lst_time = time.time()
         while len(self.positionList) > 0:
             # 超时处理
             now_time = time.time()
-            if self.exit or (now_time - lst_time) > 333:
+            if self.mExit or (now_time - lst_time) > 366:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
                 ProjectorDev.pro_show_pattern(0)
-                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程,运行时间超时:', now_time - lst_time, self.exit)
+                print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程 或者 运行时间超时:', now_time - lst_time, self.mExit)
                 break
             if self.position >= len(self.positionList):
                 time.sleep(1.5)  # 2
@@ -332,7 +380,7 @@ class AutoCalThread(QThread):
                     print('数据抓取及解析耗时：' + str((end0_time - start_time)))
                     print(proj_data)
                     if self.enableAlgo:
-                        if auto_keystone_calib2(proj_data):
+                        if auto_keystone_calib2(proj_data) == 0:
                             end1_ime = time.time()
                             print('算法运行耗时：' + str((end1_ime - end0_time)))
                             cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
@@ -342,11 +390,11 @@ class AutoCalThread(QThread):
                             os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
                             self.win.pv += 5
                             print('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
-                            self.win.restore_ai_feature()
+                            ProjectorDev.pro_restore_ai_feature()
                             # os.system('adb reboot')
-                            os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
                             # set_point(point)
                         else:
+                            self.mExit = True
                             print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
                     else:
                         print('未使能算法')
@@ -368,20 +416,27 @@ class AutoCalThread(QThread):
             # file_path = dir_ref_path + 'ref_n' + str(self.positionList[self.position] - 1) + '.bmp'
             # self.win.hk_win.save_cal_bmp(file_path)
             time.sleep(self.delay3)
-
             self.win.cal = False
+
             print('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
                 len(self.positionList), self.positionList[self.position]))
             self.position += 1
             self.win.pv += 10
+
+        if not self.mExit:
+            self.estimate_test()
+
         # 标定结束，转台归位
         self.win.pv = 100
         HuiYuanRotate.hy_control(self.ser, 0, 0)
-
-        # if not self.exit:
-        #     os.system('adb reboot')
         self.win.ui.kstCalButton.setEnabled(True)
-        self.exit = False
+
+        self.mExit = False
+        self.mRunning = False
+        os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+        time.sleep(2)
+        ProjectorDev.pro_auto_af()
+        ProjectorDev.pro_auto_kst()
 
     def work1(self):
         print('自动全向梯形标定 开始：', self.positionList)
@@ -418,7 +473,7 @@ class AutoCalThread(QThread):
             self.win.showCheckerPattern()
             self.pos_init_finished = True
         while len(self.positionList) > 0:
-            if self.exit:
+            if self.mExit:
                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
                 print('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程')
@@ -512,7 +567,7 @@ class AutoCalThread(QThread):
         else:
             print('>>>>>>>>>>>>>>>>>>>> 串口异常')
 
-        # if not self.exit:
+        # if not self.mExit:
         #     os.system('adb reboot')
         self.win.ui.kstCalButton.setEnabled(True)
-        self.exit = False
+        self.mExit = False

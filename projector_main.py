@@ -354,18 +354,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def start_mtf_test_activity(self):
         ProjectorDev.pro_mtf_test_activity()
 
-    def evaluate_kst_correct(self):
-        if not self.cameraThread.mRunning:
-            self.open_external_camera()
-            time.sleep(1)
-        img = self.cameraThread.get_img()
-        dst = [0] * 12
-        # img_size = (img.shape[0], img.shape[1])
-        img_size = img.shape
-        print('Load EvaluateCorrectionRst:', img_size, dst)
-        rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
-        print('返回参数:', dst)
-
     def get_rail_position(self):
         self.ui.currentPositionLabel.setText(str(Fmc4030.rail_position(self.current_port)))
 
@@ -803,16 +791,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.autoFocusLabel.setPalette(palette)
         self.ui.autoFocusLabel.setStyleSheet("color:blue")
         self.ui.autoFocusLabel.setText('>>>>>>>>>> 开始标定')
-        self.close_ai_feature()
+        ProjectorDev.pro_close_ai_feature()
         self.open_external_camera()
         self.cameraThread.mEnLaplace = True
         self.autofocus_cal_thread.ser = self.hui_yuan
         self.autofocus_cal_thread.start()
 
+    def evaluate_kst_correct(self):
+        if not self.cameraThread.mRunning:
+            self.open_external_camera()
+            time.sleep(1)
+        img = self.cameraThread.get_img()
+        dst = [0] * 12
+        # img_size = (img.shape[0], img.shape[1])
+        img_size = img.shape
+        print('Load EvaluateCorrectionRst:', img_size, dst)
+        rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
+        print('返回参数:', rst, dst)
+
     def kst_auto_calibrate(self):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
+        if self.root_device():
+            return
+        ProjectorDev.pro_auto_af()
         if self.timer1.isActive():
             print('>>>>>>>>>> 进度条定时器已开启')
             return
@@ -838,18 +841,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
         os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
-        self.close_ai_feature()
+        ProjectorDev.pro_close_ai_feature()
 
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
-        print(cmd)
         if cmd != '':
             self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
         self.open_external_camera()
         self.auto_cal_thread.delay1 = float(self.ui.delay1Edit.text())
         self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
         self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
-        self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
+        # self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
+        self.auto_cal_thread.enableAlgo = False
         if self.hy_enable:
             self.auto_cal_thread.ser = self.hui_yuan
         else:
@@ -1313,28 +1316,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.port_status.setText('数据发送状态: 成功')
         except:
             self.ui.port_status.setText('数据发送状态: 失败')
-
-    def close_ai_feature(self):
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        os.system('adb shell settings put global tv_auto_focus_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 0')
-        os.system('adb shell settings put system tv_screen_saver 0')
-
-    def restore_ai_feature(self):
-        # 算法切换到ASU
-        os.system('adb shell setprop persist.sys.keystone.type 0')
-        # 自动垂直校正
-        os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
-        # 位移自动对焦
-        os.system('adb shell settings put global tv_auto_focus_asu 1')
-        # 位移全向自动校正
-        os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
-        # 开机相关
-        os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
-        os.system('adb shell settings put global tv_auto_focus_poweron 1')
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 import globalVar
@@ -20,16 +21,43 @@ motor_steps_pos = 0
 PLATFORM_HISI = 0
 PLATFORM_AMLOGIC = 1
 PLATFORM_HW = PLATFORM_HISI
+# PLATFORM_HW = PLATFORM_AMLOGIC
 PRO_MOTOR_RES = True
+
 
 def pro_start_factory_test_activity():
     os.system('adb shell am start -n com.asu.projecttest/com.asu.projecttest.MainActivity')
+
+
+def pro_close_ai_feature():
+    os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+    os.system('adb shell settings put global tv_auto_focus_asu 0')
+    os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
+    os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+    os.system('adb shell settings put global tv_auto_focus_poweron 0')
+    os.system('adb shell settings put system tv_screen_saver 0')
+
+
+def pro_restore_ai_feature():
+    # 算法切换到ASU
+    os.system('adb shell setprop persist.sys.keystone.type 0')
+    # 自动垂直校正
+    os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
+    # 位移自动对焦
+    os.system('adb shell settings put global tv_auto_focus_asu 1')
+    # 位移全向自动校正
+    os.system('adb shell settings put global tv_image_auto_keystone_asu 1')
+    # 开机相关
+    os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
+    os.system('adb shell settings put global tv_auto_focus_poweron 1')
+
 
 def pro_clear_data():
     os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
     os.system("adb shell rm -rf /sdcard/kst_cal_data.yml ")
     os.system("adb shell rm -rf /sdcard/kst_cal_data_bk.yml ")
     os.system("adb shell am broadcast -a asu.intent.action.Clear")
+
 
 def pro_kst_cal_service():
     os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
@@ -224,12 +252,24 @@ def motor_forward(dir, steps):
     os.system(cmd)
 
 
+def pro_auto_af():
+    os.system(
+        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
+        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
+
+
+def pro_auto_kst():
+    os.system(
+        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
+        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
+
+
 def pro_trigger_auto_ai():
     # 触发自动梯形和自动对焦
-    # 触发全向
-    # os.system(
-    #    'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
     # 触发对焦
+    os.system(
+        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
+    # 触发全向
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
     # # 触发自动梯形和自动对焦
@@ -242,15 +282,44 @@ def pro_trigger_auto_ai():
 
 
 def connect_dev(ip_addr):
-    cmd0 = 'adb connect '
-    cmd1 = ip_addr
-    cmd2 = ':5555'
-    cmd = cmd0 + cmd1 + cmd2
-    os.system(cmd)
-    print(cmd)
-    os.system('adb root')
-    time.sleep(1)
-    os.system('adb remount')
+
+    count = 0
+    while True:
+        count += 1
+        cmd = 'adb connect {}:5555'.format(ip_addr)
+        print(cmd)
+        po = os.popen(cmd)
+        devices = po.buffer.read().decode('utf-8')
+        print(devices)
+
+        ret = re.findall('connected to 192.168.8.223:5555', devices)
+        if len(ret) > 0 and ret[0] == 'connected to 192.168.8.223:5555':
+            print('识别到投影设备：', ret[0])
+            os.system('adb root')
+            time.sleep(2.8)
+            os.system('adb remount')
+            return 0
+        else:
+            print('未识别到投影设备, retry:', count)
+        time.sleep(1.6)
+        if count > 6:
+            print('未识别到投影设备')
+            return -1
+
+    # devices = os.popen('adb devices').read()
+
+    # print('>>>>>', devices)
+    # ret = re.findall('192.168.8.223:5555', devices)
+    # print(ret)
+    # if len(ret) > 0 and ret[0] == '192.168.8.223:5555':
+    #     print('!!!!!!!', ret[0])
+    # else:
+    #     print('未识别到投影设备！！！')
+    #
+    # print(cmd)
+    # os.system('adb root')
+    # time.sleep(1)
+    # os.system('adb remount')
 
 
 def pro_get_kst_point():
@@ -325,13 +394,15 @@ def pro_set_kst_point(point):
         cmd = "adb shell setprop persist.vendor.hwc.keystone "
         cmd = cmd + point
         print('set point : ', cmd)
-        os.system(cmd)
+        # os.system(cmd)
         # time.sleep(1)
 
         cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
-        cmd1 = '"' + point + '"'
+        cmd1 = '0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,1000.0'
         cmd = cmd0 + cmd1
         print(cmd)
         os.system(cmd)
     os.system("adb shell service call SurfaceFlinger 1006")
     os.system("adb shell service call SurfaceFlinger 1006")
+
+# adb shell settings put global asu_keystone_point 0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,600.0
