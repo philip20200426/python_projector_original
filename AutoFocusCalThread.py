@@ -33,10 +33,11 @@ class AutoFocusCalThread(QThread):
         self.pos_init_finished = False
         self.dis_steps = [-1, -1]
 
+# From auto_focus_cal
     def run(self):
         start_time = time.time()
         self.init()
-        time.sleep(2.6)
+        # time.sleep(2.6)
         if not self.win.ui.getTofCheckBox.isChecked():
             print('开始对焦自动化标定')
             ProjectorDev.pro_show_pattern_af()
@@ -52,7 +53,7 @@ class AutoFocusCalThread(QThread):
             time.sleep(8)
             print('开始读取投影自动对焦后的马达位置')
             left_para_auto = self.read_para()
-            print('自动对焦后的马达数据：', left_para_auto)
+            print('投影自动对焦后的马达数据：', left_para_auto)
             left_steps = left_para_auto[1]
 
             # 基于外部CAM对焦，返回当前马达位置
@@ -69,10 +70,11 @@ class AutoFocusCalThread(QThread):
             print('外部CAM对焦结束，GAP:%d,马达位置:%d,耗时:%f' % (gap, left_ex_steps, (time.time() - lst)))
 
             # 控制转台到0度
+            ProjectorDev.motor_reset()
             HuiYuanRotate.hy_control(self.ser, 0, 0)
             time.sleep(3)
             # 触发自动梯形和自动对焦
-            ProjectorDev.pro_trigger_auto_ai()
+            ProjectorDev.pro_auto_af()
             time.sleep(5)
             center_para_auto = self.read_para()
             print('中心：', center_para_auto)
@@ -93,17 +95,12 @@ class AutoFocusCalThread(QThread):
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         # os.system("adb push AsuFocusPara.json /sdcard/DCIM/projectionFiles/AsuProjectorPara.json")
         # ProjectorDev.pro_kst_cal_service()
-        ProjectorDev.pro_tof_cal()
+        # ProjectorDev.pro_tof_cal()
         self.win.ui.autoFocusLabel.setText('启动标定服务')
 
     def read_para(self):
         self.win.ui.autoFocusLabel.setText('保存位置数据')
-        # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
-        # cmd1 = '11'
-        # cmd = cmd0 + cmd1
-        # os.system(cmd)
         ProjectorDev.pro_save_pos_data(6, 11, "0a15a15a0")
-
         time.sleep(2.9)
         self.win.ui.autoFocusLabel.setText('开始分析数据')
         self.win.pull_data()

@@ -882,14 +882,14 @@ def auto_keystone_calib2(pro_data):
                                     len(depth_data_list) / len(ref_file_list), len(imu_data_list) / len(ref_file_list),
                                     ref_file_list, pro_file_list, depth_data_list, imu_data_list, robot_pose_list,
                                     error_list)
-    for i in range(len(ret)):
-        error_list[i] = ret[i]
-    print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
+    # for i in range(len(ret)):
+    #     error_list[i] = ret[i]
+    # print('>>>>>>>>>>>>>>>>>>>> 标定算法返回状态 ', error_list)
     if os.path.exists(CALIB_DATA_PATH):
         print('>>>>>>>>>>>>>>>>>>>> 标定算法生成文件 ', CALIB_DATA_PATH)
     else:
         print('xxxxxxxxxxxxxxxxxxxx 标定算法未生成', CALIB_DATA_PATH, '文件')
-    return True
+    return ret
 
 # auto_keystone_calib()
 # auto_keystone_cam()

@@ -29,6 +29,15 @@ def pro_start_factory_test_activity():
     os.system('adb shell am start -n com.asu.projecttest/com.asu.projecttest.MainActivity')
 
 
+def pro_start_kstcal_service():
+    # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
+    os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
+
+
+def pro_stop_kstcal_service():
+    os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+
+
 def pro_close_ai_feature():
     os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
     os.system('adb shell settings put global tv_auto_focus_asu 0')
@@ -59,11 +68,6 @@ def pro_clear_data():
     os.system("adb shell am broadcast -a asu.intent.action.Clear")
 
 
-def pro_kst_cal_service():
-    os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-    os.system('adb shell am startservice com.nbd.autofocus/com.nbd.autofocus.TofService')
-
-
 def pro_pull_data():
     localSN = get_sn()
     dir_pro_path = globalVar.get_value('DIR_NAME')
@@ -73,18 +77,20 @@ def pro_pull_data():
     os.system(cmd)
 
 
-def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0", mode=1, loop=2,
-                      timing_budget=160000):
-    cmd0 = "adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a " \
-           "com.nbd.autofocus.TofService --ei type 2 --ei flag "
-    cmd1 = str(flag)
-    cmd2 = " --ei pos "
-    cmd3 = str(pos)
-    cmd4 = ' --es rois "'
-    cmd5 = str(rois)
-    cmd6 = '"'
-    cmd = cmd0 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6
-    # print(cmd)
+def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0", mode=1, loop=5,
+                      timing_budget=166666):
+    # cmd0 = "adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a " \
+    #        "com.nbd.autofocus.TofService --ei type 2 --ei flag "
+    # cmd1 = str(flag)
+    # cmd2 = " --ei pos "
+    # cmd3 = str(pos)
+    # cmd4 = ' --es rois "'
+    # cmd5 = str(rois)
+    # cmd6 = '"'
+    # cmd = cmd0 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6
+    cmd = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
+          'com.nbd.autofocus.TofService --ei type 2 --ei flag {} --ei pos {}  --ei mode {} --ei loop {} --es rois {} ' \
+          '--el time {}'.format(flag, pos, mode, loop, rois, timing_budget)
     os.system(cmd)
     # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
     # cmd1 = '11'
@@ -98,6 +104,7 @@ def pro_mtf_test_activity():
 
 def pro_show_pattern_af():
     # os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
+    os.system('adb push show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
     os.system(
         'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a '
         '"com.nbd.autofocus.TofService" --ei type 7 --ei flag 1')
@@ -158,9 +165,9 @@ def pro_motor_forward2(direction, steps):
 
 def pro_motor_forward(direction, steps):
     global motor_steps_pos
-    if steps > 2800:
-        print('!!!!!!!!!! 调用当前接口会有问题，请调用其他接口', steps)
-        return MOTOR_ABNORMAL
+    # if steps > 2800:
+    #     print('!!!!!!!!!! 调用当前接口会有问题，请调用其他接口', steps)
+    #     return MOTOR_ABNORMAL
     time_out = motor_speed * steps
     if time_out < MIN_MOTOR_TIME:
         time_out = MIN_MOTOR_TIME
@@ -223,9 +230,10 @@ def pro_motor_reset_steps(steps):
 
 def motor_reset():
     if PRO_SYS_APP:
-        # os.system("adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000")
         cmd = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
               'com.nbd.autofocus.TofService --ei type 8 --es operate 5 --ei value 3000'
+        # cmd = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
+        #       'com.nbd.autofocus.TofService --ei type 8 --es operate 6 --ei value 0'
         os.system(cmd)
     else:
         os.system('adb shell "echo 5 3000 > /sys/devices/platform/customer-AFmotor/step_set"')
@@ -282,22 +290,19 @@ def pro_trigger_auto_ai():
 
 
 def connect_dev(ip_addr):
-
     count = 0
     while True:
         count += 1
         cmd = 'adb connect {}:5555'.format(ip_addr)
-        print(cmd)
         po = os.popen(cmd)
         devices = po.buffer.read().decode('utf-8')
-        print(devices)
-
+        # print(devices)
         ret = re.findall('connected to 192.168.8.223:5555', devices)
         if len(ret) > 0 and ret[0] == 'connected to 192.168.8.223:5555':
             print('识别到投影设备：', ret[0])
-            os.system('adb root')
-            time.sleep(2.8)
-            os.system('adb remount')
+            # os.system('adb root')
+            # time.sleep(2.8)
+            # os.system('adb remount')
             return 0
         else:
             print('未识别到投影设备, retry:', count)

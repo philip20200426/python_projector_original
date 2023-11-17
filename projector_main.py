@@ -706,7 +706,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
-        self.restore_ai_feature()
+        ProjectorDev.pro_restore_ai_feature()
         print('恢复所有开关到默认状态')
         time.sleep(1)
         os.system('adb reboot')
@@ -781,6 +781,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
+        if self.root_device():
+            return
+        print('>>>>>>>>>> 开始对焦标定')
         self.cameraThread.mEnLaplace = True
         motor_position = os.popen('adb shell getprop persist.motor.position').read()
         # print('马达位置：', motor_position, self.ui.positionLabel.text())
@@ -815,7 +818,23 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         if self.root_device():
             return
-        ProjectorDev.pro_auto_af()
+        print('>>>>>>>>>> 开始全向自动标定')
+        create_dir_file()
+        ProjectorDev.pro_motor_reset_steps(1587)
+        # ProjectorDev.pro_auto_af()
+        # 先做自动对焦
+        # dis = self.autofocus_cal_thread.read_para()
+        # a = 4.0721e-07
+        # b = -0.00302
+        # c = 7.9745
+        # d = -5345.0431
+        # steps = a * (dis[0] ** 3) + b * (dis[0] ** 2) + c * dis[0] + d
+        # print('TOF对焦：', dis, steps)
+        # if dis[0] > 1500:
+        #     ProjectorDev.pro_motor_reset_steps(steps)
+        # else:
+        #     print('全向标定前的自动对焦失败！！！')
+
         if self.timer1.isActive():
             print('>>>>>>>>>> 进度条定时器已开启')
             return
@@ -830,7 +849,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.snEdit.clear()
 
         ProjectorDev.pro_clear_data()
-        create_dir_file()
+
         # 拉取对焦标定文件
         # calib_data_path = globalVar.get_value('CALIB_DATA_PATH')
         # cmd0 = 'adb pull /sdcard/kst_cal_data_bk.yml '
@@ -851,8 +870,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.auto_cal_thread.delay1 = float(self.ui.delay1Edit.text())
         self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
         self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
-        # self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
-        self.auto_cal_thread.enableAlgo = False
+        self.auto_cal_thread.enableAlgo = self.ui.enableAlgoCheckBox.isChecked()
         if self.hy_enable:
             self.auto_cal_thread.ser = self.hui_yuan
         else:
@@ -933,22 +951,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def root_device(self):
         ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
-        ProjectorDev.pro_kst_cal_service()
-        # devices = os.popen("adb devices").read()
-        # if len(devices) > 30:
-        #     os.system(
-        #         'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
-        #     # os.system("adb root")
-        #     # os.system("adb remount")
-        #     # os.system("adb shell chmod 777 /dev/stmvl53l1_ranging")
-        #     self.open_ui()
-        #     # self.update_data_timer.start(1000)
-        # else:
-        #     self.close_ui()
-        # get_sn()
-        # print("devices ", devices[::-1])
-        # print("len ", len(devices))
-        # self.ui.rootButton.setEnabled(True)
+        ProjectorDev.pro_start_kstcal_service()
 
     def clean_data(self):
         localSN = get_sn()

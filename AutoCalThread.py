@@ -294,7 +294,7 @@ class AutoCalThread(QThread):
         ProjectorDev.pro_show_pattern(0)
 
     def work0(self):
-        # from kst_auto_calibrate
+        # From kst_auto_calibrate
         print('>>>>>>>>>> 自动全向梯形标定 work0 开始')
         self.mRunning = True
         # 解析json中配置的云台角度
@@ -315,24 +315,22 @@ class AutoCalThread(QThread):
 
         self.pos_count = len(self.positionList)
         # self.position_list_bk = self.positionList
+        os.system('adb shell am broadcast -a asu.intent.action.KstReset')
+        ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
         ProjectorDev.pro_show_pattern(2)
         time.sleep(2.6)
         start_time = time.time()
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
             HuiYuanRotate.hy_control(self.ser, 0, 0)
-            # os.system('adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
-            # time.sleep(2)
             # 只有自动标定会走到这里
-            # os.system('adb install -r app-debug.apk')
+            # os.system('adb install -rd app-debug.apk')
             # print('启动投影仪校准服务')
             # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
             # time.sleep(1)
             # ProjectorDev.pro_kst_cal_service()
             time.sleep(1.9)
             print('0点位置准备：投影显示复位，TOF校准')
-            os.system('adb shell am broadcast -a asu.intent.action.KstReset')
-            ProjectorDev.pro_set_kst_point([0, 0, 1920, 0, 1920, 1080, 0, 1080])
             # # 投影启动MikeySever时，会自动加载TOF校准参数，这里不再做TOF校准
             # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
             # ProjectorDev.pro_tof_cal()
@@ -385,17 +383,14 @@ class AutoCalThread(QThread):
                             print('算法运行耗时：' + str((end1_ime - end0_time)))
                             cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
                             os.system(cmd)
-                            # os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
-                            # self.win.clean_data()
                             os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
                             self.win.pv += 5
                             print('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
                             ProjectorDev.pro_restore_ai_feature()
                             # os.system('adb reboot')
-                            # set_point(point)
                         else:
                             self.mExit = True
-                            print('>>>>>>>>>>>>>>>>>>> 全向标定失败')
+                            print('>>>>>>>>>>>>>>>>>>> 算法返回ERROR,全向标定失败')
                     else:
                         print('未使能算法')
                     break

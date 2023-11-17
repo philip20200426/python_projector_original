@@ -149,7 +149,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # ccrop_img = orig_img.crop((600, 600, 1900, 1460))
                 # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
                 #crop_img = orig_img.crop((1000, 600, 2260, 1760))
-                crop_img = orig_img.crop((1200, 0, 2960, 1390))
+                crop_img = orig_img.crop((1200, 800, 2960, 1890))
                 numpy_image_preview = np.array(crop_img)
                 img, la = MTF_measure3.mtf_measure(numpy_image_preview)
                 # 这里有风险需要先判定区域才可以
