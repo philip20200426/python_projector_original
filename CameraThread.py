@@ -149,7 +149,7 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # ccrop_img = orig_img.crop((600, 600, 1900, 1460))
                 # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
                 #crop_img = orig_img.crop((1000, 600, 2260, 1760))
-                crop_img = orig_img.crop((1200, 800, 2960, 1890))
+                crop_img = orig_img.crop((300, 800, 2960, 1920))
                 numpy_image_preview = np.array(crop_img)
                 img, la = MTF_measure3.mtf_measure(numpy_image_preview)
                 # 这里有风险需要先判定区域才可以
@@ -194,7 +194,8 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # show acquired image
                 img = Image.fromarray(numpy_image_picture, 'L')
                 img.save(self.mImageName + '.bmp')
-
+                # preview_img = Image.fromarray(numpy_image_preview, 'L')
+                # preview_img.save('asuFiles/temp/raw.bmp')
                 # print("TakePicture Height: %d   Width: %d "
                 #       % (numpy_image_picture.sh, numpy_image_picture.get_width()))
                 print(self.mImageName + '.bmp')
@@ -206,6 +207,5 @@ class CameraThread(QThread):  # 建立一个任务线程类
             # hk 3072 2048  768 512
             pix = QPixmap(q_img).scaled(768, 512)
             # gx
-            # pix = QPixmap(q_img).scaled(720, 540)
-            # pix = QPixmap(q_img).scaled(430, 540)
+            # pix = QPixmap(q_img).scaled(720, 540) # gx
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

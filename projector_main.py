@@ -1,6 +1,5 @@
-
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import *
-
 
 from HkCamera import UiHkWindow
 
@@ -27,7 +26,6 @@ import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
 from ExCamAfThread import ExCamAfThread
 from Fmc4030 import rail_forward, rail_position, init, rail_forward_pos, rail_stop
-
 
 from math_utils import CRC
 from pathlib import Path
@@ -73,7 +71,8 @@ import matplotlib.pyplot as plt
 #             # position 1
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
-VERSION = 'V0.01 2023_1113_2052'
+TOOL_NAME = '全向梯形标定'
+VERSION = 'V0.01 2023_1123_0949'
 
 
 class SerialThread(QThread):
@@ -109,7 +108,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle('全向梯形标定工具 ' + VERSION)
+        self.setWindowTitle(TOOL_NAME + ' ' + VERSION)
         self.initialize_ui()
 
         # 实例化状态栏
@@ -124,8 +123,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.statusBar.addWidget(self.statusBar_4, 1)
         # 设置状态栏，类似布局设置
         self.setStatusBar(self.statusBar)
-        self.statusBar_1.setText(VERSION)
 
+        pix_white = QPixmap('res/fail.png')
+        self.ui.calAfResultLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.ui.calAfResultLabel.setFrameShape(QtWidgets.QFrame.Box)
+        self.ui.calAfResultLabel.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.ui.calKstResultLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.ui.calKstResultLabel.setFrameShape(QtWidgets.QFrame.Box)
+        self.ui.calKstResultLabel.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.ui.calKstResultLabel.setScaledContents(True)
+        self.ui.calAfResultLabel.setScaledContents(True)
+        self.ui.calKstResultLabel.setPixmap(pix_white)
+        self.ui.calAfResultLabel.setPixmap(pix_white)
+
+        self.ui.startAutoCalButton.clicked.connect(self.start_auto_cal)
+
+        self.ui.readCalDataButton.clicked.connect(self.read_cal_data)
         self.ui.openTangSengButton.clicked.connect(self.start_mtf_test_activity)
         self.ui.writeDataNv.clicked.connect(self.write_to_nv)
         self.ui.saveLa.clicked.connect(self.save_laplace)
@@ -184,6 +197,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.eCloseCameraButton.clicked.connect(self.close_external_camera)
         self.ui.eTakePictureButton.clicked.connect(self.external_take_picture)
         self.ui.exTimesHorizontalSlider.valueChanged['int'].connect(self.set_exposure_time)
+        self.ui.exTimeSpinBox.valueChanged['int'].connect(self.set_exposure_time)
         self.ui.delay1Edit.textChanged.connect(self.set_exposure_time)
         self.ui.delay2Edit.textChanged.connect(self.set_exposure_time)
         self.ui.delay3Edit.textChanged.connect(self.set_exposure_time)
@@ -195,6 +209,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.frame.setEnabled(False)
         # self.ui.frame_left_up.setEnabled(False)
         # self.init_status_bar()
+        self.start_time = 0
+        self.end_time = 0
 
         self.current_port = None
         self.serial_thread = SerialThread(self.current_port)
@@ -203,9 +219,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.auto_cal_thread = None
         self.auto_cal_thread = AutoCalThread(self.current_port, self)
+        self.auto_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
 
         self.autofocus_cal_thread = None
         self.autofocus_cal_thread = AutoFocusCalThread(self.current_port, self)
+        self.auto_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
         self.ex_cam_af_thread = ExCamAfThread(self.current_port, self)
         # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
@@ -288,13 +306,24 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 print(dic)
                 file.close()
 
+    def show_result(self, res=0):
+        if res == 0:
+            pix_white = QPixmap('res/pass.png')
+            self.ui.calResultLabel.setPixmap(pix_white)
+        elif res == 1:
+            pix_white = QPixmap('res/fail.png')
+            self.ui.calResultLabel.setPixmap(pix_white)
+
     def image_callback(self, image):  # 这里的image就是任务线程传回的图像数据,类型必须是已经定义好的数据类型
         try:
             if self.cameraThread.mRunning or self.ex_cam_af_thread.mRunning:
                 self.ui.previewCameraLabel.setPixmap(image)
+                self.ui.previewCameraLabel_2.setPixmap(image)
             else:
                 self.ui.previewCameraLabel.setPixmap(QPixmap(""))
                 self.ui.previewCameraLabel.setText('CAM已关闭')
+                self.ui.previewCameraLabel_2.setPixmap(QPixmap(""))
+                self.ui.previewCameraLabel_2.setText('CAM已关闭')
                 print('关闭工业相机')
         except:
             print('图片显示异常', image)
@@ -351,6 +380,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.stepsLabel.setEnabled(True)
         self.ui.sumStepsLabel.setEnabled(True)
 
+    def read_cal_data(self):
+        create_dir_file()
+        if self.autofocus_cal_thread is not None:
+            self.statusBar_1.setText('TOF数据：' + str(self.autofocus_cal_thread.read_para()))
+
     def start_mtf_test_activity(self):
         ProjectorDev.pro_mtf_test_activity()
 
@@ -386,11 +420,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
-            # self.hk_win.show()
+            self.hk_win.show()
             self.hk_win.enum_devices()
             self.hk_win.open_device()
             self.hk_win.start_grabbing()
             self.ui.previewCameraLabel.show()
+            self.ui.previewCameraLabel_2.show()
             self.cameraThread.start()
             # time.sleep(1.5)
             # if not self.cameraThread.mRunning:
@@ -399,11 +434,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print("External camera already opened")
         self.ui.eOpenCameraButton.setEnabled(True)
 
-
     def close_external_camera(self):
         if self.cameraThread.mRunning:
             self.cameraThread.closeCamera()
             self.ui.previewCameraLabel.clear()
+            self.ui.previewCameraLabel_2.show()
             self.hk_win.stop_grabbing()
             self.hk_win.close_device()
             self.hk_win.hide()
@@ -415,7 +450,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def set_exposure_time(self):
         if self.cameraThread is not None:
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
-        # self.ui.edtExposureTime.setText("{0:.2f}".format(obj_cam_operation.exposure_time))
+            # self.ui.edtExposureTime.setText("{0:.2f}".format(obj_cam_operation.exposure_time))
             self.hk_win.ui.edtExposureTime.setText("{0:.2f}".format(float(self.ui.exTimeSpinBox.text())))
             self.hk_win.set_param()
         if os.path.isfile('res/para.json'):
@@ -578,27 +613,28 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusVision")
 
     def auto_focus_tof(self):
-        create_dir_file()
-        os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
-        time.sleep(float(self.ui.delay2Edit.text()))
-        self.pull_data()
-        position, target_pos = auto_focus_tof()
-        if position < 0 or position > 2900 or target_pos < 0 or target_pos > 2900:
-            print('数据异常 ', position, target_pos)
-        print('当前马达位置:' + str(position) + ',目标位置:' + str(target_pos))
-        if target_pos > position:
-            direction = 2
-            target_steps = target_pos - position
-        else:
-            target_steps = position - target_pos
-            direction = 5
-        cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
-        cmd1 = str(direction)
-        cmd2 = ' --ei value '
-        cmd3 = str(target_steps)
-        cmd = cmd0 + cmd1 + cmd2 + cmd3
-        print(cmd)
-        os.system(cmd)
+        ProjectorDev.pro_auto_af_kst_cal()
+        # create_dir_file()
+        # os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
+        # time.sleep(float(self.ui.delay2Edit.text()))
+        # self.pull_data()
+        # position, target_pos = auto_focus_tof()
+        # if position < 0 or position > 2900 or target_pos < 0 or target_pos > 2900:
+        #     print('数据异常 ', position, target_pos)
+        # print('当前马达位置:' + str(position) + ',目标位置:' + str(target_pos))
+        # if target_pos > position:
+        #     direction = 2
+        #     target_steps = target_pos - position
+        # else:
+        #     target_steps = position - target_pos
+        #     direction = 5
+        # cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate '
+        # cmd1 = str(direction)
+        # cmd2 = ' --ei value '
+        # cmd3 = str(target_steps)
+        # cmd = cmd0 + cmd1 + cmd2 + cmd3
+        # print(cmd)
+        # os.system(cmd)
         # os.system(
         #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
         # os.system("adb shell am broadcast -a asu.intent.action.AutoFocusTof")
@@ -677,7 +713,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.timer1.stop()
             # self.stop_auto_cal()
             # self.btn_start.setText("Finish")
-            self.ui.stopAutoCalButton.setText("结束")
+            # self.ui.stopAutoCalButton.setText("结束")
             self.ui.kstAutoCalButton.setText('开始')
             print('停止进度条定时器', self.pv)
             self.ui.autoCalProgressBar.setValue(100)
@@ -696,8 +732,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        ProjectorDev.pro_kst_cal_service()
-        time.sleep(2.9)
+        # ProjectorDev.pro_start_kstcal_service()
+        # time.sleep(2.9)
         create_dir_file()
         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
         print(cmd)
@@ -707,12 +743,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
         ProjectorDev.pro_restore_ai_feature()
-        print('恢复所有开关到默认状态')
-        time.sleep(1)
-        os.system('adb reboot')
+        # time.sleep(1)
+        # os.system('adb reboot')
 
     def auto_focus_motor(self):
-        print(self.autofocus_cal_thread.dis_steps)
         # self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
         #     float(self.ui.pos11StepsEdit.text()) * 50)
         print(self.autofocus_cal_thread.dis_steps)
@@ -803,7 +837,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def evaluate_kst_correct(self):
         if not self.cameraThread.mRunning:
             self.open_external_camera()
-            time.sleep(1)
+            time.sleep(1.6)
         img = self.cameraThread.get_img()
         dst = [0] * 12
         # img_size = (img.shape[0], img.shape[1])
@@ -812,6 +846,32 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
         print('返回参数:', rst, dst)
 
+    def auto_cal_callback(self, callback):
+        # if callback == 'kst_cal_finished':
+        #     self.ui.calResultEdit.setText('耗时：' + str(time))
+        print('auto_cal_callback ', callback)
+        if callback == 'af_cal_finished':
+            self.auto_cal_thread.mAfCal = False
+
+    def start_auto_cal(self):
+        pix_white = QPixmap('res/fail.png')
+        self.ui.calAfResultLabel.setPixmap(pix_white)
+        self.ui.calKstResultLabel.setPixmap(pix_white)
+        if not self.sn_changed():
+            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+            return
+        print('>>>>>>>>>> 识别设备中...')
+        self.ui.calResultEdit.setText('识别投影设备...')
+        if self.root_device():
+            self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
+            return
+        print('>>>>>>>>>> 开始工厂标定')
+        # self.start_time = time.time()
+        self.kst_auto_calibrate()
+        self.auto_cal_thread.mAfCal = True
+        # self.show_result(1)
+
+    # philip
     def kst_auto_calibrate(self):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
@@ -842,9 +902,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.pv = 0
             self.timer1.start(1000, self)  # ms
             self.ui.autoCalProgressBar.setValue(0)
-            self.ui.stopAutoCalButton.setText("停止")
-            self.ui.kstAutoCalButton.setText("测试中")
-        self.statusBar_3.setText('SN:' + self.ui.snEdit.text())
+            # self.ui.stopAutoCalButton.setText("停止")
+            # self.ui.kstAutoCalButton.setText("测试中")
+        # self.statusBar_3.setText('SN:' + self.ui.snEdit.text())
         # self.ui.snEdit.setText('')
         # self.ui.snEdit.clear()
 
@@ -879,22 +939,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
-        # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
+        print('>>>>>>>>>> 结束标定 ！！！！！！！')
         self.ex_cam_af_thread.mExit = True
         if self.auto_cal_thread is not None:
-            self.auto_cal_thread.exit = True
+            self.auto_cal_thread.mExit = True
+            self.auto_cal_thread.mAfCal = False
+        if self.cameraThread is not None:
+            self.cameraThread.mRunning = False
         if self.timer1.isActive():
             self.timer1.stop()
-        self.ui.kstAutoCalButton.setText('开始')
-        self.ui.stopAutoCalButton.setText("结束")
+        # self.ui.kstAutoCalButton.setText('全向梯形标定')
+        # self.ui.stopAutoCalButton.setText("全向梯形标定结束")
         self.ui.autoCalProgressBar.setValue(0)
         self.pv = 0
-        # cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
-        # cmd1 = '"0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,1080.0"'
-        # cmd = cmd0 + cmd1
-        # print(cmd)
-        # os.system(cmd)
-        # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
 
     def kst_reset(self):
         print('----------------------')
@@ -902,15 +959,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system(cmd)
         # os.system("adb shell service call SurfaceFlinger 1006")
         # set_point('0,0,1920,0,1920,1080,0,1080')
-        self.ui.ksdLeftDownEdit_x.setText('0')
-        self.ui.ksdLeftDownEdit_y.setText('0')
-        self.ui.ksdLeftUpEdit_x.setText('0')
-        self.ui.ksdLeftUpEdit_y.setText('1079')
-        self.ui.ksdRightUpEdit_x.setText('1919')
-        self.ui.ksdRightUpEdit_y.setText('1079')
-        self.ui.ksdRightDownEdit_x.setText('1919')
-        self.ui.ksdRightDownEdit_y.setText('0')
-        self.refresh_keystone()
+        # self.ui.ksdLeftDownEdit_x.setText('0')
+        # self.ui.ksdLeftDownEdit_y.setText('0')
+        # self.ui.ksdLeftUpEdit_x.setText('0')
+        # self.ui.ksdLeftUpEdit_y.setText('1079')
+        # self.ui.ksdRightUpEdit_x.setText('1919')
+        # self.ui.ksdRightUpEdit_y.setText('1079')
+        # self.ui.ksdRightDownEdit_x.setText('1919')
+        # self.ui.ksdRightDownEdit_y.setText('0')
+        # self.refresh_keystone()
+        os.system('adb shell am broadcast -a asu.intent.action.KstReset')
 
     def refresh_keystone(self):
         ksdPoint = [0] * 8
@@ -947,7 +1005,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system('adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.MainActivity')
 
     def start_service(self):
-        ProjectorDev.pro_kst_cal_service()
+        ProjectorDev.pro_start_kstcal_service()
 
     def root_device(self):
         ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
@@ -1319,6 +1377,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.port_status.setText('数据发送状态: 成功')
         except:
             self.ui.port_status.setText('数据发送状态: 失败')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

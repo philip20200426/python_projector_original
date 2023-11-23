@@ -2,6 +2,7 @@ import os
 import re
 import time
 
+import Constants
 import globalVar
 from pro_correct_wrapper import get_sn
 
@@ -45,6 +46,7 @@ def pro_close_ai_feature():
     os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
     os.system('adb shell settings put global tv_auto_focus_poweron 0')
     os.system('adb shell settings put system tv_screen_saver 0')
+    print('关闭所有智能开关')
 
 
 def pro_restore_ai_feature():
@@ -59,6 +61,7 @@ def pro_restore_ai_feature():
     # 开机相关
     os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
     os.system('adb shell settings put global tv_auto_focus_poweron 1')
+    print('恢复所有开关到默认状态')
 
 
 def pro_clear_data():
@@ -99,6 +102,7 @@ def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15
 
 
 def pro_mtf_test_activity():
+    os.system('adb push show_pattern10.png /sdcard/DCIM/show_pattern_test.png')
     os.system('adb shell am start -n com.nbd.autofocus/com.nbd.autofocus.KeystoneCalibration')
 
 
@@ -116,6 +120,7 @@ def pro_show_pattern(mode=1):
     os.system(cmd0 + cmd1)
 
 
+# adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a com.nbd.autofocus.TofService" --ei type 7 --ei flag 6
 def pro_tof_cal():
     cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
            'com.nbd.autofocus.TofService" --ei type 7 --ei flag 6'
@@ -272,6 +277,31 @@ def pro_auto_kst():
         '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
 
 
+def pro_auto_af_kst_cal():
+    pro_trigger_auto_ai()
+    time.sleep(1)
+    lst_pos = pro_get_motor_position()
+    count0 = 0
+    count1 = 0
+    while True:
+        time.sleep(0.8)
+        count0 += 1
+        cur_pos = pro_get_motor_position()
+        print(cur_pos)
+        if cur_pos > Constants.AF_CAL_MOTOR_THRESHOLD and cur_pos == lst_pos:
+            print('对焦结束')
+            return 0
+        lst_pos = cur_pos
+        if count0 > 10:
+            print('对焦异常，再次触发')
+            pro_trigger_auto_ai()
+            time.sleep(3)
+            count0 = 0
+            count1 += 1
+            if count1 > 3:
+                return -1
+
+
 def pro_trigger_auto_ai():
     # 触发自动梯形和自动对焦
     # 触发对焦
@@ -390,6 +420,12 @@ def pro_set_kst_point(point):
         cmd = 'adb shell setprop persist.sys.keystone.update true'
         print(cmd)
         os.system(cmd)
+
+        # cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
+        # cmd1 = '0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,1080.0'
+        # cmd = cmd0 + cmd1
+        # print(cmd)
+        # os.system(cmd)
 
     elif PLATFORM_HW == 1:
         # int列表转字符串列表
