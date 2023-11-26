@@ -132,7 +132,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_18.addLayout(self.verticalLayout_3)
         self.horizontalLayout_6.addWidget(self.frame_9)
         self.previewCameraLabel = QtWidgets.QLabel(self.tab)
-        self.previewCameraLabel.setMinimumSize(QtCore.QSize(768, 512))
+        self.previewCameraLabel.setMinimumSize(QtCore.QSize(684, 456))
         self.previewCameraLabel.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.previewCameraLabel.setFrameShape(QtWidgets.QFrame.Box)
         self.previewCameraLabel.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -594,8 +594,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_17.addLayout(self.horizontalLayout_5)
         self.verticalLayout_5.addWidget(self.frame_8)
         self.previewCameraLabel_2 = QtWidgets.QLabel(self.tab_2)
-        self.previewCameraLabel_2.setMinimumSize(QtCore.QSize(768, 512))
-        self.previewCameraLabel_2.setMaximumSize(QtCore.QSize(768, 512))
+        self.previewCameraLabel_2.setMinimumSize(QtCore.QSize(684, 456))
+        self.previewCameraLabel_2.setMaximumSize(QtCore.QSize(684, 456))
         self.previewCameraLabel_2.setFrameShape(QtWidgets.QFrame.Box)
         self.previewCameraLabel_2.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.previewCameraLabel_2.setLineWidth(2)
@@ -850,7 +850,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

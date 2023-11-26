@@ -324,7 +324,7 @@ class CameraOperation:
         memset(byref(stOutFrame), 0, sizeof(stOutFrame))
 
         while True:
-            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
+            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 20000)
             if 0 == ret:
                 # 拷贝图像和图像信息
                 if self.buf_save_image is None:

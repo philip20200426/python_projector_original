@@ -38,7 +38,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -274,8 +274,8 @@
          <widget class="QLabel" name="previewCameraLabel">
           <property name="minimumSize">
            <size>
-            <width>768</width>
-            <height>512</height>
+            <width>684</width>
+            <height>456</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -1408,14 +1408,14 @@
            <widget class="QLabel" name="previewCameraLabel_2">
             <property name="minimumSize">
              <size>
-              <width>768</width>
-              <height>512</height>
+              <width>684</width>
+              <height>456</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>768</width>
-              <height>512</height>
+              <width>684</width>
+              <height>456</height>
              </size>
             </property>
             <property name="frameShape">

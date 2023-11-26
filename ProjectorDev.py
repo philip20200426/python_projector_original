@@ -115,6 +115,7 @@ def pro_show_pattern_af():
 
 
 def pro_show_pattern(mode=1):
+    os.system('adb push show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
     cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a com.nbd.autofocus.TofService" --ei type 7 --ei flag '
     cmd1 = str(mode)
     os.system(cmd0 + cmd1)
@@ -277,8 +278,32 @@ def pro_auto_kst():
         '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
 
 
-def pro_auto_af_kst_cal():
-    pro_trigger_auto_ai()
+def pro_trigger_auto_ai():
+    # 触发自动梯形和自动对焦
+    # 触发全向
+    # adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0
+    # adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0
+    os.system(
+        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
+        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
+    # 触发对焦
+    os.system(
+        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
+        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
+    # # 触发自动梯形和自动对焦
+    # # 触发全向
+    # os.system(
+    #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 2 flag 0')
+    # # 触发对焦
+    # os.system(
+    #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
+
+
+def pro_auto_af_kst_cal(mode):
+    if mode == 2:
+        pro_trigger_auto_ai()
+    elif mode == 1:
+        pro_auto_af()
     time.sleep(1)
     lst_pos = pro_get_motor_position()
     count0 = 0
@@ -302,25 +327,11 @@ def pro_auto_af_kst_cal():
                 return -1
 
 
-def pro_trigger_auto_ai():
-    # 触发自动梯形和自动对焦
-    # 触发对焦
-    os.system(
-        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
-    # 触发全向
-    os.system(
-        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
-    # # 触发自动梯形和自动对焦
-    # # 触发全向
-    # os.system(
-    #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 2 flag 0')
-    # # 触发对焦
-    # os.system(
-    #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
-
-
 def connect_dev(ip_addr):
     count = 0
+    cmd = 'adb disconnect {}:5555'.format(ip_addr)
+    os.popen(cmd)
+    time.sleep(1)
     while True:
         count += 1
         cmd = 'adb connect {}:5555'.format(ip_addr)
@@ -330,9 +341,9 @@ def connect_dev(ip_addr):
         ret = re.findall('connected to 192.168.8.223:5555', devices)
         if len(ret) > 0 and ret[0] == 'connected to 192.168.8.223:5555':
             print('识别到投影设备：', ret[0])
-            # os.system('adb root')
-            # time.sleep(2.8)
-            # os.system('adb remount')
+            os.system('adb root')
+            time.sleep(2.8)
+            os.system('adb remount')
             return 0
         else:
             print('未识别到投影设备, retry:', count)

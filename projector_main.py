@@ -1,6 +1,8 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import *
 
+import Constants
+import ParsePara
 from HkCamera import UiHkWindow
 
 import sys
@@ -72,7 +74,7 @@ import matplotlib.pyplot as plt
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2023_1123_0949'
+VERSION = 'V0.01 2023_1126_1916'
 
 
 class SerialThread(QThread):
@@ -395,11 +397,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         init(self.current_port)
 
     def rail_forward(self):
-        Fmc4030.test(self.current_port)
-        # direction = 1
-        # if float(self.ui.railForewardEdit.text()) > 0:
-        #     direction = 0
-        # Fmc4030.rail_forward(self.current_port, direction, abs(float(self.ui.railForewardEdit.text())))
+        # Fmc4030.test(self.current_port)
+        direction = 1
+        if float(self.ui.railForewardEdit.text()) > 0:
+            direction = 0
+        Fmc4030.rail_forward(self.current_port, direction, abs(float(self.ui.railForewardEdit.text())))
 
     def rail_reversal(self):
         Fmc4030.rail_forward(self.current_port, 1, abs(float(self.ui.railForewardEdit.text())))
@@ -420,7 +422,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
-            self.hk_win.show()
+            # self.hk_win.show()
             self.hk_win.enum_devices()
             self.hk_win.open_device()
             self.hk_win.start_grabbing()
@@ -613,7 +615,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system("adb shell am broadcast -a asu.intent.action.AutoFocusVision")
 
     def auto_focus_tof(self):
-        ProjectorDev.pro_auto_af_kst_cal()
+        ProjectorDev.pro_auto_af_kst_cal(2)
         # create_dir_file()
         # os.system("adb shell am broadcast -a asu.intent.action.AutoKeystone --ei mode 0")
         # time.sleep(float(self.ui.delay2Edit.text()))
@@ -818,16 +820,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if self.root_device():
             return
         print('>>>>>>>>>> 开始对焦标定')
-        self.cameraThread.mEnLaplace = True
-        motor_position = os.popen('adb shell getprop persist.motor.position').read()
-        # print('马达位置：', motor_position, self.ui.positionLabel.text())
+        # motor_position = os.popen('adb shell getprop persist.motor.position').read()
+        # # print('马达位置：', motor_position, self.ui.positionLabel.text())
         create_dir_file()
         # palette = QPalette()
         # palette.setColor(QPalette.Background, QColor(255, 0, 0))
         # self.ui.autoFocusLabel.setAutoFillBackground(True)
         # self.ui.autoFocusLabel.setPalette(palette)
-        self.ui.autoFocusLabel.setStyleSheet("color:blue")
-        self.ui.autoFocusLabel.setText('>>>>>>>>>> 开始标定')
+        # self.ui.autoFocusLabel.setStyleSheet("color:blue")
+        # self.ui.autoFocusLabel.setText('>>>>>>>>>> 开始标定')
         ProjectorDev.pro_close_ai_feature()
         self.open_external_camera()
         self.cameraThread.mEnLaplace = True
@@ -857,14 +858,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         pix_white = QPixmap('res/fail.png')
         self.ui.calAfResultLabel.setPixmap(pix_white)
         self.ui.calKstResultLabel.setPixmap(pix_white)
-        if not self.sn_changed():
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
-            return
-        print('>>>>>>>>>> 识别设备中...')
-        self.ui.calResultEdit.setText('识别投影设备...')
-        if self.root_device():
-            self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
-            return
+        # if not self.sn_changed():
+        #     print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+        #     return
+        # print('>>>>>>>>>> 识别设备中...')
+        self.ui.calResultEdit.append('标定结果评估中...')
+        self.ui.calResultEdit.append('标定结果评估中...')
+        #vself.ui.calResultEdit.setText('<font color="red" size="50">{}</font>'.format('识别投影设备...'))
+        # if self.root_device():
+        #     self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
+        #     return
         print('>>>>>>>>>> 开始工厂标定')
         # self.start_time = time.time()
         self.kst_auto_calibrate()
@@ -880,7 +883,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         print('>>>>>>>>>> 开始全向自动标定')
         create_dir_file()
-        ProjectorDev.pro_motor_reset_steps(1587)
+        ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
         # ProjectorDev.pro_auto_af()
         # 先做自动对焦
         # dis = self.autofocus_cal_thread.read_para()
@@ -1133,6 +1136,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
         print('Pull files from PC : ', cmd)
         os.system(cmd)
+        # distDirName = distDirName + '/projectionFiles/AsuProData.json'
+        # distDirName = 'res/para.json'
+        # print(distDirName)
+        # res = ParsePara.get_para(distDirName, 'angle')
+        # print(type(res), res)
 
     def removePattern(self):
         # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")

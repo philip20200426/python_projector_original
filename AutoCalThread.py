@@ -108,7 +108,7 @@ class AutoCalThread(QThread):
                             print('TOF 数据；', tof_list)
                             tof_data = list(map(float, tof_data))[0:-2]
                             print('TOF 数据；', i, tof_data, max(tof_data), min(tof_data))
-                            if max(tof_data) > 1900 or min(tof_data) < 1500:
+                            if max(tof_data) > 1900 or min(tof_data) < 1300:
                                 print('!!!!!!!!!!!!!!!!!!!! TOF数据异常：', max(tof_data), min(tof_list), i)
                                 pos_error[i] = -1
                         else:
@@ -162,6 +162,7 @@ class AutoCalThread(QThread):
         tof_central = []
         imu_list = []
         ref_img_list = []
+        pitch_ref = 0
 
         # 分析json数据
         file_pro_path = dir_pro_path + "AsuProData.json"
@@ -189,7 +190,7 @@ class AutoCalThread(QThread):
                                 data = list(map(float, dic[pos]['tof'].split(',')))
                                 # print('TOF数据：', data, i, max(data), min(data))
                                 if len(data) == 4:
-                                    if max(data) < 1900 and min(data) > 1500:
+                                    if max(data) < 1900 and min(data) > 1300:
                                         if i == 0 and ((data[0] - data[1]) > 15):
                                             pos_error[i] = -1
                                         elif (i == 1 or i == 2 or i == 8) and data[1] > data[2]:
@@ -213,10 +214,14 @@ class AutoCalThread(QThread):
                             print('json文件中，没有发现TOF数据')
                         if 'imu' in dic[pos].keys():
                             data = list(map(float, dic[pos]['imu'].split(',')))
+                            if i == 0:
+                                pitch_ref = data[3]
                             if len(data) == 5:
-                                gap = abs(abs(data[3]) - abs(self.angle_list[i][1]))
+                                gap = abs(abs(data[3] - pitch_ref) - abs(self.angle_list[i][1]))
+                                print('!!!!!!!!!!!!!!!!!!!!>>>>>>>>', gap)
+                                # gap = abs(abs(data[3]) - abs(self.angle_list[i][1]))
                                 # print(data, gap)
-                                if gap > 4:
+                                if gap > 3:
                                     print('!!!!!!!!!!!!!!!!!!!! IMU数据异常：', data[3],
                                           self.angle_list[i][1], gap)
                                     pos_error[i] = -1
@@ -316,17 +321,20 @@ class AutoCalThread(QThread):
 
         print('>>>>>>>>>>>标定结果：', result0, result1)
         print('>>>>>>>>>>>Max:', max(result0), max(result1))
+        # 浮点List转化成字符串列表
         temp0 = [str(i) for i in result0]
         temp0 = ' '.join(temp0)
         temp1 = [str(i) for i in result1]
         temp1 = '  '.join(temp1)
         temp = temp0 + " ; " + temp1
+        self.win.ui.calResultEdit.append(temp)
         if max(result0) <= Constants.KST_EVAL_EDGE and abs((max(result1) - 90)) <= Constants.KST_EVAL_ANGLE:
-            self.win.ui.calResultEdit.append('全向梯形标定成功:' + temp)
+            self.win.ui.calResultEdit.append('<font color="green" size="6">{}</font>'.format('全向梯形标定成功'))
             pix_white = QPixmap('res/pass.png')
             self.win.ui.calKstResultLabel.setPixmap(pix_white)
         else:
-            self.win.ui.calResultEdit.append('全向梯形标定失败：' + temp)
+            self.win.ui.calResultEdit.append('<font color="red" size="6">{}</font>'.format('全向梯形标定失败'))
+            # self.win.ui.calResultEdit.append('全向梯形标定失败：' + temp)
         ProjectorDev.pro_show_pattern(0)
 
         result = result0 + result1
@@ -368,9 +376,11 @@ class AutoCalThread(QThread):
         ProjectorDev.pro_show_pattern(2)
         time.sleep(2.6)
         start_time = time.time()
+        print('>>>>>>>>>>', len(self.positionList), self.positionList)
         if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
             # 直接到第一个位置，只有第一次在第一個位置時運行
             HuiYuanRotate.hy_control(self.ser, 0, 0)
+            self.win.set_exposure_time()
             # 只有自动标定会走到这里
             # os.system('adb install -rd app-debug.apk')
             # print('启动投影仪校准服务')
@@ -383,9 +393,9 @@ class AutoCalThread(QThread):
             # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
             # ProjectorDev.pro_tof_cal()
             # time.sleep(1.6)
-            if ProjectorDev.pro_get_motor_position() < 1300:
+            if ProjectorDev.pro_get_motor_position() < 1000:
                 print('马达位置不对，重新对焦！！！！！！')
-                ProjectorDev.pro_motor_reset_steps(1587)
+                ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
             # self.pos_init_finished = True
         lst_time = time.time()
         while len(self.positionList) > 0:
