@@ -309,7 +309,7 @@ class AutoCalThread(QThread):
                                      self.estimateAngelList[i][1])
             print(
                 '>>>>>>>>>>>>>>>>>>>>> 控制转台到%d %d' % (self.estimateAngelList[i][0], self.estimateAngelList[i][1]))
-            time.sleep(5.6)
+            time.sleep(4.6)
             ProjectorDev.pro_auto_kst()
             time.sleep(5.6)
             dst = self.evaluate_kst_correct()

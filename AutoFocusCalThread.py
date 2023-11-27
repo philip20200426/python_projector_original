@@ -97,12 +97,12 @@ class AutoFocusCalThread(QThread):
         if ProjectorDev.pro_auto_af_kst_cal(2):
             self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
             return
-        time.sleep(2.6)
+        time.sleep(3.6)
         # print('开始读取投影自动对焦后的马达位置')
         dis_steps_r = self.read_para()
         right_steps = dis_steps_r[1]
         self.win.ex_cam_af()
-        time.sleep(1)
+        time.sleep(1.6)
         right_ex_steps = self.win.ex_cam_af_thread.get_result()
         right_ex_steps = right_ex_steps - Constants.DEV_LOCATION_STEPS_OFFSET
         ProjectorDev.pro_show_pattern(0)
@@ -158,14 +158,22 @@ class AutoFocusCalThread(QThread):
             result.insert(0, date_time)
             writer = csv.writer(file)
             writer.writerow(result)
+        print(type(result), result)
+        del result[0]
+        del result[0]
+        temp0 = [str(i) for i in result]
+        temp0 = ' '.join(temp0)
+        self.win.ui.calResultEdit.append(temp0)
 
         self.win.pv += 100
         self.win.ui.snEdit.setText('')
         # HuiYuanRotate.hy_control(self.ser, 0, 0)
         self.win.start_mtf_test_activity()
         res = os.popen('adb shell getprop persist.sys.tof.offset.compensate')
-        print(res)
-        self.win.ui.calResultEdit.append(res)
+        print(type(res), res)
+        os.system('adb shell getprop persist.sys.tof.offset.compensate')
+        self.win.ui.snEdit.setFocus(True)
+        #  self.win.ui.calResultEdit.append(res)
         # os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
         self.auto_cal_callback.emit('af_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
         cal_end = time.time()

@@ -252,7 +252,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         # ProjectorDev.pro_motor_forward(5, steps_range-150)
         direction = 2
         time.sleep(200 * motor_speed)
-        time.sleep(2.6)
+        time.sleep(3.6)
         print('后退%d步完成' % steps_range)
 
         while count > 0:
@@ -271,7 +271,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             time.sleep(exp_time * 2)
             time.sleep(motor_speed * 50 * 2)
             time.sleep(2.6)
-            time.sleep(1.6)
+            time.sleep(2.6)
             count -= 1
         if len(self.mPositionList) > (count - 1):
             self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
@@ -315,7 +315,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             ProjectorDev.pro_motor_forward(direction, 50)
             time.sleep(exp_time * 2)
             time.sleep(motor_speed * 50 * 2)
-            time.sleep(3.6)
+            time.sleep(3.9)
             if len(self.mLaplaceList) > 1:
                 if self.mLaplaceList[1] - self.mLaplaceList[0] < 0:
                     print('>>>>>>>>>>异常：', len(self.mPositionList), len(self.mLaplaceList), self.mPositionList,
