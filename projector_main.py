@@ -454,6 +454,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.exposureTime = float(self.ui.exTimeSpinBox.text())
             # self.ui.edtExposureTime.setText("{0:.2f}".format(obj_cam_operation.exposure_time))
             self.hk_win.ui.edtExposureTime.setText("{0:.2f}".format(float(self.ui.exTimeSpinBox.text())))
+            self.hk_win.ui.edtGain.setText("{0:.2f}".format(10.1))
             self.hk_win.set_param()
         if os.path.isfile('res/para.json'):
             file = open('res/para.json', )
@@ -853,21 +854,21 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         print('auto_cal_callback ', callback)
         if callback == 'af_cal_finished':
             self.auto_cal_thread.mAfCal = False
+            os.system('adb shell getprop persist.sys.tof.offset.compensate')
+            self.ui.snEdit.setText('')
 
     def start_auto_cal(self):
         pix_white = QPixmap('res/fail.png')
         self.ui.calAfResultLabel.setPixmap(pix_white)
         self.ui.calKstResultLabel.setPixmap(pix_white)
-        # if not self.sn_changed():
-        #     print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
-        #     return
-        # print('>>>>>>>>>> 识别设备中...')
-        self.ui.calResultEdit.append('标定结果评估中...')
-        self.ui.calResultEdit.append('标定结果评估中...')
-        #vself.ui.calResultEdit.setText('<font color="red" size="50">{}</font>'.format('识别投影设备...'))
-        # if self.root_device():
-        #     self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
-        #     return
+        if not self.sn_changed():
+            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+            return
+        print('>>>>>>>>>> 识别设备中...')
+        self.ui.calResultEdit.setText('开始工厂标定...')
+        if self.root_device():
+            self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
+            return
         print('>>>>>>>>>> 开始工厂标定')
         # self.start_time = time.time()
         self.kst_auto_calibrate()
@@ -1011,8 +1012,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         ProjectorDev.pro_start_kstcal_service()
 
     def root_device(self):
-        ProjectorDev.connect_dev(str(self.ui.ip_addr.text()))
-        ProjectorDev.pro_start_kstcal_service()
+        if ProjectorDev.connect_dev(str(self.ui.ip_addr.text())):
+            return -1
+        else:
+            ProjectorDev.pro_start_kstcal_service()
+            return 0
 
     def clean_data(self):
         localSN = get_sn()

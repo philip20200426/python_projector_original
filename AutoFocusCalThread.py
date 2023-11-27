@@ -139,7 +139,6 @@ class AutoFocusCalThread(QThread):
         else:
             self.win.ui.calResultEdit.append('对焦标定失败，直接退出！！！')
 
-
         # 保存对焦标定数据
         af_cal_result.append(right_steps)
         af_cal_result.append(right_ex_steps)
@@ -161,6 +160,13 @@ class AutoFocusCalThread(QThread):
             writer.writerow(result)
 
         self.win.pv += 100
+        self.win.ui.snEdit.setText('')
+        # HuiYuanRotate.hy_control(self.ser, 0, 0)
+        self.win.start_mtf_test_activity()
+        res = os.popen('adb shell getprop persist.sys.tof.offset.compensate')
+        print(res)
+        self.win.ui.calResultEdit.append(res)
+        # os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
         self.auto_cal_callback.emit('af_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
         cal_end = time.time()
         self.win.ui.calResultEdit.append('对焦标定耗时{}秒'.format(str(round(cal_end - cal_start, 1))))

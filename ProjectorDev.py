@@ -5,6 +5,7 @@ import time
 import Constants
 import globalVar
 from pro_correct_wrapper import get_sn
+import ProjectorDev
 
 PRO_SYS_APP = True
 MOTOR_ABNORMAL = -9999
@@ -40,6 +41,7 @@ def pro_stop_kstcal_service():
 
 
 def pro_close_ai_feature():
+    os.system('adb shell setprop persist.sys.tof.offset.compensate false')
     os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
     os.system('adb shell settings put global tv_auto_focus_asu 0')
     os.system('adb shell settings put global tv_image_auto_keystone_asu 0')
@@ -341,31 +343,30 @@ def connect_dev(ip_addr):
         ret = re.findall('connected to 192.168.8.223:5555', devices)
         if len(ret) > 0 and ret[0] == 'connected to 192.168.8.223:5555':
             print('识别到投影设备：', ret[0])
-            os.system('adb root')
-            time.sleep(2.8)
-            os.system('adb remount')
-            return 0
+            break
+            # return 0
         else:
             print('未识别到投影设备, retry:', count)
         time.sleep(1.6)
         if count > 6:
-            print('未识别到投影设备')
+            print('未识别到投影设备,count:', count)
             return -1
 
-    # devices = os.popen('adb devices').read()
-
-    # print('>>>>>', devices)
-    # ret = re.findall('192.168.8.223:5555', devices)
-    # print(ret)
-    # if len(ret) > 0 and ret[0] == '192.168.8.223:5555':
-    #     print('!!!!!!!', ret[0])
-    # else:
-    #     print('未识别到投影设备！！！')
-    #
-    # print(cmd)
-    # os.system('adb root')
-    # time.sleep(1)
-    # os.system('adb remount')
+    devices = os.popen('adb devices').read()
+    ret = re.findall('device', devices)
+    # print(ret[0])
+    print(devices)
+    ret0 = re.findall('192.168.8.223:5555', devices)
+    # print(ret0[0])
+    if len(ret) > 0 and len(ret0) > 0 and ret[0] == 'device' and ret0[0] == '192.168.8.223:5555':
+        print('adb devices 识别成功:', ret0[0] + ret[0])
+        os.system('adb root')
+        time.sleep(1.8)
+        os.system('adb remount')
+        return 0
+    else:
+        print('未识别到投影设备！！！')
+        return -1
 
 
 def pro_get_kst_point():
