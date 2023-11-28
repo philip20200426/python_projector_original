@@ -317,6 +317,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
                     self.mLaplaceList.clear()
                     time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
                     location_reset = True
+            if len(self.mLaplaceList) > 1:
                 if self.mLaplaceList[len(self.mLaplaceList)-1] - self.mLaplaceList[len(self.mLaplaceList)-2] < 0:
                     print('>>>>>>>>>>> 对焦完成')
                     break

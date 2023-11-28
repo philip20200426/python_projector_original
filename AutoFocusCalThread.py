@@ -13,7 +13,8 @@ import Constants
 import HuiYuanRotate
 import ProjectorDev
 import globalVar
-from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
+from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2, \
+    create_dir_file
 from math_utils import CRC
 
 
@@ -42,11 +43,17 @@ class AutoFocusCalThread(QThread):
     # From auto_focus_cal
     def run(self):
         cal_start = time.time()
+        if self.win.root_device():
+            self.auto_cal_callback.emit('find dev error')
+            self.win.ui.calResultEdit.append('未找到投影设备！！！')
+            return
+        ProjectorDev.pro_close_ai_feature()
+        create_dir_file()
+        self.win.cameraThread.mEnLaplace = True
         right_steps2 = 0
         af_cal_result = []
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
-        # self.win.ui.autoFocusLabel.setText('启动对焦标定服务')
-        # time.sleep(2.6)
+        self.win.set_exposure_time()
         print('开始对焦自动化标定')
         # ProjectorDev.pro_show_pattern_af()
         # os.system('adb shell am broadcast -a asu.intent.action.TofCal')

@@ -16,7 +16,8 @@ import ProjectorDev
 import evaluate_correct_wrapper
 import globalVar
 from Constants import KST_EVAL_ANGLE
-from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2
+from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2, \
+    create_dir_file
 from math_utils import CRC
 
 
@@ -349,8 +350,19 @@ class AutoCalThread(QThread):
 
     def work0(self):
         # From kst_auto_calibrate
-        print('>>>>>>>>>> 自动全向梯形标定 work0 开始')
+        print('>>>>>>>>>> 自动全向梯形标定 work0 识别设备')
         cal_start = time.time()
+        if self.win.root_device():
+            self.auto_cal_callback.emit('find dev error')
+            self.win.ui.calResultEdit.append('未找到投影设备！！！')
+            return
+        create_dir_file()
+        ProjectorDev.pro_clear_data()
+        ProjectorDev.pro_close_ai_feature()
+        os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
+        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
+
+        ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
         self.win.ui.calResultEdit.append('全向梯形标定开始...')
         self.mRunning = True
         # 解析json中配置的云台角度
@@ -393,7 +405,7 @@ class AutoCalThread(QThread):
             # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
             # ProjectorDev.pro_tof_cal()
             # time.sleep(1.6)
-            if ProjectorDev.pro_get_motor_position() < Constants.DEV_LOCATION_STEPS-200:
+            if abs(ProjectorDev.pro_get_motor_position() - Constants.DEV_LOCATION_STEPS) > 100:
                 print('马达位置不对，重新对焦！！！！！！')
                 ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
             # self.pos_init_finished = True

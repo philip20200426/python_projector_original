@@ -225,7 +225,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.autofocus_cal_thread = None
         self.autofocus_cal_thread = AutoFocusCalThread(self.current_port, self)
-        self.auto_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
+        self.autofocus_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
         self.ex_cam_af_thread = ExCamAfThread(self.current_port, self)
         # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
@@ -422,7 +422,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
-            self.hk_win.show()
+            # self.hk_win.show()
             self.hk_win.enum_devices()
             self.hk_win.open_device()
             self.hk_win.start_grabbing()
@@ -818,21 +818,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        if self.root_device():
-            return
+        # if self.root_device():
+        #     return
         print('>>>>>>>>>> 开始对焦标定')
-        # motor_position = os.popen('adb shell getprop persist.motor.position').read()
-        # # print('马达位置：', motor_position, self.ui.positionLabel.text())
-        create_dir_file()
-        # palette = QPalette()
-        # palette.setColor(QPalette.Background, QColor(255, 0, 0))
-        # self.ui.autoFocusLabel.setAutoFillBackground(True)
-        # self.ui.autoFocusLabel.setPalette(palette)
-        # self.ui.autoFocusLabel.setStyleSheet("color:blue")
-        # self.ui.autoFocusLabel.setText('>>>>>>>>>> 开始标定')
-        ProjectorDev.pro_close_ai_feature()
         self.open_external_camera()
-        self.cameraThread.mEnLaplace = True
+        # self.cameraThread.mEnLaplace = True
         self.autofocus_cal_thread.ser = self.hui_yuan
         self.autofocus_cal_thread.start()
 
@@ -852,10 +842,22 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # if callback == 'kst_cal_finished':
         #     self.ui.calResultEdit.setText('耗时：' + str(time))
         print('auto_cal_callback ', callback)
+        if callback == 'find dev error':
+            self.auto_cal_thread.mAfCal = False
+            if self.timer1.isActive():
+                self.timer1.stop()
+            self.ui.autoCalProgressBar.setValue(0)
+            self.pv = 0
         if callback == 'af_cal_finished':
+            self.ui.snEdit.setFocus(True)
             self.auto_cal_thread.mAfCal = False
             os.system('adb shell getprop persist.sys.tof.offset.compensate')
             self.ui.snEdit.setText('')
+            self.pv += 100
+            self.ui.autoCalProgressBar.setValue(100)
+            if self.timer1.isActive():
+                self.timer1.stop()
+
 
     def start_auto_cal(self):
         pix_white = QPixmap('res/fail.png')
@@ -864,15 +866,25 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        print('>>>>>>>>>> 识别设备中...')
-        self.ui.calResultEdit.setText('开始工厂标定...')
-        if self.root_device():
-            self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
-            return
+        self.ui.calResultEdit.setText('识别设备中...')
+        # print('>>>>>>>>>> 识别设备中...')
+        # self.ui.calResultEdit.setText('开始工厂标定...')
+        # if self.root_device():
+        #     self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
+        #     return
         print('>>>>>>>>>> 开始工厂标定')
-        # self.start_time = time.time()
         self.kst_auto_calibrate()
+
+        if self.timer1.isActive():
+            print('>>>>>>>>>> 进度条定时器已开启')
+            return
+        else:
+            self.pv = 0
+            self.timer1.start(1000, self)  # ms
+            self.ui.autoCalProgressBar.setValue(0)
         self.auto_cal_thread.mAfCal = True
+        # self.auto_cal_thread.mAfCal = True
+        # self.auto_focus_cal()
         # self.show_result(1)
 
     # philip
@@ -880,11 +892,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
-        if self.root_device():
-            return
-        print('>>>>>>>>>> 开始全向自动标定')
-        create_dir_file()
-        ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
+        self.open_external_camera()
+        # if self.root_device():
+        #     return
+        # print('>>>>>>>>>> 开始全向自动标定')
+        # ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
         # ProjectorDev.pro_auto_af()
         # 先做自动对焦
         # dis = self.autofocus_cal_thread.read_para()
@@ -899,38 +911,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # else:
         #     print('全向标定前的自动对焦失败！！！')
 
-        if self.timer1.isActive():
-            print('>>>>>>>>>> 进度条定时器已开启')
-            return
-        else:
-            self.pv = 0
-            self.timer1.start(1000, self)  # ms
-            self.ui.autoCalProgressBar.setValue(0)
-            # self.ui.stopAutoCalButton.setText("停止")
-            # self.ui.kstAutoCalButton.setText("测试中")
-        # self.statusBar_3.setText('SN:' + self.ui.snEdit.text())
-        # self.ui.snEdit.setText('')
-        # self.ui.snEdit.clear()
-
-        ProjectorDev.pro_clear_data()
-
-        # 拉取对焦标定文件
-        # calib_data_path = globalVar.get_value('CALIB_DATA_PATH')
-        # cmd0 = 'adb pull /sdcard/kst_cal_data_bk.yml '
-        # cmd1 = calib_data_path
-        # cmd = cmd0 + cmd1
-        # print(cmd)
-        # os.system(cmd)
-
-        os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
-        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
-        ProjectorDev.pro_close_ai_feature()
-
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
         if cmd != '':
             self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
-        self.open_external_camera()
         self.auto_cal_thread.delay1 = float(self.ui.delay1Edit.text())
         self.auto_cal_thread.delay2 = float(self.ui.delay2Edit.text())
         self.auto_cal_thread.delay3 = float(self.ui.delay3Edit.text())
@@ -1012,6 +996,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         ProjectorDev.pro_start_kstcal_service()
 
     def root_device(self):
+        ProjectorDev.pro_set_ip(self.current_port, str(self.ui.ip_addr.text()))
         if ProjectorDev.connect_dev(str(self.ui.ip_addr.text())):
             return -1
         else:
