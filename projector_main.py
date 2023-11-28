@@ -422,7 +422,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mEnLaplace = False
         self.ui.eOpenCameraButton.setEnabled(False)
         if not self.cameraThread.mRunning:
-            # self.hk_win.show()
+            self.hk_win.show()
             self.hk_win.enum_devices()
             self.hk_win.open_device()
             self.hk_win.start_grabbing()

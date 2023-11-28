@@ -221,7 +221,7 @@ class AutoCalThread(QThread):
                                 print('!!!!!!!!!!!!!!!!!!!!>>>>>>>>', gap)
                                 # gap = abs(abs(data[3]) - abs(self.angle_list[i][1]))
                                 # print(data, gap)
-                                if gap > 3:
+                                if gap > Constants.IMU_GAP:
                                     print('!!!!!!!!!!!!!!!!!!!! IMU数据异常：', data[3],
                                           self.angle_list[i][1], gap)
                                     pos_error[i] = -1
@@ -393,7 +393,7 @@ class AutoCalThread(QThread):
             # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
             # ProjectorDev.pro_tof_cal()
             # time.sleep(1.6)
-            if ProjectorDev.pro_get_motor_position() < 1000:
+            if ProjectorDev.pro_get_motor_position() < Constants.DEV_LOCATION_STEPS-200:
                 print('马达位置不对，重新对焦！！！！！！')
                 ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
             # self.pos_init_finished = True

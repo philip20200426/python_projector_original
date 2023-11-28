@@ -324,7 +324,11 @@ class CameraOperation:
         memset(byref(stOutFrame), 0, sizeof(stOutFrame))
 
         while True:
-            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 20000)
+            # lst = time.time()
+            # 超时时间是ms
+            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 300)
+            # cur = time.time()
+            # print('工业相机每帧时间：', cur-lst)
             if 0 == ret:
                 # 拷贝图像和图像信息
                 if self.buf_save_image is None:
