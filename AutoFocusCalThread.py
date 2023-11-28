@@ -64,7 +64,7 @@ class AutoFocusCalThread(QThread):
         ProjectorDev.pro_auto_af_kst_cal(1)
         time.sleep(1.6)
         dis_steps_c = self.read_para()
-        print('投影段正投对焦后马达位置：', dis_steps_c[1])
+        print('投影设备正投对焦后马达位置：', dis_steps_c[1])
         center_steps = dis_steps_c[1]
 
         # 控制转台左转15度
@@ -190,7 +190,7 @@ class AutoFocusCalThread(QThread):
 
     def read_para(self):
         self.win.ui.autoFocusLabel.setText('保存位置数据')
-        ProjectorDev.pro_save_pos_data(6, 11, "0a15a15a0")
+        ProjectorDev.pro_save_pos_data(6, 21, "0a15a15a0")
         time.sleep(2.9)
         self.win.ui.autoFocusLabel.setText('开始分析数据')
         self.win.pull_data()
@@ -200,18 +200,15 @@ class AutoFocusCalThread(QThread):
         if os.path.isfile(file_pro_path):
             file = open(file_pro_path, )
             dic = json.load(file)
-            if len(dic) > 0 and 'POS11' in dic.keys() and 'tof' in dic['POS11'].keys():
-                if dic['POS11']['tof'] != '':
+            if len(dic) > 0 and 'POS21' in dic.keys() and 'tof' in dic['POS21'].keys():
+                if dic['POS21']['tof'] != '':
                     # print(dic['POS11']['tof'].split(',')[0])
-                    self.dis_steps[0] = int(dic['POS11']['tof'].split(',')[0])
-            if len(dic) > 0 and 'POS11' in dic.keys() and 'location' in dic['POS11'].keys():
-                if dic['POS11']['location'] != '':
+                    self.dis_steps[0] = int(dic['POS21']['tof'].split(',')[0])
+            if len(dic) > 0 and 'POS21' in dic.keys() and 'location' in dic['POS21'].keys():
+                if dic['POS21']['location'] != '':
                     # print(dic['POS11']['location'])
-                    self.dis_steps[1] = dic['POS11']['location']
+                    self.dis_steps[1] = dic['POS21']['location']
             file.close()
-        # location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-        # if location != '':
-        #     location = location[9:-1]
         location = ProjectorDev.pro_get_motor_position()
         self.dis_steps[1] = int(location)
         para = 'TOF: ' + str(self.dis_steps[0]) + '  马达: ' + str(self.dis_steps[1])
