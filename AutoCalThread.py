@@ -311,8 +311,8 @@ class AutoCalThread(QThread):
             print(
                 '>>>>>>>>>>>>>>>>>>>>> 控制转台到%d %d' % (self.estimateAngelList[i][0], self.estimateAngelList[i][1]))
             time.sleep(4.6)
-            ProjectorDev.pro_auto_kst()
-            time.sleep(5.6)
+            ProjectorDev.pro_auto_af_kst_cal(2)
+            time.sleep(6.9)
             dst = self.evaluate_kst_correct()
             print(dst)
             result0.append(round(dst[0] * 100, 1))
@@ -445,7 +445,7 @@ class AutoCalThread(QThread):
                 self.position = 0
                 if len(self.positionList) == 0:
                     self.win.pv += Constants.CAL_PROGRESS_STEP
-                    ProjectorDev.pro_show_pattern(0)
+                    # ProjectorDev.pro_show_pattern(0)
                     end0_time = time.time()
                     print('数据抓取及解析耗时：' + str((end0_time - start_time)))
                     print(proj_data)
@@ -458,7 +458,7 @@ class AutoCalThread(QThread):
                             os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
                             self.win.pv += Constants.CAL_PROGRESS_STEP
                             print('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
-                            ProjectorDev.pro_restore_ai_feature()
+                            # ProjectorDev.pro_restore_ai_feature()
                             # os.system('adb reboot')
                             self.win.ui.calResultEdit.append('标定算法处理完成')
                         else:

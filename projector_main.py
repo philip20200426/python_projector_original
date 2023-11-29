@@ -74,7 +74,7 @@ import matplotlib.pyplot as plt
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2023_1126_1916'
+VERSION = 'V0.01 2023_1129_1334'
 
 
 class SerialThread(QThread):
@@ -140,6 +140,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
         self.ui.startAutoCalButton.clicked.connect(self.start_auto_cal)
 
+        self.ui.adminButton.clicked.connect(self.check_admin)
         self.ui.readCalDataButton.clicked.connect(self.read_cal_data)
         self.ui.openTangSengButton.clicked.connect(self.start_mtf_test_activity)
         self.ui.writeDataNv.clicked.connect(self.write_to_nv)
@@ -228,6 +229,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autofocus_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
         self.ex_cam_af_thread = ExCamAfThread(self.current_port, self)
         # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
+        self.ui.tab_2.hide()
+        self.ui.tab_3.hide()
+        self.ui.tab_4.hide()
 
         # self.update_data_timer = QTimer()
         # self.update_data_timer.timeout.connect(self.update_data)
@@ -307,6 +311,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.delay3Edit.setText(str(dic['delay3']))
                 print(dic)
                 file.close()
+
+    def check_admin(self):
+        if str(self.ui.adminLineEdit.text()) == '6666666666':
+            self.ui.tab_2.show()
+            self.ui.tab_3.show()
+            self.ui.tab_4.show()
+            print(self.ui.adminLineEdit.text())
 
     def show_result(self, res=0):
         if res == 0:
@@ -849,6 +860,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoCalProgressBar.setValue(0)
             self.pv = 0
         if callback == 'af_cal_finished':
+            ProjectorDev.pro_restore_ai_feature()
             self.ui.snEdit.setFocus(True)
             self.auto_cal_thread.mAfCal = False
             os.system('adb shell getprop persist.sys.tof.offset.compensate')
@@ -857,7 +869,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoCalProgressBar.setValue(100)
             if self.timer1.isActive():
                 self.timer1.stop()
-
 
     def start_auto_cal(self):
         pix_white = QPixmap('res/fail.png')

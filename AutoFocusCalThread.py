@@ -140,7 +140,7 @@ class AutoFocusCalThread(QThread):
                 pix_white = QPixmap('res/pass.png')
                 self.win.ui.calAfResultLabel.setPixmap(pix_white)
             else:
-                self.win.ui.calResultEdit.append('<font color="green" size="6">{}</font>'.format('对焦标定失败'))
+                self.win.ui.calResultEdit.append('<font color="red" size="6">{}</font>'.format('对焦标定失败'))
 
             print('对焦标定结果：', right_steps2, right_ex_steps)
         else:
@@ -185,6 +185,11 @@ class AutoFocusCalThread(QThread):
         self.auto_cal_callback.emit('af_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
         cal_end = time.time()
         self.win.ui.calResultEdit.append('对焦标定耗时{}秒'.format(str(round(cal_end - cal_start, 1))))
+
+        time.sleep(6)
+        HuiYuanRotate.hy_control(self.ser, -15, 0)
+        time.sleep(2.9)
+        ProjectorDev.pro_auto_af_kst_cal(2)
 
     def init(self):
         # self.win.ui.autoFocusLabel.setText('安装标定APK')

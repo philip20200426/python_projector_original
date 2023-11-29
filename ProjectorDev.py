@@ -294,6 +294,7 @@ def pro_trigger_auto_ai():
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
         '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
+    time.sleep(2.9)
     # 触发对焦
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
