@@ -1,4 +1,3 @@
-
 KST_EVAL_EDGE = 2
 KST_EVAL_ANGLE = 1
 # 这里斜投和正投的步数不一致，需要注意
@@ -12,3 +11,5 @@ IMU_GAP = 10
 ROTATE_DELAY = 3.6
 
 KST_FILE_CSV_NAME = 'asuFiles/kst_cal_data.csv'
+
+AF_FILE_CSV_NAME = 'result/af_cal_data.csv'

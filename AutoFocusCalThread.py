@@ -47,11 +47,11 @@ class AutoFocusCalThread(QThread):
             self.auto_cal_callback.emit('find dev error')
             self.win.ui.calResultEdit.append('未找到投影设备！！！')
             return
+        self.win.start_mtf_test_activity()
         ProjectorDev.pro_close_ai_feature()
         create_dir_file()
         self.win.cameraThread.mEnLaplace = True
-        right_steps2 = 0
-        af_cal_result = []
+
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         self.win.set_exposure_time()
         print('开始对焦自动化标定')
@@ -71,16 +71,12 @@ class AutoFocusCalThread(QThread):
         if ProjectorDev.pro_auto_af_kst_cal(2):
             self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
             return
-        time.sleep(3.6)
-        # # print('开始读取投影自动对焦后的马达位置')
-        # dis_steps_r = self.read_para()
-        # right_steps = dis_steps_r[1]
+        time.sleep(0.6)
         right_steps = ProjectorDev.pro_get_motor_position()
         self.win.ex_cam_af()
         time.sleep(0.3)
         right_ex_steps = self.win.ex_cam_af_thread.get_result()
         right_ex_steps = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
-        ProjectorDev.pro_show_pattern(0)
         right_gap = right_ex_steps - right_steps
 
         self.win.ui.calResultEdit.append('正投自动对焦')
@@ -91,8 +87,9 @@ class AutoFocusCalThread(QThread):
         HuiYuanRotate.hy_control(self.ser, 0, 0)
         time.sleep(Constants.ROTATE_DELAY)
         ProjectorDev.pro_auto_af_kst_cal(1)
-        time.sleep(2.6)
+        time.sleep(2.9)
         dis_steps_c = self.read_para()
+        print(self.dis_steps, dis_steps_c)
         print('投影设备正投对焦后马达位置：', dis_steps_c[1])
         center_steps = dis_steps_c[1]
         target_steps = center_steps + right_gap
@@ -112,13 +109,8 @@ class AutoFocusCalThread(QThread):
             if ProjectorDev.pro_auto_af_kst_cal(2):
                 self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
                 return
-            time.sleep(2.6)
-            # # print('开始读取投影自动对焦后的马达位置')
-            # dis_steps_l = self.read_para()
-            # left_steps = dis_steps_l[1]
+            time.sleep(0.6)
             left_steps_cal = ProjectorDev.pro_get_motor_position()
-            # print('投影自动对焦后，马达位置：', left_steps, left_para_auto)
-            # 基于外部CAM对焦，返回当前马达位置
             self.win.ex_cam_af()
             time.sleep(0.3)
             left_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
@@ -131,7 +123,7 @@ class AutoFocusCalThread(QThread):
             HuiYuanRotate.hy_control(self.ser, 15, 0)
             time.sleep(Constants.ROTATE_DELAY)
             ProjectorDev.pro_auto_af_kst_cal(2)
-            time.sleep(3.6)
+            time.sleep(0.6)
             right_steps_cal = ProjectorDev.pro_get_motor_position()
             # 基于外部CAM对焦，返回当前马达位置
             self.win.ex_cam_af()
@@ -154,6 +146,7 @@ class AutoFocusCalThread(QThread):
             self.win.ui.calResultEdit.append('对焦标定失败，直接退出！！！')
 
         # 保存对焦标定数据
+        af_cal_result = []
         af_cal_result.append(right_steps)
         af_cal_result.append(right_ex_steps)
         af_cal_result.append(right_gap)
@@ -165,12 +158,19 @@ class AutoFocusCalThread(QThread):
         af_cal_result.append(right_ex_steps_cal)
         af_cal_result.append(right_gap_cal)
         sn = globalVar.get_value('SN')
-        # 评估时会冲掉，需要重新赋值
-        # self.dis_steps[1] = target_steps
         result = self.dis_steps + af_cal_result
-        with open('asuFiles/af_cal_data.csv', 'a+', newline='') as file:
+
+        times = datetime.datetime.now(tz=None)
+        file_name = 'result/af/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
+        if not os.path.exists(file_name):
+            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '右15对焦', '右15外对焦', '右差值', '正投对焦', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
+            with open(file_name, mode='a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(items_list)
+                csvfile.close()
+        with open(file_name, 'a+', newline='') as file:
             times = datetime.datetime.now(tz=None)
-            date_time = times.strftime("%Y-%m-%d %H:%M:%S").strip()
+            date_time = times.strftime("%H:%M:%S").strip()
             result.insert(0, af_result)
             result.insert(0, sn)
             result.insert(0, date_time)
@@ -184,11 +184,6 @@ class AutoFocusCalThread(QThread):
         self.win.ui.calResultEdit.append(temp0)
 
         self.win.pv += 100
-        self.win.ui.snEdit.setText('')
-        # HuiYuanRotate.hy_control(self.ser, 0, 0)
-        self.win.start_mtf_test_activity()
-        # res = os.popen('adb shell getprop persist.sys.tof.offset.compensate')
-        # print(type(res), res)
         os.system('adb shell getprop persist.sys.tof.offset.compensate')
         self.win.ui.snEdit.setFocus(True)
         #  self.win.ui.calResultEdit.append(res)
@@ -196,11 +191,10 @@ class AutoFocusCalThread(QThread):
         self.auto_cal_callback.emit('af_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
         cal_end = time.time()
         self.win.ui.calResultEdit.append('对焦标定耗时{}秒'.format(str(round(cal_end - cal_start, 1))))
-
-        time.sleep(6)
-        HuiYuanRotate.hy_control(self.ser, -15, 0)
-        time.sleep(2.9)
-        ProjectorDev.pro_auto_af_kst_cal(2)
+        self.win.ui.snEdit.setText('')
+        ProjectorDev.pro_show_pattern(0)
+        ProjectorDev.pro_restore_ai_feature()
+        HuiYuanRotate.hy_control(self.ser, 0, 0)
 
     def init(self):
         # self.win.ui.autoFocusLabel.setText('安装标定APK')

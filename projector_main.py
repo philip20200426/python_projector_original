@@ -304,6 +304,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.autoCalProgressBar.setFormat(
             'Loaded  %p%'.format(self.ui.autoCalProgressBar.value() - self.ui.autoCalProgressBar.minimum()))
         self.lap_list = []
+
+        dir_exit = os.path.isdir('result/af')
+        if not dir_exit:
+            os.mkdir('result/af')
+        dir_exit = os.path.isdir('result/kst')
+        if not dir_exit:
+            os.mkdir('result/kst')
+
         # 初始化外部相机曝光参数
         dir_exit = os.path.isdir('res')
         if not dir_exit:
@@ -767,7 +775,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
         time.sleep(3)
         os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
-        ProjectorDev.pro_restore_ai_feature()
         # time.sleep(1)
         # os.system('adb reboot')
 

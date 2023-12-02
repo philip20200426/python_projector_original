@@ -350,7 +350,7 @@ class AutoCalThread(QThread):
         result = result0 + result1
         sn = globalVar.get_value('SN')
         times = datetime.datetime.now(tz=None)
-        file_name = 'result/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
+        file_name = 'result/kst/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
         if not os.path.exists(file_name):
             items_list = ['时间', 'SN', '结果', '畸变', '角度', '边差', '边差', '边差', '边差', '角度', '角度', '角度', '角度', '角度', '角度', '角度', '角度']
             # items_list = items_list_head + list(self.dictAutoTestResult.keys()) + items_list_tail
@@ -520,13 +520,12 @@ class AutoCalThread(QThread):
 
         # 标定结束，转台归位
         # self.win.pv = 100
-        HuiYuanRotate.hy_control(self.ser, 0, 0)
+        # HuiYuanRotate.hy_control(self.ser, 0, 0)
         self.win.ui.kstCalButton.setEnabled(True)
 
         self.mExit = False
         self.mRunning = False
         self.auto_cal_callback.emit('kst_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
-        time.sleep(1.6)
         if self.mAfCal:
             self.mAfCal = False
             # 启动对焦标定

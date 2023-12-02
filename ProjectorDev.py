@@ -294,7 +294,7 @@ def pro_trigger_auto_ai():
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
         '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
-    time.sleep(2.9)
+    time.sleep(2.6)
     # 触发对焦
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
@@ -323,13 +323,16 @@ def pro_auto_af_kst_cal(mode):
         cur_pos = pro_get_motor_position()
         print(cur_pos)
         if cur_pos > Constants.AF_CAL_MOTOR_THRESHOLD and cur_pos == lst_pos:
-            print('对焦结束')
+            print('投影设备内部自动对焦结束')
             return 0
         lst_pos = cur_pos
         if count0 > 10:
-            print('对焦异常，再次触发')
-            pro_trigger_auto_ai()
-            time.sleep(3)
+            print('投影设备内部自动对焦异常，再次触发')
+            if mode == 2:
+                pro_trigger_auto_ai()
+            elif mode == 1:
+                pro_auto_af()
+            time.sleep(2.9)
             count0 = 0
             count1 += 1
             if count1 > 3:
