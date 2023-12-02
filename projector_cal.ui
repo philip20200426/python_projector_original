@@ -38,7 +38,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -76,7 +76,7 @@
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0">
+               <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
                 <property name="spacing">
                  <number>6</number>
                 </property>
@@ -120,6 +120,22 @@
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="autoCalCheckBox">
+                  <property name="minimumSize">
+                   <size>
+                    <width>26</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -1578,6 +1594,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="openTangSengButton">
+            <property name="text">
+             <string>打开唐曾界面</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="removePatternButton">
             <property name="text">
              <string>清除显示图片</string>
@@ -2038,90 +2061,106 @@
          </property>
         </widget>
        </widget>
-       <widget class="QWidget" name="layoutWidget">
+       <widget class="QFrame" name="frame_10">
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>380</y>
-          <width>451</width>
-          <height>151</height>
+          <y>370</y>
+          <width>471</width>
+          <height>171</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QPushButton" name="camInterCalButton">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>440</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>CAM内参标定</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="kstCalButton">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>440</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>解析数据，生成全向标定参数</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,6">
-           <item>
-            <widget class="QCheckBox" name="enCalAlgoCheckBox">
-             <property name="text">
-              <string>算法</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="parceCalDataButton">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>40</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>440</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>解析数据，生成全向标定参数</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>10</y>
+           <width>451</width>
+           <height>151</height>
+          </rect>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QPushButton" name="camInterCalButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>440</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>CAM内参标定</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="kstCalButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>440</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>解析数据，生成全向标定参数</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,6">
+            <item>
+             <widget class="QCheckBox" name="enCalAlgoCheckBox">
+              <property name="text">
+               <string>算法</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="parceCalDataButton">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>40</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>440</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>解析数据，生成全向标定参数</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
-        <string>Tab 3</string>
+        <string>Tab 4</string>
        </attribute>
        <widget class="QLabel" name="autoFocusLabel">
         <property name="geometry">
@@ -2174,19 +2213,6 @@
         </property>
         <property name="text">
          <string/>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="openTangSengButton">
-        <property name="geometry">
-         <rect>
-          <x>60</x>
-          <y>220</y>
-          <width>211</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>打开唐曾图界面</string>
         </property>
        </widget>
        <widget class="QPushButton" name="readCalDataButton">

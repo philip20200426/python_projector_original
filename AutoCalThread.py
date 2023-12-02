@@ -2,14 +2,14 @@ import csv
 import datetime
 import json
 import os
-
+import time
 import cv2
 from PyQt5.QtCore import QThread, pyqtSignal
 import time
 
 from PyQt5.QtGui import QPixmap
 from matplotlib import pyplot as plt
-
+import datetime
 import Constants
 import HuiYuanRotate
 import ProjectorDev
@@ -329,20 +329,41 @@ class AutoCalThread(QThread):
         temp1 = '  '.join(temp1)
         temp = temp0 + " ; " + temp1
         self.win.ui.calResultEdit.append(temp)
-        if max(result0) <= Constants.KST_EVAL_EDGE and abs((max(result1) - 90)) <= Constants.KST_EVAL_ANGLE:
-            self.win.ui.calResultEdit.append('<font color="green" size="6">{}</font>'.format('全向梯形标定成功'))
+        edge_result = False
+        angle_result = False
+        kst_result = False
+        if max(result0) <= Constants.KST_EVAL_EDGE:
+            edge_result = True
+        if abs((max(result1) - 90)) <= Constants.KST_EVAL_ANGLE:
+            angle_result = True
+        if edge_result and angle_result:
+            self.win.ui.calResultEdit.append('<font color="green" size="5">{}</font>'.format('全向梯形标定成功'))
             pix_white = QPixmap('res/pass.png')
             self.win.ui.calKstResultLabel.setPixmap(pix_white)
+            kst_result = True
         else:
-            self.win.ui.calResultEdit.append('<font color="red" size="6">{}</font>'.format('全向梯形标定失败'))
+            self.win.ui.calResultEdit.append('<font color="red" size="5">{}</font>'.format('全向梯形标定失败'))
+            kst_result = False
             # self.win.ui.calResultEdit.append('全向梯形标定失败：' + temp)
         ProjectorDev.pro_show_pattern(0)
-
+        # 保存数据
         result = result0 + result1
         sn = globalVar.get_value('SN')
-        with open('asuFiles/kst_cal_data.csv', 'a+', newline='') as file:
+        times = datetime.datetime.now(tz=None)
+        file_name = 'result/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
+        if not os.path.exists(file_name):
+            items_list = ['时间', 'SN', '结果', '畸变', '角度', '边差', '边差', '边差', '边差', '角度', '角度', '角度', '角度', '角度', '角度', '角度', '角度']
+            # items_list = items_list_head + list(self.dictAutoTestResult.keys()) + items_list_tail
+            with open(file_name, mode='a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(items_list)
+                csvfile.close()
+        with open(file_name, 'a+', newline='') as file:
             times = datetime.datetime.now(tz=None)
-            date_time = times.strftime("%Y-%m-%d %H:%M:%S").strip()
+            date_time = times.strftime("%H:%M:%S").strip()
+            result.insert(0, angle_result)
+            result.insert(0, edge_result)
+            result.insert(0, kst_result)
             result.insert(0, sn)
             result.insert(0, date_time)
             writer = csv.writer(file)
@@ -350,7 +371,7 @@ class AutoCalThread(QThread):
 
     def work0(self):
         # From kst_auto_calibrate
-        print('>>>>>>>>>> 自动全向梯形标定 work0 识别设备')
+        print('>>>>>>>>>> 识别设备...')
         cal_start = time.time()
         if self.win.root_device():
             self.auto_cal_callback.emit('find dev error')

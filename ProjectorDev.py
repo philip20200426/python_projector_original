@@ -340,7 +340,7 @@ def connect_dev(ip_addr):
     count = 0
     cmd = 'adb disconnect {}:5555'.format(ip_addr)
     os.popen(cmd)
-    time.sleep(1)
+    # time.sleep(1)
     while True:
         count += 1
         cmd = 'adb connect {}:5555'.format(ip_addr)

@@ -59,67 +59,45 @@ class AutoFocusCalThread(QThread):
         # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
         # self..win.ui.autoFocusLabel.setText('启动TOF校准')
         # time.sleep(1)
-        self.win.ui.calResultEdit.append('对焦标定开始...')
-        self.win.ui.calResultEdit.append('正投自动对焦')
-        # 控制转台到0度
-        self.win.pv += Constants.CAL_PROGRESS_STEP
-        # ProjectorDev.motor_reset()
-        # 梯形标定完成后，默认就是正投状态，不需要再控制云台
-        # HuiYuanRotate.hy_control(self.ser, 0, 0)
-        # time.sleep(3)
-        # 触发自动梯形和自动对焦
-        ProjectorDev.pro_auto_af_kst_cal(1)
-        time.sleep(1.6)
-        dis_steps_c = self.read_para()
-        print('投影设备正投对焦后马达位置：', dis_steps_c[1])
-        center_steps = dis_steps_c[1]
 
-        # 控制转台左转15度
-        self.win.pv += Constants.CAL_PROGRESS_STEP
-        HuiYuanRotate.hy_control(self.ser, -15, 0)
-        time.sleep(3.6)
-        # 触发全向和自动对焦
-        self.win.ui.calResultEdit.append('左15°对焦标定')
-        if ProjectorDev.pro_auto_af_kst_cal(2):
-            self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
-            return
-        time.sleep(2.6)
-        # print('开始读取投影自动对焦后的马达位置')
-        dis_steps_l = self.read_para()
-        left_steps = dis_steps_l[1]
-        # print('投影自动对焦后，马达位置：', left_steps, left_para_auto)
-        # 基于外部CAM对焦，返回当前马达位置
-        self.win.ex_cam_af()
-        time.sleep(1)
-        left_ex_steps = self.win.ex_cam_af_thread.get_result()
-        left_ex_steps = left_ex_steps - Constants.DEV_LOCATION_STEPS_OFFSET
-        left_gap = left_ex_steps - left_steps
+        self.win.ui.calResultEdit.append('对焦标定开始...')
 
         # 控制转台右转15度
         self.win.pv += Constants.CAL_PROGRESS_STEP
         HuiYuanRotate.hy_control(self.ser, 15, 0)
-        time.sleep(3.6)
+        time.sleep(Constants.ROTATE_DELAY)
         # 触发全向和自动对焦
         self.win.ui.calResultEdit.append('右15°对焦标定')
         if ProjectorDev.pro_auto_af_kst_cal(2):
             self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
             return
         time.sleep(3.6)
-        # print('开始读取投影自动对焦后的马达位置')
-        dis_steps_r = self.read_para()
-        right_steps = dis_steps_r[1]
+        # # print('开始读取投影自动对焦后的马达位置')
+        # dis_steps_r = self.read_para()
+        # right_steps = dis_steps_r[1]
+        right_steps = ProjectorDev.pro_get_motor_position()
         self.win.ex_cam_af()
-        time.sleep(1.6)
+        time.sleep(0.3)
         right_ex_steps = self.win.ex_cam_af_thread.get_result()
-        right_ex_steps = right_ex_steps - Constants.DEV_LOCATION_STEPS_OFFSET
+        right_ex_steps = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
         ProjectorDev.pro_show_pattern(0)
         right_gap = right_ex_steps - right_steps
 
-        gap = (right_gap + left_gap) / 2
-
-        target_steps = center_steps + gap
+        self.win.ui.calResultEdit.append('正投自动对焦')
+        # 控制转台到0度
+        self.win.pv += Constants.CAL_PROGRESS_STEP
+        # ProjectorDev.motor_reset()
+        # 梯形标定完成后，默认就是正投状态，不需要再控制云台
+        HuiYuanRotate.hy_control(self.ser, 0, 0)
+        time.sleep(Constants.ROTATE_DELAY)
+        ProjectorDev.pro_auto_af_kst_cal(1)
+        time.sleep(2.6)
+        dis_steps_c = self.read_para()
+        print('投影设备正投对焦后马达位置：', dis_steps_c[1])
+        center_steps = dis_steps_c[1]
+        target_steps = center_steps + right_gap
         self.dis_steps[1] = target_steps
-        print('投影对焦标定后的数据,距离和马达位置：', self.dis_steps)
+        ################################################################################## 以上标定结束
 
         if self.dis_steps[0] > Constants.DIS_STEPS_1 and self.dis_steps[1] > Constants.DIS_STEPS_1:
             self.win.auto_focus_motor()
@@ -127,22 +105,51 @@ class AutoFocusCalThread(QThread):
             self.win.ui.calResultEdit.append('对焦标定完成')
 
             # 对焦标定评估
+            self.win.ui.calResultEdit.append('左15°对焦标定评估')
             self.win.pv += Constants.CAL_PROGRESS_STEP
-            self.win.ui.calResultEdit.append('对焦标定评估开始')
-            HuiYuanRotate.hy_control(self.ser, 15, 0)
+            HuiYuanRotate.hy_control(self.ser, -15, 0)
+            time.sleep(Constants.ROTATE_DELAY)
+            if ProjectorDev.pro_auto_af_kst_cal(2):
+                self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
+                return
             time.sleep(2.6)
+            # # print('开始读取投影自动对焦后的马达位置')
+            # dis_steps_l = self.read_para()
+            # left_steps = dis_steps_l[1]
+            left_steps_cal = ProjectorDev.pro_get_motor_position()
+            # print('投影自动对焦后，马达位置：', left_steps, left_para_auto)
+            # 基于外部CAM对焦，返回当前马达位置
+            self.win.ex_cam_af()
+            time.sleep(0.3)
+            left_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
+            left_ex_steps_cal = left_ex_steps_cal
+            left_gap_cal = left_ex_steps_cal - left_steps_cal
+            print('左15度标定结果：', left_ex_steps_cal, left_steps_cal, left_gap_cal)
+
+            self.win.ui.calResultEdit.append('右15°对焦标定评估')
+            self.win.pv += Constants.CAL_PROGRESS_STEP
+            HuiYuanRotate.hy_control(self.ser, 15, 0)
+            time.sleep(Constants.ROTATE_DELAY)
             ProjectorDev.pro_auto_af_kst_cal(2)
             time.sleep(3.6)
-            dis_steps_r2 = self.read_para()
-            right_steps2 = dis_steps_r2[1]
-            if abs(right_steps2 - right_ex_steps) < 100:
+            right_steps_cal = ProjectorDev.pro_get_motor_position()
+            # 基于外部CAM对焦，返回当前马达位置
+            self.win.ex_cam_af()
+            time.sleep(0.3)
+            right_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
+            right_gap_cal = right_ex_steps_cal - right_steps_cal
+            print('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
+
+            af_result = False
+            if abs(left_gap_cal) < 50 and abs(right_gap_cal) < 50:
                 self.win.ui.calResultEdit.append('<font color="green" size="6">{}</font>'.format('对焦标定成功'))
                 pix_white = QPixmap('res/pass.png')
                 self.win.ui.calAfResultLabel.setPixmap(pix_white)
+                af_result = True
             else:
                 self.win.ui.calResultEdit.append('<font color="red" size="6">{}</font>'.format('对焦标定失败'))
 
-            print('对焦标定结果：', right_steps2, right_ex_steps)
+            print('对焦标定结果：', left_gap_cal, right_gap_cal)
         else:
             self.win.ui.calResultEdit.append('对焦标定失败，直接退出！！！')
 
@@ -150,17 +157,21 @@ class AutoFocusCalThread(QThread):
         af_cal_result.append(right_steps)
         af_cal_result.append(right_ex_steps)
         af_cal_result.append(right_gap)
-        af_cal_result.append(left_steps)
-        af_cal_result.append(left_ex_steps)
-        af_cal_result.append(left_gap)
         af_cal_result.append(center_steps)
-        af_cal_result.append(gap)
-        af_cal_result.append(right_steps2)
+        af_cal_result.append(left_steps_cal)
+        af_cal_result.append(left_ex_steps_cal)
+        af_cal_result.append(left_gap_cal)
+        af_cal_result.append(right_steps_cal)
+        af_cal_result.append(right_ex_steps_cal)
+        af_cal_result.append(right_gap_cal)
         sn = globalVar.get_value('SN')
+        # 评估时会冲掉，需要重新赋值
+        # self.dis_steps[1] = target_steps
         result = self.dis_steps + af_cal_result
         with open('asuFiles/af_cal_data.csv', 'a+', newline='') as file:
             times = datetime.datetime.now(tz=None)
             date_time = times.strftime("%Y-%m-%d %H:%M:%S").strip()
+            result.insert(0, af_result)
             result.insert(0, sn)
             result.insert(0, date_time)
             writer = csv.writer(file)
@@ -176,8 +187,8 @@ class AutoFocusCalThread(QThread):
         self.win.ui.snEdit.setText('')
         # HuiYuanRotate.hy_control(self.ser, 0, 0)
         self.win.start_mtf_test_activity()
-        res = os.popen('adb shell getprop persist.sys.tof.offset.compensate')
-        print(type(res), res)
+        # res = os.popen('adb shell getprop persist.sys.tof.offset.compensate')
+        # print(type(res), res)
         os.system('adb shell getprop persist.sys.tof.offset.compensate')
         self.win.ui.snEdit.setFocus(True)
         #  self.win.ui.calResultEdit.append(res)

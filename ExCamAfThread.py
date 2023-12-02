@@ -329,6 +329,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
         for i in range(len(self.mPositionList)):
             print(str(self.mPositionList[i]) + ':' + str(self.mLaplaceList[i]))
+        ProjectorDev.pro_show_pattern(0)
         print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
         print('耗时：', time.time() - sta)
 

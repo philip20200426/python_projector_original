@@ -49,7 +49,6 @@ from PyQt5.QtCore import QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QStatusBar
 import os, sys
 
-from utils import check_hex, move_file
 from projector_cal import Ui_MainWindow
 import time
 from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame, ser_send
@@ -60,6 +59,8 @@ import os
 import shutil
 import socket
 import matplotlib.pyplot as plt
+
+from utils.logUtil import print_debug
 
 # class AutoCalThread(QThread):
 #
@@ -74,7 +75,7 @@ import matplotlib.pyplot as plt
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2023_1129_1334'
+VERSION = 'V0.01 2023_1129_1722'
 
 
 class SerialThread(QThread):
@@ -138,6 +139,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.calKstResultLabel.setPixmap(pix_white)
         self.ui.calAfResultLabel.setPixmap(pix_white)
 
+        self.ui.snEdit.textChanged.connect(self.sn_text_changed)
         self.ui.startAutoCalButton.clicked.connect(self.start_auto_cal)
 
         self.ui.adminButton.clicked.connect(self.check_admin)
@@ -208,6 +210,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.frame_2.hide()
         self.hy_enable = True
         self.hui_yuan = HuiYuanRotate.open_hy_dev()
+        print('转台：：：：：：：：：：：', self.hui_yuan)
         # self.close_ui()
         # self.ui.frame.setEnabled(False)
         # self.ui.frame_left_up.setEnabled(False)
@@ -229,9 +232,17 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.autofocus_cal_thread.auto_cal_callback.connect(self.auto_cal_callback)
         self.ex_cam_af_thread = ExCamAfThread(self.current_port, self)
         # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
-        self.ui.tab_2.hide()
-        self.ui.tab_3.hide()
-        self.ui.tab_4.hide()
+
+        self.auto_cal_flag = False
+        self.ui.frame.hide()
+        self.ui.frame_left_up.hide()
+        self.ui.frame_2.hide()
+        self.ui.frame_3.hide()
+        self.ui.frame_4.hide()
+        self.ui.frame_5.hide()
+        self.ui.frame_6.hide()
+        self.ui.frame_8.hide()
+        self.ui.frame_10.hide()
 
         # self.update_data_timer = QTimer()
         # self.update_data_timer.timeout.connect(self.update_data)
@@ -314,9 +325,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def check_admin(self):
         if str(self.ui.adminLineEdit.text()) == '6666666666':
-            self.ui.tab_2.show()
-            self.ui.tab_3.show()
-            self.ui.tab_4.show()
+            self.ui.frame.show()
+            self.ui.frame_left_up.show()
+            self.ui.frame_2.show()
+            self.ui.frame_3.show()
+            self.ui.frame_4.show()
+            self.ui.frame_5.show()
+            self.ui.frame_6.show()
+            self.ui.frame_8.show()
+            self.ui.frame_10.show()
             print(self.ui.adminLineEdit.text())
 
     def show_result(self, res=0):
@@ -735,17 +752,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             self.ui.autoCalProgressBar.setValue(int(self.pv))
 
-    def sn_changed(self):
-        if len(self.ui.snEdit.text()) >= 19:
-            set_sn(str(self.ui.snEdit.text()).replace('/', '').upper())
-            return True
-        else:
-            return False
-
     def write_to_nv(self):
-        if not self.sn_changed():
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
-            return
+        if not self.auto_cal_flag:
+            if not self.sn_changed():
+                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                return
         # ProjectorDev.pro_start_kstcal_service()
         # time.sleep(2.9)
         create_dir_file()
@@ -763,7 +774,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_focus_motor(self):
         # self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
         #     float(self.ui.pos11StepsEdit.text()) * 50)
-        print(self.autofocus_cal_thread.dis_steps)
+        create_dir_file()                                                                           
+        # print('>>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
+        # para = self.ui.pos11StepsEdit.text()
+        # # if para != '':
+        # #     self.autofocus_cal_thread.dis_steps = list(map(int, para.split(',')))
+        # # else:
+        # #     print('>>>>>>>>>??????')
+        # print('>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
         file_path = globalVar.get_value('CALIB_DATA_PATH')
         print(file_path)
         prefix = 'FocusA: [ '
@@ -826,9 +844,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ex_cam_af_thread.start()
 
     def auto_focus_cal(self):
-        if not self.sn_changed():
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
-            return
+        if not self.auto_cal_flag:
+            if not self.sn_changed():
+                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                return
         # if self.root_device():
         #     return
         print('>>>>>>>>>> 开始对焦标定')
@@ -859,6 +878,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.timer1.stop()
             self.ui.autoCalProgressBar.setValue(0)
             self.pv = 0
+            self.auto_cal_flag = False
         if callback == 'af_cal_finished':
             ProjectorDev.pro_restore_ai_feature()
             self.ui.snEdit.setFocus(True)
@@ -869,14 +889,38 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoCalProgressBar.setValue(100)
             if self.timer1.isActive():
                 self.timer1.stop()
+            self.auto_cal_flag = False
+
+    def sn_text_changed(self):
+        if self.sn_changed():
+            # print(len(self.ui.snLineEdit.text()), self.ui.snLineEdit.text())
+            if self.ui.autoCalCheckBox.isChecked():
+                print_debug(self.ui.snEdit.text())
+                #self.ui.snEdit.setEnabled(False)
+                self.start_auto_cal()
+
+    def sn_changed(self):
+        if len(self.ui.snEdit.text()) >= 19:
+            sn = str(self.ui.snEdit.text()).replace('/', '').upper()
+            if os.path.exists('asuFiles/' + sn):
+                sn = sn + '_' + str(int(time.time()))
+            print(sn)
+            set_sn(sn)
+            self.statusBar_1.setText('SN:' + sn)
+            return True
+        else:
+            return False
 
     def start_auto_cal(self):
+        self.auto_cal_flag = True
         pix_white = QPixmap('res/fail.png')
         self.ui.calAfResultLabel.setPixmap(pix_white)
         self.ui.calKstResultLabel.setPixmap(pix_white)
         if not self.sn_changed():
             print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
+        else:
+            self.ui.calResultEdit.setText(self.ui.snEdit.text())
         self.ui.calResultEdit.setText('识别设备中...')
         # print('>>>>>>>>>> 识别设备中...')
         # self.ui.calResultEdit.setText('开始工厂标定...')
@@ -900,9 +944,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     # philip
     def kst_auto_calibrate(self):
-        if not self.sn_changed():
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
-            return
+        if not self.auto_cal_flag:
+            if not self.sn_changed():
+                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                return
         self.open_external_camera()
         # if self.root_device():
         #     return
@@ -939,6 +984,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
         print('>>>>>>>>>> 结束标定 ！！！！！！！')
+        self.auto_cal_flag = False
         self.ex_cam_af_thread.mExit = True
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.mExit = True
