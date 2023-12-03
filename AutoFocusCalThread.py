@@ -41,6 +41,8 @@ class AutoFocusCalThread(QThread):
         self.dis_steps = [-1, -1]
 
     # From auto_focus_cal
+    def work0(self):
+        pass
     def run(self):
         cal_start = time.time()
         if self.win.root_device():
@@ -54,7 +56,7 @@ class AutoFocusCalThread(QThread):
 
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         self.win.set_exposure_time()
-        print('开始对焦自动化标定')
+        print('开始对焦自动化标定,云台延时：{} 标定补偿：{}'.format(Constants.ROTATE_DELAY, Constants.DEV_AF_CAL_STEPS_OFFSET))
         # ProjectorDev.pro_show_pattern_af()
         # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
         # self..win.ui.autoFocusLabel.setText('启动TOF校准')
@@ -71,29 +73,33 @@ class AutoFocusCalThread(QThread):
         if ProjectorDev.pro_auto_af_kst_cal(2):
             self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
             return
-        time.sleep(0.6)
-        right_steps = ProjectorDev.pro_get_motor_position()
+        time.sleep(2.9)
+        dis_steps_r = self.read_para()
+        print('投影设备右投对焦后马达位置：', dis_steps_r[1])
+        right_steps = dis_steps_r[1]
+        # right_steps = ProjectorDev.pro_get_motor_position()
         self.win.ex_cam_af()
         time.sleep(0.3)
         right_ex_steps = self.win.ex_cam_af_thread.get_result()
         right_ex_steps = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
         right_gap = right_ex_steps - right_steps
+        self.dis_steps[1] = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
 
-        self.win.ui.calResultEdit.append('正投自动对焦')
-        # 控制转台到0度
-        self.win.pv += Constants.CAL_PROGRESS_STEP
-        # ProjectorDev.motor_reset()
-        # 梯形标定完成后，默认就是正投状态，不需要再控制云台
-        HuiYuanRotate.hy_control(self.ser, 0, 0)
-        time.sleep(Constants.ROTATE_DELAY)
-        ProjectorDev.pro_auto_af_kst_cal(1)
-        time.sleep(2.9)
-        dis_steps_c = self.read_para()
-        print(self.dis_steps, dis_steps_c)
-        print('投影设备正投对焦后马达位置：', dis_steps_c[1])
-        center_steps = dis_steps_c[1]
-        target_steps = center_steps + right_gap
-        self.dis_steps[1] = target_steps
+        # self.win.ui.calResultEdit.append('正投自动对焦')
+        # # 控制转台到0度
+        # self.win.pv += Constants.CAL_PROGRESS_STEP
+        # # ProjectorDev.motor_reset()
+        # # 梯形标定完成后，默认就是正投状态，不需要再控制云台
+        # HuiYuanRotate.hy_control(self.ser, 0, 0)
+        # time.sleep(Constants.ROTATE_DELAY)
+        # ProjectorDev.pro_auto_af_kst_cal(1)
+        # time.sleep(2.9)
+        # dis_steps_c = self.read_para()
+        # print(self.dis_steps, dis_steps_c)
+        # print('投影设备正投对焦后马达位置：', dis_steps_c[1])
+        # center_steps = dis_steps_c[1]
+        # target_steps = center_steps + right_gap
+        # self.dis_steps[1] = target_steps
         ################################################################################## 以上标定结束
 
         if self.dis_steps[0] > Constants.DIS_STEPS_1 and self.dis_steps[1] > Constants.DIS_STEPS_1:
@@ -102,6 +108,20 @@ class AutoFocusCalThread(QThread):
             self.win.ui.calResultEdit.append('对焦标定完成')
 
             # 对焦标定评估
+            self.win.ui.calResultEdit.append('右15°对焦标定评估')
+            self.win.pv += Constants.CAL_PROGRESS_STEP
+            HuiYuanRotate.hy_control(self.ser, 15, 0)
+            time.sleep(Constants.ROTATE_DELAY)
+            ProjectorDev.pro_auto_af_kst_cal(2)
+            time.sleep(0.6)
+            right_steps_cal = ProjectorDev.pro_get_motor_position()
+            # 基于外部CAM对焦，返回当前马达位置
+            self.win.ex_cam_af()
+            time.sleep(0.3)
+            right_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
+            right_gap_cal = right_ex_steps_cal - right_steps_cal
+            print('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
+
             self.win.ui.calResultEdit.append('左15°对焦标定评估')
             self.win.pv += Constants.CAL_PROGRESS_STEP
             HuiYuanRotate.hy_control(self.ser, -15, 0)
@@ -117,20 +137,6 @@ class AutoFocusCalThread(QThread):
             left_ex_steps_cal = left_ex_steps_cal
             left_gap_cal = left_ex_steps_cal - left_steps_cal
             print('左15度标定结果：', left_ex_steps_cal, left_steps_cal, left_gap_cal)
-
-            self.win.ui.calResultEdit.append('右15°对焦标定评估')
-            self.win.pv += Constants.CAL_PROGRESS_STEP
-            HuiYuanRotate.hy_control(self.ser, 15, 0)
-            time.sleep(Constants.ROTATE_DELAY)
-            ProjectorDev.pro_auto_af_kst_cal(2)
-            time.sleep(0.6)
-            right_steps_cal = ProjectorDev.pro_get_motor_position()
-            # 基于外部CAM对焦，返回当前马达位置
-            self.win.ex_cam_af()
-            time.sleep(0.3)
-            right_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
-            right_gap_cal = right_ex_steps_cal - right_steps_cal
-            print('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
 
             af_result = False
             if abs(left_gap_cal) < Constants.AF_CAL_EVAL and abs(right_gap_cal) < Constants.AF_CAL_EVAL:
@@ -150,7 +156,7 @@ class AutoFocusCalThread(QThread):
         af_cal_result.append(right_steps)
         af_cal_result.append(right_ex_steps)
         af_cal_result.append(right_gap)
-        af_cal_result.append(center_steps)
+        #af_cal_result.append(center_steps)
         af_cal_result.append(left_steps_cal)
         af_cal_result.append(left_ex_steps_cal)
         af_cal_result.append(left_gap_cal)
@@ -163,7 +169,7 @@ class AutoFocusCalThread(QThread):
         times = datetime.datetime.now(tz=None)
         file_name = 'result/af/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
         if not os.path.exists(file_name):
-            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '右15对焦', '右15外对焦', '右差值', '正投对焦', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
+            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '右15对焦', '右15外对焦', '右差值', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
             with open(file_name, mode='a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(items_list)

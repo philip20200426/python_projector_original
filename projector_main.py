@@ -48,7 +48,7 @@ from utils.logUtil import print_debug
 #             # self.win.save_data()
 #             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2023_1129_1722'
+VERSION = 'V0.01 2023_1203_1530'
 
 
 class SerialThread(QThread):

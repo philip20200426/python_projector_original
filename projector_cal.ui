@@ -135,7 +135,7 @@
                    <string/>
                   </property>
                   <property name="checked">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -219,7 +219,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QTextEdit" name="calResultEdit"/>
+            <widget class="QTextEdit" name="calResultEdit">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QProgressBar" name="autoCalProgressBar">
@@ -2005,7 +2009,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>TOF自动对焦</string>
+          <string>投影端ARM自动对焦及梯形矫正</string>
          </property>
         </widget>
         <widget class="QPushButton" name="camAfButton">
