@@ -752,8 +752,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         os.system(cmd)
         os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
         # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
-        time.sleep(3)
-        os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
+        time.sleep(1.8)
+        # os.system('adb shell cat /sys/devices/platform/asukey/ksdpara')
+        os.system('adb shell cat /sdcard/kst_cal_data_r.yml')
         # time.sleep(1)
         # os.system('adb reboot')
 
@@ -834,11 +835,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if not self.sn_changed():
                 print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
-        # if self.root_device():
-        #     return
-        print('>>>>>>>>>> 开始对焦标定')
         self.open_external_camera()
-        # self.cameraThread.mEnLaplace = True
         self.autofocus_cal_thread.ser = self.hui_yuan
         self.autofocus_cal_thread.start()
 
@@ -910,12 +907,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         else:
             self.ui.calResultEdit.setText(self.ui.snEdit.text())
         self.ui.calResultEdit.setText('识别设备中...')
-        # print('>>>>>>>>>> 识别设备中...')
-        # self.ui.calResultEdit.setText('开始工厂标定...')
-        # if self.root_device():
-        #     self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
-        #     return
-        print('>>>>>>>>>> 开始工厂标定')
         self.ui.startAutoCalButton.setEnabled(False)
         self.kst_auto_calibrate()
 
@@ -927,9 +918,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.timer1.start(1000, self)  # ms
             self.ui.autoCalProgressBar.setValue(0)
         self.auto_cal_thread.mAfCal = True
-        # self.auto_cal_thread.mAfCal = True
-        # self.auto_focus_cal()
-        # self.show_result(1)
 
     # philip
     def kst_auto_calibrate(self):
@@ -982,8 +970,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.cameraThread.mRunning = False
         if self.timer1.isActive():
             self.timer1.stop()
-        # self.ui.kstAutoCalButton.setText('全向梯形标定')
-        # self.ui.stopAutoCalButton.setText("全向梯形标定结束")
         self.ui.autoCalProgressBar.setValue(0)
         self.pv = 0
         self.ui.startAutoCalButton.setEnabled(True)

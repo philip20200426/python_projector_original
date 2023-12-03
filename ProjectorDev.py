@@ -89,7 +89,7 @@ def pro_pull_data():
 
 
 def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0", mode=1, loop=5,
-                      timing_budget=166666):
+                      timing_budget=126666):
     # cmd0 = "adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a " \
     #        "com.nbd.autofocus.TofService --ei type 2 --ei flag "
     # cmd1 = str(flag)
@@ -294,7 +294,7 @@ def pro_trigger_auto_ai():
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
         '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
-    time.sleep(2.6)
+    # time.sleep(1)
     # 触发对焦
     os.system(
         'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '

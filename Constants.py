@@ -41,4 +41,4 @@ if KST_EVAL_ANGLE == -999:
     KST_EVAL_ANGLE = 1
 if AF_CAL_EVAL == -999:
     AF_CAL_EVAL = 50
-print('初始化参数，云台延时：{}，对焦标定步数补偿：{}, Imu阈值：{}, Tof阈值：{} {}自动对焦阈值步数：{}, 评估标准：{} {}'.format(ROTATE_DELAY, DEV_AF_CAL_STEPS_OFFSET, IMU_GAP, TOF_MAX_THR, TOF_MIN_THR, AF_CAL_MOTOR_THRESHOLD, KST_EVAL_EDGE, KST_EVAL_ANGLE))
+print('初始化参数，云台延时：{}，对焦标定步数补偿：{}, Imu阈值：{}, Tof阈值：{} {}, 自动对焦阈值步数：{}, 评估标准：{} {}'.format(ROTATE_DELAY, DEV_AF_CAL_STEPS_OFFSET, IMU_GAP, TOF_MAX_THR, TOF_MIN_THR, AF_CAL_MOTOR_THRESHOLD, KST_EVAL_EDGE, KST_EVAL_ANGLE))
