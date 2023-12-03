@@ -133,7 +133,7 @@ class AutoFocusCalThread(QThread):
             print('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
 
             af_result = False
-            if abs(left_gap_cal) < 50 and abs(right_gap_cal) < 50:
+            if abs(left_gap_cal) < Constants.AF_CAL_EVAL and abs(right_gap_cal) < Constants.AF_CAL_EVAL:
                 self.win.ui.calResultEdit.append('<font color="green" size="6">{}</font>'.format('对焦标定成功'))
                 pix_white = QPixmap('res/pass.png')
                 self.win.ui.calAfResultLabel.setPixmap(pix_white)

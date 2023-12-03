@@ -1,64 +1,37 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import *
 
-import Constants
-import ParsePara
 from HkCamera import UiHkWindow
 
-import sys
-from PyQt5.QtWidgets import *
-import ctypes
-
-import binascii
-import csv
-import datetime
-import json
 import re
-import struct
 
-import serial
-import yaml
-from PyQt5.QtGui import QFont, QRegExpValidator, QPalette, QColor, QPixmap
+from PyQt5.QtGui import QFont, QRegExpValidator, QPixmap
 
 import Fmc4030
 import HuiYuanRotate
-import ProjectorDev
 import evaluate_correct_wrapper
-import pro_correct_wrapper
 from AutoFocusCalThread import AutoFocusCalThread
 from ExCamAfThread import ExCamAfThread
-from Fmc4030 import rail_forward, rail_position, init, rail_forward_pos, rail_stop
+from Fmc4030 import init
 
 from math_utils import CRC
-from pathlib import Path
 
-import cv2
-import qdarkstyle
 from PyQt5.QtCore import Qt, QBasicTimer, QRegExp
-from qdarkstyle import DarkPalette
 
 from AutoCalThread import AutoCalThread
-import globalVar
 from pro_correct_wrapper import *
 # from learn_serial.pro_correct_wrapper import keystone_correct_cam_libs
 from CameraThread import CameraThread
 
-from log_utils import Logger
-
-from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QStatusBar
-import os, sys
+import sys
 
 from projector_cal import Ui_MainWindow
 import time
 from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame, ser_send
-import shutil
-from ctypes import *
 
 import os
 import shutil
-import socket
-import matplotlib.pyplot as plt
 
 from utils.logUtil import print_debug
 

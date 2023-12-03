@@ -3,7 +3,7 @@ import os
 
 
 def get_para(dir_name, key_pri, key_sec=''):
-    res = -1
+    res = -999
     if os.path.isfile(dir_name):
         file = open(dir_name, )
         dic = json.load(file)

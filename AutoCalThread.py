@@ -191,7 +191,7 @@ class AutoCalThread(QThread):
                                 data = list(map(float, dic[pos]['tof'].split(',')))
                                 # print('TOF数据：', data, i, max(data), min(data))
                                 if len(data) == 4:
-                                    if max(data) < 1900 and min(data) > 1300:
+                                    if max(data) < Constants.TOF_MAX_THR and min(data) > Constants.TOF_MIN_THR:
                                         if i == 0 and ((data[0] - data[1]) > 15):
                                             pos_error[i] = -1
                                         elif (i == 1 or i == 2 or i == 8) and data[1] > data[2]:

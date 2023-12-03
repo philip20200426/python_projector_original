@@ -7,6 +7,7 @@ from ctypes import *
 import cv2
 import numpy as np
 
+import Constants
 import ProjectorDev
 import globalVar
 
@@ -865,7 +866,7 @@ def auto_keystone_calib2(pro_data):
     pro_file_list = pro_data[3]
     pro_file_list = ref_file_list
     # 保存Tof数据
-    with open('asuFiles/cal_data.csv', 'a+', newline='') as file:
+    with open(Constants.CAL_DATA, 'a+', newline='') as file:
         times = datetime.datetime.now(tz=None)
         date_time = times.strftime("%Y-%m-%d %H:%M:%S").strip()
         print('------------------保存到csv： ', depth_data_list, date_time)
