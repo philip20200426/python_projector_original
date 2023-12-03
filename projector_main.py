@@ -499,9 +499,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if len(dic) > 0 and 'ExposureTime' in dic.keys():
                 dic['ExposureTime'] = self.cameraThread.exposureTime
                 print(dic)
-                with open('res/para.json', 'w') as file:
-                    json.dump(dic, file)
-                file.close()
+            if len(dic) > 0 and 'delay1' in dic.keys():
+                dic['delay1'] = float(self.ui.delay1Edit.text())
+            if len(dic) > 0 and 'delay2' in dic.keys():
+                dic['delay2'] = float(self.ui.delay2Edit.text())
+            if len(dic) > 0 and 'delay3' in dic.keys():
+                dic['delay3'] = float(self.ui.delay3Edit.text())
+            with open('res/para.json', 'w') as file:
+                json.dump(dic, file)
+            file.close()
             print(dic)
         else:
             dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
@@ -886,6 +892,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.autoCalProgressBar.setValue(0)
             self.pv = 0
             self.auto_cal_flag = False
+            self.ui.startAutoCalButton.setEnabled(True)
         if callback == 'af_cal_finished':
             ProjectorDev.pro_restore_ai_feature()
             self.ui.snEdit.setFocus(True)
@@ -897,6 +904,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if self.timer1.isActive():
                 self.timer1.stop()
             self.auto_cal_flag = False
+            self.ui.startAutoCalButton.setEnabled(True)
 
     def sn_text_changed(self):
         if self.sn_changed():
@@ -935,6 +943,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         #     self.ui.calResultEdit.setText('未识别到投影设备，请检查设备链接!!!')
         #     return
         print('>>>>>>>>>> 开始工厂标定')
+        self.ui.startAutoCalButton.setEnabled(False)
         self.kst_auto_calibrate()
 
         if self.timer1.isActive():
@@ -1004,6 +1013,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ui.stopAutoCalButton.setText("全向梯形标定结束")
         self.ui.autoCalProgressBar.setValue(0)
         self.pv = 0
+        self.ui.startAutoCalButton.setEnabled(True)
 
     def kst_reset(self):
         print('----------------------')
