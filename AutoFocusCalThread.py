@@ -108,9 +108,9 @@ class AutoFocusCalThread(QThread):
             self.win.ui.calResultEdit.append('对焦标定完成')
 
             # 对焦标定评估
-            self.win.ui.calResultEdit.append('右15°对焦标定评估')
+            self.win.ui.calResultEdit.append('正投对焦标定评估')
             self.win.pv += Constants.CAL_PROGRESS_STEP
-            HuiYuanRotate.hy_control(self.ser, 15, 0)
+            HuiYuanRotate.hy_control(self.ser, 0, 0)
             time.sleep(Constants.ROTATE_DELAY)
             ProjectorDev.pro_auto_af_kst_cal(2)
             time.sleep(0.6)
@@ -170,7 +170,7 @@ class AutoFocusCalThread(QThread):
         times = datetime.datetime.now(tz=None)
         file_name = 'result/af/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
         if not os.path.exists(file_name):
-            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '右15对焦', '右15外对焦', '右差值', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
+            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '正投对焦', '正投外对焦', '右差值', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
             with open(file_name, mode='a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(items_list)
