@@ -46,7 +46,7 @@ from utils.logUtil import print_debug
 #         while True:
 #             # position 1
 #             # self.win.save_data()
-#             print('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
+#             print_debug('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
 VERSION = 'V0.01 2023_1203_1530'
 
@@ -67,7 +67,7 @@ class SerialThread(QThread):
                     self.current_data = self.ser.read(self.ser.inWaiting())
                     self.data_arrive_signal.emit()
             except:
-                print('>>>>>>>>> 串口异常')
+                print_debug('>>>>>>>>> 串口异常')
                 return
 
 
@@ -183,7 +183,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.frame_2.hide()
         self.hy_enable = True
         self.hui_yuan = HuiYuanRotate.open_hy_dev()
-        print('转台：：：：：：：：：：：', self.hui_yuan)
+        print_debug('转台：：：：：：：：：：：', self.hui_yuan)
         # self.close_ui()
         # self.ui.frame.setEnabled(False)
         # self.ui.frame_left_up.setEnabled(False)
@@ -301,7 +301,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     self.ui.delay2Edit.setText(str(dic['delay2']))
                 if len(dic) > 0 and 'delay3' in dic.keys():
                     self.ui.delay3Edit.setText(str(dic['delay3']))
-                print(dic)
+                print_debug(dic)
                 file.close()
 
     def check_admin(self):
@@ -315,7 +315,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.frame_6.show()
             self.ui.frame_8.show()
             self.ui.frame_10.show()
-            print(self.ui.adminLineEdit.text())
+            print_debug(self.ui.adminLineEdit.text())
 
     def show_result(self, res=0):
         if res == 0:
@@ -335,9 +335,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 self.ui.previewCameraLabel.setText('CAM已关闭')
                 self.ui.previewCameraLabel_2.setPixmap(QPixmap(""))
                 self.ui.previewCameraLabel_2.setText('CAM已关闭')
-                print('关闭工业相机')
+                print_debug('关闭工业相机')
         except:
-            print('图片显示异常', image)
+            print_debug('图片显示异常', image)
         return None
 
     def close_ui(self):
@@ -442,7 +442,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # if not self.cameraThread.mRunning:
             #     QMessageBox.warning(self, "警告", "未识别到摄像头硬件")
         else:
-            print("External camera already opened")
+            print_debug("External camera already opened")
         self.ui.eOpenCameraButton.setEnabled(True)
 
     def close_external_camera(self):
@@ -456,7 +456,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.hk_win.close()
 
         else:
-            print("External camera is not opened")
+            print_debug("External camera is not opened")
 
     def set_exposure_time(self):
         if self.cameraThread is not None:
@@ -471,7 +471,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             file.close()
             if len(dic) > 0 and 'ExposureTime' in dic.keys():
                 dic['ExposureTime'] = self.cameraThread.exposureTime
-                print(dic)
+                print_debug(dic)
             if len(dic) > 0 and 'delay1' in dic.keys():
                 dic['delay1'] = float(self.ui.delay1Edit.text())
             if len(dic) > 0 and 'delay2' in dic.keys():
@@ -481,14 +481,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             with open('res/para.json', 'w') as file:
                 json.dump(dic, file)
             file.close()
-            print(dic)
+            print_debug(dic)
         else:
             dic_para = {'ExposureTime': self.cameraThread.exposureTime, 'delay1': float(self.ui.delay1Edit.text()),
                         'delay2': float(self.ui.delay2Edit.text()), 'delay3': float(self.ui.delay3Edit.text())}
             with open('res/para.json', 'w') as file:
                 json.dump(dic_para, file)
             file.close()
-            print('未找到json文件，创建json文件')
+            print_debug('未找到json文件，创建json文件')
 
     def external_take_picture(self, pos=0):
         if self.cameraThread.mRunning:
@@ -510,15 +510,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             else:
                 times = datetime.datetime.now(tz=None)
                 filePath = inter_path + times.strftime("%Y-%m-%d %H:%M:%S").strip().replace(':', '_')
-            print('external_take_picture:', filePath)
+            print_debug('external_take_picture:', filePath)
             self.cameraThread.takePicture(filePath)
 
         else:
-            print("External camera is not opened")
+            print_debug("External camera is not opened")
 
     def rotating_platform_angle(self):
         if len(self.ui.xyEdit.text()) == 0 or len(self.ui.xzEdit.text()) == 0 or len(self.ui.yzEdit.text()) == 0:
-            print('输入角度不能为空')
+            print_debug('输入角度不能为空')
             return
         if self.hy_enable:
             HuiYuanRotate.hy_control(self.hui_yuan, int(self.ui.xyEdit.text()), int(self.ui.yzEdit.text()))
@@ -529,13 +529,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             polarity = True
             degree = [int(self.ui.xyEdit.text()) * 100, int(self.ui.xzEdit.text()) * 100,
                       int(self.ui.yzEdit.text()) * 100]
-            print('调整转台角度：', degree)
+            print_debug('调整转台角度：', degree)
             cmd_list = [['01', '06', '04', '72', '00', '00'], ['01', '06', '04', '70', '00', '00'],
                         ['01', '06', '04', 'ae', '00', '00']]
             # 位置0：cmd_list = [['01', '06', '04', '4c', '00', '00'], ['01', '06', '04', '4e', '00', '00'], ['01', '06', '04', '9c', '00', '00']]
             for i in range(len(degree)):
                 if abs(degree[i]) > 9000:
-                    print('角度参数异常,退出！！！')
+                    print_debug('角度参数异常,退出！！！')
                     return
                 if degree[i] == self.lst_degree[i]:
                     continue
@@ -549,17 +549,17 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 angel = '{:04X}'.format(degree[i])
                 cmd_list[i][4] = angel[0:2]
                 cmd_list[i][5] = angel[2:4]
-                # print(cmd_list[i])
+                # print_debug(cmd_list[i])
                 cmd_char = ' '.join(cmd_list[i])
-                # print(cmd_char)
+                # print_debug(cmd_char)
                 crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
                 cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-                # print(cmd_char)
+                # print_debug(cmd_char)
                 cmd_hex = bytes.fromhex(cmd_char)
                 if self.current_port is not None:
                     ser_send(self.current_port, cmd_hex)
                 else:
-                    print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                    print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
 
                 time.sleep(1.3)
                 if not polarity:
@@ -567,64 +567,64 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                     cmd_list[i][4] = 'FF'
                     cmd_list[i][5] = 'FF'
                     cmd_char = ' '.join(cmd_list[i])
-                    # print(cmd_char)
+                    # print_debug(cmd_char)
                     crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
                     cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-                    # print(cmd_char)
+                    # print_debug(cmd_char)
                     cmd_hex = bytes.fromhex(cmd_char)
                     if self.current_port is not None:
                         ser_send(self.current_port, cmd_hex)
                     else:
-                        print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                        print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
                 else:
                     cmd_list[i][3] = str(hex(int(cmd_list[i][3], 16) + 1))[2:4]
                     cmd_list[i][4] = '00'
                     cmd_list[i][5] = '00'
                     cmd_char = ' '.join(cmd_list[i])
-                    # print(cmd_char)
+                    # print_debug(cmd_char)
                     crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
                     cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-                    # print(cmd_char)
+                    # print_debug(cmd_char)
                     cmd_hex = bytes.fromhex(cmd_char)
                     if self.current_port is not None:
                         ser_send(self.current_port, cmd_hex)
                     else:
-                        print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                        print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
                 time.sleep(1)
             cmd_list = ['01', '06', '04', '87', '00', '0A']
             # cmd_list[5] = '{:02X}'.format(int(self.ui.positionEdit.text()))
-            # print(cmd_list)
+            # print_debug(cmd_list)
             cmd_char = ' '.join(cmd_list)
-            # print(cmd_char)
+            # print_debug(cmd_char)
             crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
             cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-            # print(cmd_char)
+            # print_debug(cmd_char)
             cmd_hex = bytes.fromhex(cmd_char)
             if self.current_port is not None:
                 ser_send(self.current_port, cmd_hex)
             else:
-                print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+                print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
             # self.ui.rotateButton.setEnabled(True)
 
     def manual_position(self):
         # self.showWritePattern()
-        # print(self.ui.positionEdit.text())
+        # print_debug(self.ui.positionEdit.text())
         cmd_list = ['01', '06', '04', '87', '00', '0A']
         cmd_list[5] = '{:02X}'.format(int(self.ui.positionEdit.text()))
-        # print(cmd_list)
+        # print_debug(cmd_list)
         cmd_char = ' '.join(cmd_list)
-        # print(cmd_char)
+        # print_debug(cmd_char)
         crc, crc_h, crc_l = self.CRC.CRC16(cmd_char)
         cmd_char = cmd_char + ' ' + crc_l + ' ' + crc_h
-        # print(cmd_char)
+        # print_debug(cmd_char)
         cmd_hex = bytes.fromhex(cmd_char)
         if self.current_port is not None:
             ser_send(self.current_port, cmd_hex)
         else:
-            print('>>>>>>>>>>>>>>>>>>>> 串口异常')
+            print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
         if self.ui.enAutoTofKstCheckBox.isChecked():
             time.sleep(float(self.ui.delay1Edit.text()))
-            print('>>>>>>>>>>>>>>>>>>>> 开始执行自动梯形校正')
+            print_debug('>>>>>>>>>>>>>>>>>>>> 开始执行自动梯形校正')
             self.auto_keystone_tof()
 
     def auto_focus_vision(self):
@@ -638,8 +638,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.pull_data()
         # position, target_pos = auto_focus_tof()
         # if position < 0 or position > 2900 or target_pos < 0 or target_pos > 2900:
-        #     print('数据异常 ', position, target_pos)
-        # print('当前马达位置:' + str(position) + ',目标位置:' + str(target_pos))
+        #     print_debug('数据异常 ', position, target_pos)
+        # print_debug('当前马达位置:' + str(position) + ',目标位置:' + str(target_pos))
         # if target_pos > position:
         #     direction = 2
         #     target_steps = target_pos - position
@@ -651,7 +651,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # cmd2 = ' --ei value '
         # cmd3 = str(target_steps)
         # cmd = cmd0 + cmd1 + cmd2 + cmd3
-        # print(cmd)
+        # print_debug(cmd)
         # os.system(cmd)
         # os.system(
         #     'adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
@@ -659,10 +659,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def auto_keystone_tof(self):
         if len(self.ui.snEdit.text()) >= 19:
-            print(self.ui.snEdit.text())
+            print_debug(self.ui.snEdit.text())
             set_sn(str(self.ui.snEdit.text()).replace('/', ''))
         else:
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+            print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
         create_dir_file()
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
@@ -696,34 +696,34 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def parce_cal_data(self):
         create_dir_file()
-        print('>>>>>>>>>>>>>>>>>>> 开始离线解析json数据')
+        print_debug('>>>>>>>>>>>>>>>>>>> 开始离线解析json数据')
         # 解析数据前，先判断位置数量
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
-        print(cmd)
+        print_debug(cmd)
         if cmd != '':
             self.auto_cal_thread.positionList = list(map(int, cmd.split(',')))
             self.auto_cal_thread.pos_count = len(self.auto_cal_thread.positionList)
         else:
-            print('缺少解析位置数据')
+            print_debug('缺少解析位置数据')
         data = self.auto_cal_thread.parse_projector_json()
         if data[0].count(-1) == 0:
             if self.ui.enCalAlgoCheckBox.isChecked():
                 auto_keystone_calib2(data)
         else:
-            print("数据异常，不调用算法!!!")
+            print_debug("数据异常，不调用算法!!!")
 
     def kst_calibrate(self):
         if self.sn_changed():
-            print('>>>>>>>>>>>>>>>>>>> 开始离线解析txt数据')
+            print_debug('>>>>>>>>>>>>>>>>>>> 开始离线解析txt数据')
             create_dir_file()
             proj_data = self.auto_cal_thread.parse_projector_data()
-            print('数据解析：', proj_data)
+            print_debug('数据解析：', proj_data)
             if proj_data[0].count(-1) == 0:
                 auto_keystone_calib2(proj_data)
             else:
-                print("数据异常，不调用算法!!!")
+                print_debug("数据异常，不调用算法!!!")
         else:
-            print('请输入20位SN号!!!')
+            print_debug('请输入20位SN号!!!')
 
     # timerEvent 关联定时器  self.timer1 = QBasicTimer()
     def timerEvent(self, e):
@@ -733,7 +733,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             # self.btn_start.setText("Finish")
             # self.ui.stopAutoCalButton.setText("结束")
             self.ui.kstAutoCalButton.setText('开始')
-            print('停止进度条定时器', self.pv)
+            print_debug('停止进度条定时器', self.pv)
             self.ui.autoCalProgressBar.setValue(100)
             self.pv = 0
         else:
@@ -742,13 +742,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def write_to_nv(self):
         if not self.auto_cal_flag:
             if not self.sn_changed():
-                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
         # ProjectorDev.pro_start_kstcal_service()
         # time.sleep(2.9)
         create_dir_file()
         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
-        print(cmd)
+        print_debug(cmd)
         os.system(cmd)
         os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
         # os.system('adb shell cp /sdcard/kst_cal_data.yml /sys/devices/platform/asukey/ksdpara')
@@ -762,31 +762,31 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.autofocus_cal_thread.dis_steps[1] = self.autofocus_cal_thread.dis_steps[1] + int(
         #     float(self.ui.pos11StepsEdit.text()) * 50)
         create_dir_file()                                                                           
-        # print('>>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
+        # print_debug('>>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
         # para = self.ui.pos11StepsEdit.text()
         # # if para != '':
         # #     self.autofocus_cal_thread.dis_steps = list(map(int, para.split(',')))
         # # else:
-        # #     print('>>>>>>>>>??????')
-        # print('>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
+        # #     print_debug('>>>>>>>>>??????')
+        # print_debug('>>>>>>>>>>>>>>>>>>???', self.autofocus_cal_thread.dis_steps)
         file_path = globalVar.get_value('CALIB_DATA_PATH')
-        print(file_path)
+        print_debug(file_path)
         prefix = 'FocusA: [ '
         suffix = ' ]\n'
         da = prefix + ",".join(list(map(str, self.autofocus_cal_thread.dis_steps))) + suffix
         with open(file_path, "a") as f1:
             f1.write(da)
         with open(file_path, "r") as f1:
-            print(f1.read())
+            print_debug(f1.read())
         # self.win.ui.autoFocusLabel.setText('开始写入数据')
         # cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
-        # print(cmd)
+        # print_debug(cmd)
         # os.system(cmd)
         # os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
 
         # # 提取字符串里的数字
         # sss = 'pro_123uii'
-        # print("".join(list(filter(str.isdigit, sss))))
+        # print_debug("".join(list(filter(str.isdigit, sss))))
         # os.system("adb shell am startservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
         # os.system('adb shell settings put global AsuAutoKeyStoneEnable 0')
         # os.system('adb shell settings put global tv_auto_focus_asu 0')
@@ -796,24 +796,24 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # os.system('adb shell settings put system tv_screen_saver 0')
         # time.sleep(2.6)
         # cmd = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 5 --ei value 3000'
-        # print(cmd)
+        # print_debug(cmd)
         # os.system(cmd)
         # time.sleep(3.6)
         # cmd0 = 'adb shell am broadcast -a asu.intent.action.Motor --es operate 2 --ei value '
         # pos11_steps = self.ui.pos11StepsEdit.text()
         # cmd1 = pos11_steps
         # cmd = cmd0 + cmd1
-        # print(cmd)
+        # print_debug(cmd)
         # os.system(cmd)
 
     def save_laplace(self):
         pass
         # self.lap_list.append(self.ex_cam_af_thread.mLaplace)
-        # print(self.lap_list, len(self.lap_list))
+        # print_debug(self.lap_list, len(self.lap_list))
         # total = 0
         # for i in range(len(self.lap_list)):
         #     total += self.lap_list[i]
-        # print(max(self.lap_list), round(total / len(self.lap_list), 2))
+        # print_debug(max(self.lap_list), round(total / len(self.lap_list), 2))
         # if len(self.lap_list) > 9:
         #     self.lap_list.clear()
 
@@ -824,7 +824,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ex_cam_af_thread.mRailPosition.clear()
 
     def ex_cam_af(self):
-        print('>>>>>>>>>> 外置CAM自动对焦')
+        print_debug('>>>>>>>>>> 外置CAM自动对焦')
         self.open_external_camera()
         self.cameraThread.mEnLaplace = True
         self.ex_cam_af_thread.ser = self.current_port
@@ -833,7 +833,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def auto_focus_cal(self):
         if not self.auto_cal_flag:
             if not self.sn_changed():
-                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
         self.open_external_camera()
         self.autofocus_cal_thread.ser = self.hui_yuan
@@ -847,14 +847,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         dst = [0] * 12
         # img_size = (img.shape[0], img.shape[1])
         img_size = img.shape
-        print('Load EvaluateCorrectionRst:', img_size, dst)
+        print_debug('Load EvaluateCorrectionRst:', img_size, dst)
         rst = evaluate_correct_wrapper.evaluate_correction_rst(img_size, img, dst)
-        print('返回参数:', rst, dst)
+        print_debug('返回参数:', rst, dst)
 
     def auto_cal_callback(self, callback):
         # if callback == 'kst_cal_finished':
         #     self.ui.calResultEdit.setText('耗时：' + str(time))
-        print('auto_cal_callback ', callback)
+        print_debug('auto_cal_callback ', callback)
         if callback == 'find dev error':
             self.auto_cal_thread.mAfCal = False
             if self.timer1.isActive():
@@ -878,7 +878,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def sn_text_changed(self):
         if self.sn_changed():
-            # print(len(self.ui.snLineEdit.text()), self.ui.snLineEdit.text())
+            # print_debug(len(self.ui.snLineEdit.text()), self.ui.snLineEdit.text())
             if self.ui.autoCalCheckBox.isChecked():
                 print_debug(self.ui.snEdit.text())
                 #self.ui.snEdit.setEnabled(False)
@@ -889,7 +889,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             sn = str(self.ui.snEdit.text()).replace('/', '').upper()
             if os.path.exists('asuFiles/' + sn):
                 sn = sn + '_' + str(int(time.time()))
-            print(sn)
+            print_debug(sn)
             set_sn(sn)
             self.statusBar_1.setText('SN:' + sn)
             return True
@@ -902,7 +902,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.calAfResultLabel.setPixmap(pix_white)
         self.ui.calKstResultLabel.setPixmap(pix_white)
         if not self.sn_changed():
-            print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+            print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
             return
         else:
             self.ui.calResultEdit.setText(self.ui.snEdit.text())
@@ -911,7 +911,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.kst_auto_calibrate()
 
         if self.timer1.isActive():
-            print('>>>>>>>>>> 进度条定时器已开启')
+            print_debug('>>>>>>>>>> 进度条定时器已开启')
             return
         else:
             self.pv = 0
@@ -923,12 +923,12 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def kst_auto_calibrate(self):
         if not self.auto_cal_flag:
             if not self.sn_changed():
-                print('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
+                print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
         self.open_external_camera()
         # if self.root_device():
         #     return
-        # print('>>>>>>>>>> 开始全向自动标定')
+        # print_debug('>>>>>>>>>> 开始全向自动标定')
         # ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
         # ProjectorDev.pro_auto_af()
         # 先做自动对焦
@@ -938,11 +938,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # c = 7.9745
         # d = -5345.0431
         # steps = a * (dis[0] ** 3) + b * (dis[0] ** 2) + c * dis[0] + d
-        # print('TOF对焦：', dis, steps)
+        # print_debug('TOF对焦：', dis, steps)
         # if dis[0] > 1500:
         #     ProjectorDev.pro_motor_reset_steps(steps)
         # else:
-        #     print('全向标定前的自动对焦失败！！！')
+        #     print_debug('全向标定前的自动对焦失败！！！')
 
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
@@ -960,12 +960,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
     def stop_auto_cal(self):
         # rail_stop(self.current_port)
-        print('>>>>>>>>>> 结束标定 ！！！！！！！')
+        print_debug('>>>>>>>>>> 结束标定 ！！！！！！！')
         self.auto_cal_flag = False
         self.ex_cam_af_thread.mExit = True
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.mExit = True
             self.auto_cal_thread.mAfCal = False
+            # self.auto_cal_thread.terminate()
         if self.cameraThread is not None:
             self.cameraThread.mRunning = False
         if self.timer1.isActive():
@@ -975,7 +976,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.startAutoCalButton.setEnabled(True)
 
     def kst_reset(self):
-        print('----------------------')
+        print_debug('----------------------')
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
         # os.system(cmd)
         # os.system("adb shell service call SurfaceFlinger 1006")
@@ -1006,7 +1007,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def update_data(self):
         position = os.popen("adb shell getprop persist.motor.position").read()
         if not position:
-            print("------------------update data------------------")
+            print_debug("------------------update data------------------")
             self.update_data_timer.stop()
             self.close_ui()
         steps = os.popen("adb shell getprop persist.motor.steps").read()
@@ -1046,7 +1047,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                                                                                                                     '_')
             # shutil.copytree(DIR_NAME, 'copy')
             ret = shutil.move(srcDirName, distDirName)
-            print('备份结束', ret)
+            print_debug('备份结束', ret)
         # os.system("rm -rf .\asuFiles")
         os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
         os.system("adb shell rm -rf /sdcard/kst_cal_data.yml ")
@@ -1059,14 +1060,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # if dirExists:
         #     shutil.rmtree('asuFiles')
         # else:
-        #     print("No find asuFiles")
+        #     print_debug("No find asuFiles")
         #
         # fileExists = os.path.isfile('motor.log')
         # if fileExists:
         #     # mylog.shutdown()
         #     os.remove('motor.log')
         # else:
-        #     print("No find files")
+        #     print_debug("No find files")
         self.count = 0
 
     def open_camera(self):
@@ -1114,7 +1115,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         #     nowLenFiles = len(files)
         #     nowTime = time.time()
         #     if (nowTime - preTime) > 6:
-        #         print('>>>>>>>>>>>>>>>>>>>> 采集数据超时，请重新抓取 ', DIR_NAME_PRO)
+        #         print_debug('>>>>>>>>>>>>>>>>>>>> 采集数据超时，请重新抓取 ', DIR_NAME_PRO)
         #         QMessageBox.warning(self, "警告", "标定数据保存失败")
         #         return False
         #
@@ -1124,7 +1125,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:3]
-                print(file, ext, head)
+                print_debug(file, ext, head)
                 if ext == '.bmp' and head == 'pro':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_file_list.append(file)
@@ -1134,11 +1135,11 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             pro_img = cv2.imread(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
             pro_img_size = (pro_img.shape[0], pro_img.shape[1])
             imageSize = os.path.getsize(globalVar.get_value('DIR_NAME_PRO') + pro_file_list[-1])
-            print('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
+            print_debug('最新图片：', len(pro_file_list), pro_file_list[-1], pro_img_size[0], pro_img_size[1], imageSize)
             if pro_img.shape[0] == 720 and pro_img.shape[1] == 1280 and imageSize == 2764854:
                 # 图片的大小
                 endTime = time.time()
-                print('保存数据耗时：', (endTime - startTime))
+                print_debug('保存数据耗时：', (endTime - startTime))
                 QMessageBox.warning(self, "警告", "数据保存成功")
                 os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/*.bmp ")
                 # self.statusBar_3.setText('当前姿态下数据保存完成')
@@ -1146,7 +1147,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 # self.statusBar_3.setText('当前姿态下数据保存失败')
                 QMessageBox.warning(self, "警告", "数据保存失败")
         else:
-            print('没有发现投影设备返回的图片数据 ', pro_file_list)
+            print_debug('没有发现投影设备返回的图片数据 ', pro_file_list)
             QMessageBox.warning(self, "警告", "没有发现投影设备返回的图片数据")
             # self.statusBar_3.setText('当前姿态下数据保存失败')
         # set_point(point)
@@ -1156,13 +1157,13 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         localSN = get_sn()
         distDirName = DIR_NAME + '/' + localSN
         cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
-        print('Pull files from PC : ', cmd)
+        print_debug('Pull files from PC : ', cmd)
         os.system(cmd)
         # distDirName = distDirName + '/projectionFiles/AsuProData.json'
         # distDirName = 'res/para.json'
-        # print(distDirName)
+        # print_debug(distDirName)
         # res = ParsePara.get_para(distDirName, 'angle')
-        # print(type(res), res)
+        # print_debug(type(res), res)
 
     def removePattern(self):
         # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
@@ -1242,18 +1243,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.close_port()
         # if self.hy_enable:
         #     self.hui_yuan = HuiYuanRotate.close_hy_dev()
-        print('关闭转台')
+        print_debug('关闭转台')
 
     def open_rail(self):
         self.open_dev(115200, 'N')
 
     def close_rail(self):
         self.close_port()
-        print('关闭导轨')
+        print_debug('关闭导轨')
 
     def open_dev(self, baud_rate, check_bit):
         current_port_name = self.ui.serial_selection.currentText()
-        print(current_port_name)
+        print_debug(current_port_name)
         try:
             if self.current_port is None:
                 self.current_port = open_port(current_port_name,
@@ -1263,10 +1264,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                                               stopbits=1.0,
                                               timeout=1)
             else:
-                print('串口已经打开')
+                print_debug('串口已经打开')
         except:
             self.ui.port_status.setText(current_port_name + ' 打开失败')
-            print('打开串口失败')
+            print_debug('打开串口失败')
             return
 
     def open_port(self):
@@ -1336,7 +1337,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         raw_data_list = self.serial_thread.current_data
         cmd_data = ()
         cmd_data = asu_pdu_parse_one_frame(raw_data_list)
-        print("parse data : ", cmd_data[0], cmd_data[1])
+        print_debug("parse data : ", cmd_data[0], cmd_data[1])
         if cmd_data[0] == 22:
             sw_version = str(cmd_data[1][0]) + "." \
                          + str(cmd_data[1][1]) + "." \
@@ -1349,19 +1350,19 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 current_data = self.serial_thread.current_data.decode('utf-8')
             else:
                 current_data = self.serial_thread.current_data.hex()
-                # print("receive data hex : ", self.serial_thread.current_data)
-                print("receive data hex ", current_data[2])
+                # print_debug("receive data hex : ", self.serial_thread.current_data)
+                print_debug("receive data hex ", current_data[2])
 
                 # asu_parse_one_frame(current_data)
                 data_list = re.findall('.{2}', current_data)
-                print("receive data data_list len : ", str2hex(data_list[2]))
+                print_debug("receive data data_list len : ", str2hex(data_list[2]))
                 # result = map(hex(), data_list)
-                # print("receive data len ", result[2])
-                # print("receive data data_list ", int(data_list[2]) + int(data_list[3]) + int(data_list[4]))
-                print("receive data data_list : ", int(data_list[3]))
-                # print(len(data_list), data_list[0], data_list[1], data_list[2])
+                # print_debug("receive data len ", result[2])
+                # print_debug("receive data data_list ", int(data_list[2]) + int(data_list[3]) + int(data_list[4]))
+                print_debug("receive data data_list : ", int(data_list[3]))
+                # print_debug(len(data_list), data_list[0], data_list[1], data_list[2])
                 current_data = ' '.join(data_list) + ' '
-                print("receive data X : ", current_data)
+                print_debug("receive data X : ", current_data)
             # if self.ui.auto_new_line.checkState() == Qt.Checked and self.ui.show_time.checkState() == Qt.Checked:
             #     current_data = datetime.datetime.now().strftime('%H:%M:%S') + ' ' + current_data
             # if self.ui.auto_new_line.checkState() == Qt.Checked:
@@ -1383,14 +1384,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         global count
         input_data = self.ui.input_data.toPlainText()
         if not check_hex(input_data):
-            print("非法字符")
+            print_debug("非法字符")
             QMessageBox.information(self, "输入错误",
                                     "必输输入16进制：{}\n\ntype: {}".format(input_data, type(input_data)),
                                     QMessageBox.Yes | QMessageBox.No)
             return
         # send_ascii_format = self.ui.send_ascii_format.isChecked()
         send_ascii_format = False
-        print(input_data, send_ascii_format)
+        print_debug(input_data, send_ascii_format)
         try:
             if send_ascii_format:
                 self.current_port.write(input_data.encode('utf-8'))
@@ -1398,9 +1399,9 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 list1 = ["FC FC 01 04 0D 02 02 FF 15 FB FB", "00 02 00 06 00 01 09", "00 02 00 06 00 01 10"]
                 list2 = "01 02 03 04 05 06"
                 Hex_str = bytes.fromhex(input_data)
-                print("Hex_str : ", Hex_str)
+                print_debug("Hex_str : ", Hex_str)
                 # count = count + 1
-                # print("count : %d", count)
+                # print_debug("count : %d", count)
                 # if count > 2:
                 #     count = 0
                 self.current_port.write(Hex_str)

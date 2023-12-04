@@ -16,6 +16,7 @@ import globalVar
 from pro_correct_wrapper import set_point, get_point, auto_keystone_calib, DIR_NAME_PRO, auto_keystone_calib2, \
     create_dir_file
 from math_utils import CRC
+from utils.logUtil import print_debug
 
 
 class AutoFocusCalThread(QThread):
@@ -35,7 +36,7 @@ class AutoFocusCalThread(QThread):
         self.enableAlgo = True
         self.exit = False
         self.CRC = CRC()
-        print('>>>>>>>>>>>>>>>>>>> Init AutoFocusCalThread')
+        print_debug('>>>>>>>>>>>>>>>>>>> Init AutoFocusCalThread')
         self.positionList = [1, 2, 3, 4, 5, 6]
         self.pos_init_finished = False
         self.dis_steps = [-1, -1]
@@ -56,7 +57,7 @@ class AutoFocusCalThread(QThread):
 
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         self.win.set_exposure_time()
-        print('开始对焦自动化标定,云台延时：{} 标定补偿：{}'.format(Constants.ROTATE_DELAY, Constants.DEV_AF_CAL_STEPS_OFFSET))
+        print_debug('开始对焦自动化标定,云台延时：{} 标定补偿：{}'.format(Constants.ROTATE_DELAY, Constants.DEV_AF_CAL_STEPS_OFFSET))
         # ProjectorDev.pro_show_pattern_af()
         # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
         # self..win.ui.autoFocusLabel.setText('启动TOF校准')
@@ -75,13 +76,12 @@ class AutoFocusCalThread(QThread):
             return
         time.sleep(2.9)
         dis_steps_r = self.read_para()
-        print('投影设备右投对焦后马达位置：', dis_steps_r[1])
+        print_debug('投影设备右投对焦后马达位置：', dis_steps_r[1])
         right_steps = dis_steps_r[1]
         # right_steps = ProjectorDev.pro_get_motor_position()
         self.win.ex_cam_af()
         time.sleep(0.3)
         right_ex_steps = self.win.ex_cam_af_thread.get_result()
-        right_ex_steps = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
         right_gap = right_ex_steps - right_steps
         self.dis_steps[1] = right_ex_steps - Constants.DEV_AF_CAL_STEPS_OFFSET
 
@@ -95,8 +95,8 @@ class AutoFocusCalThread(QThread):
         # ProjectorDev.pro_auto_af_kst_cal(1)
         # time.sleep(2.9)
         # dis_steps_c = self.read_para()
-        # print(self.dis_steps, dis_steps_c)
-        # print('投影设备正投对焦后马达位置：', dis_steps_c[1])
+        # print_debug(self.dis_steps, dis_steps_c)
+        # print_debug('投影设备正投对焦后马达位置：', dis_steps_c[1])
         # center_steps = dis_steps_c[1]
         # target_steps = center_steps + right_gap
         # self.dis_steps[1] = target_steps
@@ -119,8 +119,8 @@ class AutoFocusCalThread(QThread):
             self.win.ex_cam_af()
             time.sleep(0.3)
             right_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
-            right_gap_cal = right_ex_steps_cal - right_steps_cal
-            print('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
+            right_gap_cal = right_ex_steps_cal - right_steps_cal - Constants.DEV_AF_CAL_STEPS_OFFSET
+            print_debug('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
 
             self.win.ui.calResultEdit.append('左15°对焦标定评估')
             self.win.pv += Constants.CAL_PROGRESS_STEP
@@ -135,8 +135,8 @@ class AutoFocusCalThread(QThread):
             time.sleep(0.3)
             left_ex_steps_cal = self.win.ex_cam_af_thread.get_result()
             left_ex_steps_cal = left_ex_steps_cal
-            left_gap_cal = left_ex_steps_cal - left_steps_cal
-            print('左15度标定结果：', left_ex_steps_cal, left_steps_cal, left_gap_cal)
+            left_gap_cal = left_ex_steps_cal - left_steps_cal - Constants.DEV_AF_CAL_STEPS_OFFSET
+            print_debug('左15度标定结果：', left_ex_steps_cal, left_steps_cal, left_gap_cal)
 
             af_result = False
             if abs(left_gap_cal) < Constants.AF_CAL_EVAL and abs(right_gap_cal) < Constants.AF_CAL_EVAL:
@@ -147,7 +147,7 @@ class AutoFocusCalThread(QThread):
             else:
                 self.win.ui.calResultEdit.append('<font color="red" size="6">{}</font>'.format('对焦标定失败'))
 
-            print('对焦标定结果：', left_gap_cal, right_gap_cal)
+            print_debug('对焦标定结果：', left_gap_cal, right_gap_cal)
         else:
             self.win.ui.calResultEdit.append('对焦标定失败，直接退出！！！')
 
@@ -163,6 +163,7 @@ class AutoFocusCalThread(QThread):
         af_cal_result.append(right_steps_cal)
         af_cal_result.append(right_ex_steps_cal)
         af_cal_result.append(right_gap_cal)
+        af_cal_result.append(Constants.DEV_AF_CAL_STEPS_OFFSET)
         sn = globalVar.get_value('SN')
         result = self.dis_steps + af_cal_result
 
@@ -182,7 +183,7 @@ class AutoFocusCalThread(QThread):
             result.insert(0, date_time)
             writer = csv.writer(file)
             writer.writerow(result)
-        print(type(result), result)
+        print_debug(type(result), result)
         del result[0]
         del result[0]
         temp0 = [str(i) for i in result]
@@ -225,18 +226,18 @@ class AutoFocusCalThread(QThread):
             dic = json.load(file)
             if len(dic) > 0 and 'POS21' in dic.keys() and 'tof' in dic['POS21'].keys():
                 if dic['POS21']['tof'] != '':
-                    # print(dic['POS11']['tof'].split(',')[0])
+                    # print_debug(dic['POS11']['tof'].split(',')[0])
                     self.dis_steps[0] = int(dic['POS21']['tof'].split(',')[0])
             if len(dic) > 0 and 'POS21' in dic.keys() and 'location' in dic['POS21'].keys():
                 if dic['POS21']['location'] != '':
-                    # print(dic['POS11']['location'])
+                    # print_debug(dic['POS11']['location'])
                     self.dis_steps[1] = dic['POS21']['location']
             file.close()
         location = ProjectorDev.pro_get_motor_position()
         self.dis_steps[1] = int(location)
         para = 'TOF: ' + str(self.dis_steps[0]) + '  马达: ' + str(self.dis_steps[1])
         self.win.ui.autoFocusLabel.setText(para)
-        print(
+        print_debug(
             'TOF:' + str(self.dis_steps[0]) + ',马达位置:' + str(self.dis_steps[1]) + ',马达location:' + str(location))
         return self.dis_steps
 
@@ -249,12 +250,12 @@ class AutoFocusCalThread(QThread):
         pro_img_list = []
         pro_file_list = []
         ret = {"jpg": 0, "png": 0, "bmp": 0, "txt": 0}
-        print("解析目录：", globalVar.get_value('DIR_NAME_PRO'))
+        print_debug("解析目录：", globalVar.get_value('DIR_NAME_PRO'))
         for root, dirs, files in os.walk(globalVar.get_value('DIR_NAME_PRO')):
             for file in files:
                 ext = os.path.splitext(file)[-1].lower()
                 head = os.path.splitext(file)[0].lower()[:5]
-                # print(file, ext, head)
+                # print_debug(file, ext, head)
                 if ext == '.bmp' and head == 'pro_n':
                     ret["bmp"] = ret["bmp"] + 1
                     pro_img_list.append(file)
@@ -263,8 +264,8 @@ class AutoFocusCalThread(QThread):
                 if ext == ".txt" and head == 'pro_n':
                     pro_file_list.append(file)
                     ret["txt"] = ret["png"] + 1
-        print(pro_img_list)
-        print(pro_file_list)
+        print_debug(pro_img_list)
+        print_debug(pro_file_list)
 
         tof_list = []
         imu_list = []
@@ -283,7 +284,7 @@ class AutoFocusCalThread(QThread):
                     if row == 1:
                         if len(line.split(',')) == 6:
                             tof_list += line.split(',')
-                            print('+++++++++++++++++', tof_list)
+                            print_debug('+++++++++++++++++', tof_list)
                         else:
                             pos_error[i] = -1
                     if row == 2:
@@ -301,17 +302,17 @@ class AutoFocusCalThread(QThread):
                 if imageSize == 2764854:
                     img_list.append(img_name)
                 else:
-                    print('图片尺寸不对')
+                    print_debug('图片尺寸不对')
                     pos_error[i] = -1
             else:
                 pos_error[i] = -1
         tof_list = list(map(float, tof_list))
         imu_list = list(map(float, imu_list))
-        # print(len(tof_list), tof_list)
-        # print(len(imu_list), imu_list)
-        # print(len(img_list), img_list)
-        # print(pos_error)
+        # print_debug(len(tof_list), tof_list)
+        # print_debug(len(imu_list), imu_list)
+        # print_debug(len(img_list), img_list)
+        # print_debug(pos_error)
         endTime = time.time()
         # 秒
-        print('解析投影文件耗时', endTime - startTime)
+        print_debug('解析投影文件耗时', endTime - startTime)
         return pos_error, tof_list, imu_list, img_list

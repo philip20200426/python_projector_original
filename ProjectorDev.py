@@ -368,7 +368,7 @@ def connect_dev(ip_addr):
         print('未识别到投影设备, retry:', count)
         # time.sleep(1.6)
         if count > 6:
-            print('未识别到投影设备, retry {} 次失败！！！'.format(count))
+            print('未识别到投影设备, retry: {} 次失败！！！'.format(count))
             return -1
 
 
