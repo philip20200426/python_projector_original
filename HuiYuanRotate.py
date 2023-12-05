@@ -5,12 +5,13 @@ import time
 import re
 
 from math_utils import CRC
+from utils.logUtil import print_debug
 
 
 def open_hy_dev():
     # 创建一个 socket 对象
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print('打开转台')
+    print_debug('打开转台')
     return udp_socket
 
 
