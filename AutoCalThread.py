@@ -285,8 +285,6 @@ class AutoCalThread(QThread):
         return dst
 
     def estimate_test(self):
-        result0 = []
-        result1 = []
         # 解析json中配置的云台角度
         if os.path.isfile('res/para.json'):
             file = open('res/para.json', )
@@ -301,54 +299,71 @@ class AutoCalThread(QThread):
             file.close()
         else:
             print_debug('未找到json文件,使用默认角度配置')
+        count = 0
+        while True:
+            result0 = []
+            result1 = []
+            count += 1
+            print_debug('云台角度配置参数：', self.estimateAngelList, len(self.estimateAngelList))
+            self.win.ui.calResultEdit.append('标定结果评估中...')
+            self.win.pv += Constants.CAL_PROGRESS_STEP
+            ProjectorDev.pro_show_pattern(2)
+            for i in range(len(self.estimateAngelList)):
+                HuiYuanRotate.hy_control(self.ser, self.estimateAngelList[i][0],
+                                         self.estimateAngelList[i][1])
+                print_debug(
+                    '>>>>>>>>>>>>>>>>>>>>> 控制转台到%d %d' % (self.estimateAngelList[i][0], self.estimateAngelList[i][1]))
+                time.sleep(4.6)
+                ProjectorDev.pro_auto_af_kst_cal(2)
+                time.sleep(1.8)
+                dst = self.evaluate_kst_correct()
+                print_debug(dst)
+                result0.append(round(dst[0] * 100, 1))
+                result0.append(round(dst[1] * 100, 1))
+                for j in range(2, 6):
+                    result1.append(round(dst[j], 1))
 
-        print_debug('云台角度配置参数：', self.estimateAngelList, len(self.estimateAngelList))
-        self.win.ui.calResultEdit.append('标定结果评估中...')
-        self.win.pv += Constants.CAL_PROGRESS_STEP
-        ProjectorDev.pro_show_pattern(2)
-        for i in range(len(self.estimateAngelList)):
-            HuiYuanRotate.hy_control(self.ser, self.estimateAngelList[i][0],
-                                     self.estimateAngelList[i][1])
-            print_debug(
-                '>>>>>>>>>>>>>>>>>>>>> 控制转台到%d %d' % (self.estimateAngelList[i][0], self.estimateAngelList[i][1]))
-            time.sleep(4.6)
-            ProjectorDev.pro_auto_af_kst_cal(2)
-            time.sleep(6.9)
-            dst = self.evaluate_kst_correct()
-            print_debug(dst)
-            result0.append(round(dst[0] * 100, 1))
-            result0.append(round(dst[1] * 100, 1))
-            for j in range(2, 6):
-                result1.append(round(dst[j], 1))
-
-        print_debug('>>>>>>>>>>>标定结果：', result0, result1)
-        print_debug('>>>>>>>>>>>Max:', max(result0), max(result1))
-        # 浮点List转化成字符串列表
-        temp0 = [str(i) for i in result0]
-        temp0 = ' '.join(temp0)
-        temp1 = [str(i) for i in result1]
-        temp1 = '  '.join(temp1)
-        temp = temp0 + " ; " + temp1
-        self.win.ui.calResultEdit.append(temp)
-        edge_result = False
-        angle_result = False
-        kst_result = False
-        if max(result0) <= Constants.KST_EVAL_EDGE:
-            edge_result = True
-        if abs((max(result1) - 90)) <= Constants.KST_EVAL_ANGLE:
-            angle_result = True
-        if edge_result and angle_result:
-            self.win.ui.calResultEdit.append('<font color="green" size="5">{}</font>'.format('全向梯形标定成功'))
-            pix_white = QPixmap('res/pass.png')
-            self.win.ui.calKstResultLabel.setPixmap(pix_white)
-            kst_result = True
-        else:
-            self.win.ui.calResultEdit.append('<font color="red" size="5">{}</font>'.format('全向梯形标定失败'))
+            print_debug('>>>>>>>>>>>标定结果：', result0, result1)
+            print_debug('>>>>>>>>>>>Max:', max(result0), max(result1))
+            # 浮点List转化成字符串列表
+            temp0 = [str(i) for i in result0]
+            temp0 = ' '.join(temp0)
+            temp1 = [str(i) for i in result1]
+            temp1 = '  '.join(temp1)
+            temp = temp0 + " ; " + temp1
+            self.win.ui.calResultEdit.append(temp)
+            edge_result = False
+            angle_result = False
             kst_result = False
-            # self.win.ui.calResultEdit.append('全向梯形标定失败：' + temp)
-        ProjectorDev.pro_show_pattern(0)
+            if max(result0) <= Constants.KST_EVAL_EDGE:
+                edge_result = True
+            result2 = [round(abs(x - 90), 1) for x in result1]
+            if max(result2) <= Constants.KST_EVAL_ANGLE:
+                angle_result = True
+            temp1 = [str(i) for i in result2]
+            temp1 = '  '.join(temp1)
+            self.win.ui.calResultEdit.append(temp1)
+            print('处理后的角度值：', result1)
+            # for i in range(len(result1)):
+            #     if abs((result1[i] - 90)) > Constants.KST_EVAL_ANGLE:
+            #         angle_result = False
+            #         break
+            if edge_result and angle_result:
+                self.win.ui.calResultEdit.append('<font color="green" size="5">{}</font>'.format('全向梯形标定成功'))
+                pix_white = QPixmap('res/pass.png')
+                self.win.ui.calKstResultLabel.setPixmap(pix_white)
+                kst_result = True
+            else:
+                self.win.ui.calResultEdit.append('<font color="red" size="5">{}</font>'.format('全向梯形标定失败'))
+                kst_result = False
+                # self.win.ui.calResultEdit.append('全向梯形标定失败：' + temp)
+            ProjectorDev.pro_show_pattern(0)
+            if kst_result or count == 2:
+                break
         # 保存数据
-        result = result0 + result1
+        print(result1)
+        result = result0 + result2 + result1
+        print(result)
         sn = globalVar.get_value('SN')
         times = datetime.datetime.now(tz=None)
         file_name = 'result/kst/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'

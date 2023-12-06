@@ -46,10 +46,11 @@ class AutoFocusCalThread(QThread):
         pass
     def run(self):
         cal_start = time.time()
-        if self.win.root_device():
-            self.auto_cal_callback.emit('find dev error')
-            self.win.ui.calResultEdit.append('未找到投影设备！！！')
-            return
+        if not self.win.auto_cal_flag:
+            if self.win.root_device():
+                self.auto_cal_callback.emit('find dev error')
+                self.win.ui.calResultEdit.append('未找到投影设备！！！')
+                return
         self.win.start_mtf_test_activity()
         ProjectorDev.pro_close_ai_feature()
         create_dir_file()
