@@ -744,6 +744,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if not self.sn_changed():
                 print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
+        print('LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL')
         # ProjectorDev.pro_start_kstcal_service()
         # time.sleep(2.9)
         create_dir_file()
@@ -887,7 +888,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def sn_changed(self):
         if len(self.ui.snEdit.text()) >= 19:
             sn = str(self.ui.snEdit.text()).replace('/', '').upper()
-            if os.path.exists('asuFiles/' + sn):
+            if self.auto_cal_flag and os.path.exists('asuFiles/' + sn):
                 sn = sn + '_' + str(int(time.time()))
             print_debug(sn)
             set_sn(sn)
