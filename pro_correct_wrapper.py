@@ -118,28 +118,6 @@ def create_dir_file():
         print('创建目录：', DIR_NAME_PRO)
         os.makedirs(DIR_NAME_PRO)
 
-    # IMG_AUTO_KEYSTONE = 'asuFiles/auto_keystone.png'
-    # IMG_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/auto_keystone_pattern.png'
-    # FILE_AUTO_KEYSTONE = 'asuFiles/' + SN + '/projectionFiles/keystone.txt'
-    # DIR_NAME_REF = 'asuFiles/' + SN + '/refFiles/'
-    # DIR_NAME_PRO = 'asuFiles/' + SN + '/projectionFiles/'
-    # FILE_NAME_CSV = 'asuFiles/' + SN + '/projectionFiles/test.csv'
-    # CALIB_CONFIG_PARA = 'asuFiles/' + SN + '/config_para.yml'
-    # CALIB_DATA_PATH = 'asuFiles/' + SN + '/calib_data_' + SN + '.yml'
-    # DIR_NAME_INTER_REF = 'asuFiles/interRefFiles/'
-    # ex = os.path.isdir(DIR_NAME_REF)
-    # if not ex and len(SN) != 0:
-    #     os.makedirs(DIR_NAME_REF)
-    #     print('创建目录：', DIR_NAME_REF)
-    # ex = os.path.isdir(DIR_NAME_INTER_REF)
-    # if not ex:
-    #     os.makedirs(DIR_NAME_INTER_REF)
-    #     print('创建目录：', DIR_NAME_INTER_REF)
-    # ex = os.path.isdir(DIR_NAME_PRO)
-    # if not ex and len(SN) != 0:
-    #     os.makedirs(DIR_NAME_PRO)
-    #     print('创建目录：', DIR_NAME_PRO)
-
 
 def make_charpp(arr):
     return (c_char_p * len(arr))(*(s.encode() for s in arr))
@@ -417,14 +395,14 @@ if hasattr(dll, 'KeystoneCorrectCalibS'):
         error = (c_double * len(error))(*error)
         print('>>>>>>>>>>>>>>>>>>>> Load KeystoneCorrectCalibS')
         ret = dll.KeystoneCorrectCalibS(calib_config_para, calib_data_path,
-                                           list_size,
-                                           ref_img_r, ref_img_c, pro_img_r, pro_img_c,
-                                           tof_data_size, imu_data_size,
-                                           ref_cam_pattern_imgs_name, pro_cam_pattern_imgs_name,
-                                           depth_data,
-                                           imu_data,
-                                           robot_pose,
-                                           error)
+                                        list_size,
+                                        ref_img_r, ref_img_c, pro_img_r, pro_img_c,
+                                        tof_data_size, imu_data_size,
+                                        ref_cam_pattern_imgs_name, pro_cam_pattern_imgs_name,
+                                        depth_data,
+                                        imu_data,
+                                        robot_pose,
+                                        error)
         return ret
 
 
