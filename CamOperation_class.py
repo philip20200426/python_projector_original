@@ -13,6 +13,7 @@ import ctypes
 import random
 from ctypes import *
 
+import Constants
 import MTF_measure3
 
 sys.path.append("MvImport")
@@ -326,7 +327,7 @@ class CameraOperation:
         while True:
             # lst = time.time()
             # # 超时时间是ms,实际时间是0.18s, 2s以内
-            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, 666)
+            ret = self.obj_cam.MV_CC_GetImageBuffer(stOutFrame, Constants.HK_CAM_TIMEOUT)
             # cur = time.time()
             # print('工业相机每帧时间：', cur-lst)
             if 0 == ret:

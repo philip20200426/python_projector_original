@@ -21,6 +21,7 @@ from utils.logUtil import print_debug
 
 class AutoFocusCalThread(QThread):
     auto_cal_callback = pyqtSignal(str)
+
     def __init__(self, ser=None, win=None):
         super().__init__()
         self.ser = ser
@@ -44,7 +45,10 @@ class AutoFocusCalThread(QThread):
     # From auto_focus_cal
     def work0(self):
         pass
+
     def run(self):
+        print_debug('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', len(self.dis_steps))
+        self.dis_steps = [-1, -1]
         cal_start = time.time()
         if not self.win.auto_cal_flag:
             if self.win.root_device():
@@ -58,7 +62,8 @@ class AutoFocusCalThread(QThread):
 
         os.system("adb shell mkdir /sdcard/DCIM/projectionFiles")
         self.win.set_exposure_time()
-        print_debug('开始对焦自动化标定,云台延时：{} 标定补偿：{}'.format(Constants.ROTATE_DELAY, Constants.DEV_AF_CAL_STEPS_OFFSET))
+        print_debug('开始对焦自动化标定,云台延时：{} 标定补偿：{}'.format(Constants.ROTATE_DELAY,
+                                                                        Constants.DEV_AF_CAL_STEPS_OFFSET))
         # ProjectorDev.pro_show_pattern_af()
         # os.system('adb shell am broadcast -a asu.intent.action.TofCal')
         # self..win.ui.autoFocusLabel.setText('启动TOF校准')
@@ -67,7 +72,7 @@ class AutoFocusCalThread(QThread):
         self.win.ui.calResultEdit.append('对焦标定开始...')
 
         # 控制转台右转15度
-        self.win.pv += Constants.CAL_PROGRESS_STEP
+        # self.win.pv += Constants.CAL_PROGRESS_STEP
         HuiYuanRotate.hy_control(self.ser, 15, 0)
         time.sleep(Constants.ROTATE_DELAY)
         # 触发全向和自动对焦
@@ -75,7 +80,7 @@ class AutoFocusCalThread(QThread):
         if ProjectorDev.pro_auto_af_kst_cal(2):
             self.win.ui.calResultEdit.append('投影自动对焦失败，直接退出！！！')
             return
-        time.sleep(2.9)
+        time.sleep(3.9)
         dis_steps_r = self.read_para()
         print_debug('投影设备右投对焦后马达位置：', dis_steps_r[1])
         right_steps = dis_steps_r[1]
@@ -102,15 +107,17 @@ class AutoFocusCalThread(QThread):
         # target_steps = center_steps + right_gap
         # self.dis_steps[1] = target_steps
         ################################################################################## 以上标定结束
-
+        print_debug(self.dis_steps[0], self.dis_steps[1], type(self.dis_steps[0]), type(self.dis_steps[1]))
+        dis_steps_cp = [-1, -1]
         if self.dis_steps[0] > Constants.DIS_STEPS_1 and self.dis_steps[1] > Constants.DIS_STEPS_1:
-            self.win.auto_focus_motor()
+            dis_steps_cp = self.dis_steps.copy() # 这里需要注意还要再改
+            self.win.write_af_cal_offset_yml()
             self.win.write_to_nv()
             self.win.ui.calResultEdit.append('对焦标定完成')
 
             # 对焦标定评估
             self.win.ui.calResultEdit.append('正投对焦标定评估')
-            self.win.pv += Constants.CAL_PROGRESS_STEP
+            # self.win.pv += Constants.CAL_PROGRESS_STEP
             HuiYuanRotate.hy_control(self.ser, 0, 0)
             time.sleep(Constants.ROTATE_DELAY)
             ProjectorDev.pro_auto_af_kst_cal(2)
@@ -124,7 +131,7 @@ class AutoFocusCalThread(QThread):
             print_debug('右15度标定结果：', right_ex_steps_cal, right_steps_cal, right_gap_cal)
 
             self.win.ui.calResultEdit.append('左15°对焦标定评估')
-            self.win.pv += Constants.CAL_PROGRESS_STEP
+            # self.win.pv += Constants.CAL_PROGRESS_STEP
             HuiYuanRotate.hy_control(self.ser, -15, 0)
             time.sleep(Constants.ROTATE_DELAY)
             if ProjectorDev.pro_auto_af_kst_cal(2):
@@ -150,14 +157,18 @@ class AutoFocusCalThread(QThread):
 
             print_debug('对焦标定结果：', left_gap_cal, right_gap_cal)
         else:
+            print_debug('投影段返回数据错误')
+            self.auto_cal_callback.emit('af_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
+            self.auto_cal_callback.emit('af_cal_error')  # 任务线程发射信号,图像数据作为参数传递给主线程
             self.win.ui.calResultEdit.append('对焦标定失败，直接退出！！！')
+            return
 
         # 保存对焦标定数据
         af_cal_result = []
         af_cal_result.append(right_steps)
         af_cal_result.append(right_ex_steps)
         af_cal_result.append(right_gap)
-        #af_cal_result.append(center_steps)
+        # af_cal_result.append(center_steps)
         af_cal_result.append(left_steps_cal)
         af_cal_result.append(left_ex_steps_cal)
         af_cal_result.append(left_gap_cal)
@@ -166,12 +177,15 @@ class AutoFocusCalThread(QThread):
         af_cal_result.append(right_gap_cal)
         af_cal_result.append(Constants.DEV_AF_CAL_STEPS_OFFSET)
         sn = globalVar.get_value('SN')
-        result = self.dis_steps + af_cal_result
+        result = dis_steps_cp + af_cal_result
+        print_debug('??????????????????', self.dis_steps, dis_steps_cp)
+        print_debug('??????????????????', result)
 
         times = datetime.datetime.now(tz=None)
         file_name = 'result/af/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
         if not os.path.exists(file_name):
-            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '正投对焦', '正投外对焦', '右差值', '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
+            items_list = ['时间', 'SN', '结果', '补偿距离', '补偿步数', '正投对焦', '正投外对焦', '右差值',
+                          '左15对焦评估', '左15外对焦评估', '左差值', '右15对焦评估', '右15外对焦标评估', '右差值']
             with open(file_name, mode='a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(items_list)
@@ -191,7 +205,7 @@ class AutoFocusCalThread(QThread):
         temp0 = ' '.join(temp0)
         self.win.ui.calResultEdit.append(temp0)
 
-        self.win.pv += 100
+        # self.win.pv += 100
         os.system('adb shell getprop persist.sys.tof.offset.compensate')
         self.win.ui.snEdit.setFocus(True)
         #  self.win.ui.calResultEdit.append(res)
@@ -227,8 +241,14 @@ class AutoFocusCalThread(QThread):
             dic = json.load(file)
             if len(dic) > 0 and 'POS21' in dic.keys() and 'tof' in dic['POS21'].keys():
                 if dic['POS21']['tof'] != '':
-                    # print_debug(dic['POS11']['tof'].split(',')[0])
-                    self.dis_steps[0] = int(dic['POS21']['tof'].split(',')[0])
+                    print_debug(dic['POS21']['tof'])
+                    # print_debug(dic['POS21']['tof'].split(','))
+                    # print_debug(type(dic['POS21']['tof'].split(',')))
+                    tof_dis = int(dic['POS21']['tof'])
+                    print_debug('tof_dis', tof_dis, len(self.dis_steps))
+                    self.dis_steps[0] = tof_dis
+                    print(self.dis_steps, self.dis_steps[0])
+                    # self.dis_steps[0] = dic['POS21']['tof']
             if len(dic) > 0 and 'POS21' in dic.keys() and 'location' in dic['POS21'].keys():
                 if dic['POS21']['location'] != '':
                     # print_debug(dic['POS11']['location'])

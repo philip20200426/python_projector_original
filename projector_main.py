@@ -50,7 +50,7 @@ from utils.logUtil import print_debug
 #             # self.win.save_data()
 #             print_debug('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2023_1206_1058'
+VERSION = 'V0.01 2024_0108_2346'
 
 
 class SerialThread(QThread):
@@ -137,6 +137,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.railReversalButton.clicked.connect(self.rail_reversal)
         self.ui.railPositionButton.clicked.connect(self.rail_absolute_position)
         self.ui.exCamAfButton.clicked.connect(self.ex_cam_af)
+        self.ui.exAFCalDataButton.clicked.connect(self.ex_cam_af_cal_data)
         self.ui.autoFocusMotorButton.clicked.connect(self.write_af_cal_offset_yml)
         self.ui.autoFocusCalButton.clicked.connect(self.auto_focus_cal)
         self.ui.rotateButton.clicked.connect(self.rotating_platform_angle)
@@ -258,26 +259,26 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.pgb = QProgressBar(self)
         # self.pgb.move(50, 50)
         # self.pgb.resize(250, 20)
-        self.ui.autoCalProgressBar.setStyleSheet(
-            "QProgressBar { border: 2px solid grey; border-radius: 5px; color: rgb(20,20,20);  background-color: #FFFFFF; text-align: center;}QProgressBar::chunk {background-color: rgb(100,200,200); border-radius: 10px; margin: 0.1px;  width: 1px;}")
+        # self.ui.autoCalProgressBar.setStyleSheet(
+        #     "QProgressBar { border: 2px solid grey; border-radius: 5px; color: rgb(20,20,20);  background-color: #FFFFFF; text-align: center;}QProgressBar::chunk {background-color: rgb(100,200,200); border-radius: 10px; margin: 0.1px;  width: 1px;}")
         ## 其中 width 是设置进度条每一步的宽度
         ## margin 设置两步之间的间隔
         # 设置字体
         font = QFont()
         font.setBold(True)
         font.setWeight(30)
-        self.ui.autoCalProgressBar.setFont(font)
-        # 设置一个值表示进度条的当前进度
-        self.pv = 0
-        # 申明一个时钟控件
-        self.timer1 = QBasicTimer()
-        # 设置进度条的范围
-        self.ui.autoCalProgressBar.setMinimum(0)
-        self.ui.autoCalProgressBar.setMaximum(100)
-        self.ui.autoCalProgressBar.setValue(self.pv)
-        ## 设置进度条文字格式
-        self.ui.autoCalProgressBar.setFormat(
-            'Loaded  %p%'.format(self.ui.autoCalProgressBar.value() - self.ui.autoCalProgressBar.minimum()))
+        # self.ui.autoCalProgressBar.setFont(font)
+        # # 设置一个值表示进度条的当前进度
+        # self.pv = 0
+        # # 申明一个时钟控件
+        # self.timer1 = QBasicTimer()
+        # # 设置进度条的范围
+        # self.ui.autoCalProgressBar.setMinimum(0)
+        # self.ui.autoCalProgressBar.setMaximum(100)
+        # self.ui.autoCalProgressBar.setValue(self.pv)
+        # ## 设置进度条文字格式
+        # self.ui.autoCalProgressBar.setFormat(
+        #     'Loaded  %p%'.format(self.ui.autoCalProgressBar.value() - self.ui.autoCalProgressBar.minimum()))
         self.lap_list = []
 
         dir_exit = os.path.isdir('result/af')
@@ -440,7 +441,8 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.ui.previewCameraLabel.show()
             self.ui.previewCameraLabel_2.show()
             self.cameraThread.start()
-            # time.sleep(1.5)
+            time.sleep(1.6)
+            self.set_exposure_time()
             # if not self.cameraThread.mRunning:
             #     QMessageBox.warning(self, "警告", "未识别到摄像头硬件")
         else:
@@ -728,18 +730,18 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             print_debug('请输入20位SN号!!!')
 
     # timerEvent 关联定时器  self.timer1 = QBasicTimer()
-    def timerEvent(self, e):
-        if self.pv >= 100:
-            self.timer1.stop()
-            # self.stop_auto_cal()
-            # self.btn_start.setText("Finish")
-            # self.ui.stopAutoCalButton.setText("结束")
-            self.ui.kstAutoCalButton.setText('开始')
-            print_debug('停止进度条定时器', self.pv)
-            self.ui.autoCalProgressBar.setValue(100)
-            self.pv = 0
-        else:
-            self.ui.autoCalProgressBar.setValue(int(self.pv))
+    # def timerEvent(self, e):
+    #     if self.pv >= 100:
+    #         self.timer1.stop()
+    #         # self.stop_auto_cal()
+    #         # self.btn_start.setText("Finish")
+    #         # self.ui.stopAutoCalButton.setText("结束")
+    #         self.ui.kstAutoCalButton.setText('开始')
+    #         print_debug('停止进度条定时器', self.pv)
+    #         self.ui.autoCalProgressBar.setValue(100)
+    #         self.pv = 0
+    #     else:
+    #         self.ui.autoCalProgressBar.setValue(int(self.pv))
 
     def write_to_nv(self):
         if not self.auto_cal_flag:
@@ -824,8 +826,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.open_external_camera()
         self.cameraThread.mEnLaplace = True
         self.ex_cam_af_thread.ser = self.current_port
+        self.ex_cam_af_thread.mode = 0
         self.ex_cam_af_thread.start()
 
+    def ex_cam_af_cal_data(self):
+        self.open_external_camera()
+        self.cameraThread.mEnLaplace = True
+        self.ex_cam_af_thread.ser = self.current_port
+        self.ex_cam_af_thread.mode = 1
+        self.ex_cam_af_thread.start()
     def auto_focus_cal(self):
         if not self.auto_cal_flag:
             if not self.sn_changed():
@@ -861,10 +870,10 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.calResultEdit.append(callback)
         if callback == 'find dev error':
             self.auto_cal_thread.mAfCal = False
-            if self.timer1.isActive():
-                self.timer1.stop()
-            self.ui.autoCalProgressBar.setValue(0)
-            self.pv = 0
+            # if self.timer1.isActive():
+            #     self.timer1.stop()
+            # self.ui.autoCalProgressBar.setValue(0)
+            # self.pv = 0
             self.auto_cal_flag = False
             self.ui.startAutoCalButton.setEnabled(True)
         elif callback == 'kst_cal_data_ready':
@@ -873,24 +882,28 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             #     self.auto_focus_cal()
         elif callback == 'kst_est_finished':
             print('>>>>>>>>>> 全向梯形评估完成')
+            # self.ui.startAutoCalButton.setEnabled(True)
+            # self.auto_cal_flag = False
+            self.auto_focus_cal()
         elif callback == 'kst_cal_finished':
-            print('>>>>>>>>>> 全向梯形评估完成')
+            print('>>>>>>>>>> 全向梯形评估开始')
             self.auto_cal_thread.mode = 1
             self.auto_cal_thread.start()
-
         elif callback == 'af_cal_finished':
             ProjectorDev.pro_restore_ai_feature()
             self.ui.snEdit.setFocus(True)
             self.auto_cal_thread.mAfCal = False
             os.system('adb shell getprop persist.sys.tof.offset.compensate')
             self.ui.snEdit.setText('')
-            self.pv += 100
-            self.ui.autoCalProgressBar.setValue(100)
-            if self.timer1.isActive():
-                self.timer1.stop()
+            # self.pv += 100
+            # self.ui.autoCalProgressBar.setValue(100)
+            # if self.timer1.isActive():
+            #     self.timer1.stop()
             self.auto_cal_flag = False
             self.ui.startAutoCalButton.setEnabled(True)
             os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+            self.end_time = time.time()
+            self.ui.calResultEdit.append('总耗时：' + str(round((self.end_time - self.start_time), 1)))
 
     def sn_text_changed(self):
         if self.sn_changed():
@@ -927,14 +940,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.startAutoCalButton.setEnabled(False)
         self.kst_auto_calibrate()
 
-        if self.timer1.isActive():
-            print_debug('>>>>>>>>>> 进度条定时器已开启')
-            return
-        else:
-            self.pv = 0
-            self.timer1.start(1000, self)  # ms
-            self.ui.autoCalProgressBar.setValue(0)
-        self.auto_cal_thread.mAfCal = True
+        # if self.timer1.isActive():
+        #     print_debug('>>>>>>>>>> 进度条定时器已开启')
+        #     return
+        # else:
+        #     self.pv = 0
+        #     self.timer1.start(1000, self)  # ms
+        #     self.ui.autoCalProgressBar.setValue(0)
+        # self.auto_cal_thread.mAfCal = True
 
     # philip
     def kst_auto_calibrate(self):
@@ -942,6 +955,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             if not self.sn_changed():
                 print_debug('输入的SN号长度不对: ', len(self.ui.snEdit.text()))
                 return
+        self.start_time = time.time()
         self.open_external_camera()
         # if self.root_device():
         #     return
@@ -973,6 +987,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             self.auto_cal_thread.ser = self.hui_yuan
         else:
             self.auto_cal_thread.ser = self.current_port
+        self.auto_cal_thread.mode = 0
         self.auto_cal_thread.start()
 
     def stop_auto_cal(self):
@@ -983,13 +998,16 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         if self.auto_cal_thread is not None:
             self.auto_cal_thread.mExit = True
             self.auto_cal_thread.mAfCal = False
-            # self.auto_cal_thread.terminate()
+            self.auto_cal_thread.terminate()
+        if self.autofocus_cal_thread is not None:
+            self.autofocus_cal_thread.terminate()
+        self.close_external_camera()
         if self.cameraThread is not None:
             self.cameraThread.mRunning = False
-        if self.timer1.isActive():
-            self.timer1.stop()
-        self.ui.autoCalProgressBar.setValue(0)
-        self.pv = 0
+        # if self.timer1.isActive():
+        #     self.timer1.stop()
+        # self.ui.autoCalProgressBar.setValue(0)
+        # self.pv = 0
         self.ui.startAutoCalButton.setEnabled(True)
 
     def kst_reset(self):

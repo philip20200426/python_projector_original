@@ -143,10 +143,12 @@ class UiHkWindow(QMainWindow, UiHk_MainWindow):
     def start_grabbing(self):
         global obj_cam_operation
         global isGrabbing
+        print('start_grabbing', isOpen)
         if isOpen:
             ret = obj_cam_operation.Start_grabbing(self.ui.widgetDisplay.winId())
             if ret != 0:
                 strError = "Start grabbing failed ret:" + ToHexStr(ret)
+                print('Start grabbing failed ret')
                 QMessageBox.warning(self, "Error", strError, QMessageBox.Ok)
             else:
                 isGrabbing = True

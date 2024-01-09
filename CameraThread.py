@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 from PyQt5.QtCore import Qt, QThread, pyqtSignal  # 缩放
+
+import Constants
 import MTF_measure3
 import evaluate_correct_wrapper
 import gxipy as gx
@@ -149,8 +151,9 @@ class CameraThread(QThread):  # 建立一个任务线程类
                 # ccrop_img = orig_img.crop((600, 600, 1900, 1460))
                 # crop_img.save('asuFiles/interRefFiles/crop123.bmp')
                 #crop_img = orig_img.crop((1000, 600, 2260, 1760))
-                # 下面可以
-                crop_img = orig_img.crop((1300, 1399, 4160, 2320))
+                # 下面是芜湖DVT2 参数
+                # crop_img = orig_img.crop((1300, 1399, 4160, 2320))
+                crop_img = orig_img.crop((Constants.IMG_CROP_TOP_X, Constants.IMG_CROP_TOP_Y, Constants.IMG_CROP_BOTTOM_X, Constants.IMG_CROP_BOTTOM_Y))
                 # crop_img = orig_img.crop((900, 999, 4660, 3320))
                 numpy_image_preview = np.array(crop_img)
                 img, la = MTF_measure3.mtf_measure(numpy_image_preview)
@@ -209,7 +212,10 @@ class CameraThread(QThread):  # 建立一个任务线程类
             # hk 3072 2048  768 512
             # hk 5472 3648 1368  912  684 456
             # pix = QPixmap(q_img).scaled(768, 512)
-            pix = QPixmap(q_img).scaled(684, 456)
+            if self.mEnLaplace:
+                pix = QPixmap(q_img).scaled((Constants.IMG_CROP_BOTTOM_X - Constants.IMG_CROP_TOP_X)/2, (Constants.IMG_CROP_BOTTOM_Y - Constants.IMG_CROP_TOP_Y)/2)
+            else:
+                pix = QPixmap(q_img).scaled(684, 456)
             # gx
             # pix = QPixmap(q_img).scaled(720, 540) # gx
             self.camera_arrive_signal.emit(pix)  # 任务线程发射信号,图像数据作为参数传递给主线程

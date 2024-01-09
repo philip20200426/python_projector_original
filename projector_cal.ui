@@ -75,6 +75,9 @@
               <number>2</number>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
+              <property name="spacing">
+               <number>18</number>
+              </property>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
                 <property name="spacing">
@@ -142,7 +145,43 @@
                </layout>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_22">
+               <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,1,0,1">
+                <property name="spacing">
+                 <number>72</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="calResultLabel">
+                  <property name="font">
+                   <font>
+                    <pointsize>10</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>梯形标定</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="calKstResultLabel">
+                  <property name="minimumSize">
+                   <size>
+                    <width>33</width>
+                    <height>33</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>33</width>
+                    <height>33</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>结果</string>
+                  </property>
+                 </widget>
+                </item>
                 <item>
                  <widget class="QLabel" name="calResultLabel_2">
                   <property name="font">
@@ -178,43 +217,6 @@
                 </item>
                </layout>
               </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_21">
-                <item>
-                 <widget class="QLabel" name="calResultLabel">
-                  <property name="font">
-                   <font>
-                    <pointsize>10</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>梯形标定</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="calKstResultLabel">
-                  <property name="minimumSize">
-                   <size>
-                    <width>33</width>
-                    <height>33</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>33</width>
-                    <height>33</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>结果</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
              </layout>
             </widget>
            </item>
@@ -222,22 +224,6 @@
             <widget class="QTextEdit" name="calResultEdit">
              <property name="readOnly">
               <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="autoCalProgressBar">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>15</height>
-              </size>
-             </property>
-             <property name="value">
-              <number>0</number>
              </property>
             </widget>
            </item>
@@ -429,7 +415,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>0</string>
+                  <string>30</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
@@ -889,6 +875,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QPushButton" name="exAFCalDataButton">
+                   <property name="text">
+                    <string>AF标定数据抓取</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </item>
                <item>
@@ -899,6 +892,9 @@
                     <string>写入标定数据到标定文件</string>
                    </property>
                   </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="afCalOffsetLineEdit"/>
                  </item>
                  <item>
                   <widget class="QPushButton" name="writeDataNv">
@@ -1277,55 +1273,6 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_17">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,0">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label_17">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>30</height>
-                  </size>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Arial</family>
-                   <weight>75</weight>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>机器码</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLineEdit" name="snEdit_2">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>30</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <item>
                 <widget class="QPushButton" name="eOpenCameraButton">
@@ -1445,8 +1392,8 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>684</width>
-              <height>456</height>
+              <width>16777215</width>
+              <height>16777215</height>
              </size>
             </property>
             <property name="frameShape">
@@ -1593,7 +1540,7 @@
           <item>
            <widget class="QPushButton" name="showWritePatternButton">
             <property name="text">
-             <string>显示白色图片</string>
+             <string>显示对焦图片</string>
             </property>
            </widget>
           </item>
@@ -2179,41 +2126,6 @@
          <font>
           <pointsize>16</pointsize>
          </font>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="pos11StepsEdit">
-        <property name="geometry">
-         <rect>
-          <x>220</x>
-          <y>70</y>
-          <width>51</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>80</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>2</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QCheckBox" name="getTofCheckBox">
-        <property name="geometry">
-         <rect>
-          <x>290</x>
-          <y>70</y>
-          <width>21</width>
-          <height>31</height>
-         </rect>
         </property>
         <property name="text">
          <string/>

@@ -1,3 +1,4 @@
+import csv
 import datetime
 import os
 
@@ -9,12 +10,14 @@ from matplotlib import pyplot as plt
 import Constants
 import Fmc4030
 import ProjectorDev
+import globalVar
 import gxipy as gx
 from PyQt5.QtGui import QImage, QPixmap
 from PIL import Image
 import time
 from Fmc4030 import init
 from math_utils import CRC
+from pro_correct_wrapper import create_dir_file
 
 
 # import matplotlib.pyplot as plt
@@ -36,6 +39,8 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         self.mPositionList = []
         self.motor_position = 0
         self.result = []
+        self.location_max = 0
+        self.mode = 0
         print('>>>>>>>>>> CamAfCalThread')
 
     def run(self):
@@ -43,7 +48,17 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         # self.work2()
         # self.work2_detailed_search()
         # self.work2_detailed_search2()
-        self.work2_detailed_search6()
+        # self.work2_detailed_search6()
+        # self.work2_detailed_search6_2()
+        if self.mode == 0:
+            # tof_data = ProjectorDev.get_tof_data(21, "0a15a15a0,0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0")
+            # if len(tof_data) > 0:
+            #     self.work2_detailed_search6_1(tof_data[0])
+            # else:
+            #     print('TOF 数据异常')
+            self.work2_detailed_search6()
+        elif self.mode == 1:
+            self.get_ex_af_cal_data()
         self.mRunning = False
         # self.work2()
 
@@ -135,11 +150,11 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         print('投影仪位置:', distance, '马达初始化位置:', steps)
         motor_init_pos = ProjectorDev.pro_motor_reset_steps(steps)
         print('移动马达到初始位置, motor_init_pos', motor_init_pos)
-        time.sleep(wait_time0*2)
+        time.sleep(wait_time0 * 2)
         while True:
             location = ProjectorDev.pro_get_motor_position()
             self.win.ui.posValueLabel.setText(str(location))
-            self.mLaplaceList.append(int(round(self.win.cameraThread.mLaplace, 2)*100))
+            self.mLaplaceList.append(int(round(self.win.cameraThread.mLaplace, 2) * 100))
             self.mPositionList.append(int(location))
             if len(self.mLaplaceList) > 1:
                 gap = self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2]
@@ -149,7 +164,8 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
                     elif direction == 2:
                         direction = 5
                     step_size = step_size * 0.618
-                    print('>>>>>>>>>>>>>>>>>>>> 切换方向：', gap, self.mLaplaceList[len(self.mLaplaceList) - 1], self.mLaplaceList[len(self.mLaplaceList) - 2])
+                    print('>>>>>>>>>>>>>>>>>>>> 切换方向：', gap, self.mLaplaceList[len(self.mLaplaceList) - 1],
+                          self.mLaplaceList[len(self.mLaplaceList) - 2])
 
             if self.mExit or step_size < 30:
                 print('马达位置:', self.mPositionList)
@@ -165,12 +181,12 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             time.sleep(2)
             ProjectorDev.pro_motor_forward(direction, step_size)
             # us -> s
-            wait_time1 = motor_speed*step_size
+            wait_time1 = motor_speed * step_size
             if wait_time1 < 0.6:
                 wait_time1 = 0.6
-            time.sleep(motor_speed*step_size)
+            time.sleep(motor_speed * step_size)
             time.sleep(3)
-            print('延时等待完成,', wait_time0+wait_time1)
+            print('延时等待完成,', wait_time0 + wait_time1)
             # 这里只要延时足够长，就能保证拿到的清晰度值是当前位置的
             # plt.plot(self.mPositionList, self.mLaplaceList)
             # plt.show()
@@ -218,9 +234,9 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
                 self.mPositionList.append(int(location))
 
                 wait_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
-                time.sleep(wait_time*2)
+                time.sleep(wait_time * 2)
                 ProjectorDev.pro_motor_forward(direction, pos[i][j])
-                time.sleep(wait_time*3)
+                time.sleep(wait_time * 3)
             if direction == 2:
                 direction = 5
             elif direction == 5:
@@ -311,14 +327,15 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             if len(self.mLaplaceList) > 1:
                 if self.mLaplaceList[1] - self.mLaplaceList[0] < 0:
                     init_steps = init_steps - 100
-                    print('>>>>>>>>>> 起始位置后退，重新开始：', init_steps, len(self.mPositionList), len(self.mLaplaceList), self.mPositionList, self.mLaplaceList)
+                    print('>>>>>>>>>> 起始位置后退，重新开始：', init_steps, len(self.mPositionList),
+                          len(self.mLaplaceList), self.mPositionList, self.mLaplaceList)
                     ProjectorDev.pro_motor_reset_steps(init_steps)
                     self.mPositionList.clear()
                     self.mLaplaceList.clear()
                     time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
                     location_reset = True
             if len(self.mLaplaceList) > 1:
-                if self.mLaplaceList[len(self.mLaplaceList)-1] - self.mLaplaceList[len(self.mLaplaceList)-2] < 0:
+                if self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2] < 0:
                     print('>>>>>>>>>>> 对焦完成')
                     break
             if not location_reset:
@@ -333,6 +350,247 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
         print('耗时：', time.time() - sta)
 
+    def get_ex_af_cal_data(self):
+        rail_pos = 0
+        # while rail_pos < 30:
+        self.location_max = ProjectorDev.pro_motor_max_steps()
+        print('马达最远位置：', self.location_max)
+        while True:
+            rail_pos = Fmc4030.rail_position(self.win.current_port)
+            tof_data = ProjectorDev.get_tof_data(21, "0a15a15a0,0a15a15a12,0a15a3a0,12a15a15a0,0a3a15a0")
+            if len(tof_data) > 0:
+                motor_pos = self.work2_detailed_search6_2(tof_data[0])
+                tof_data.insert(0, motor_pos)
+                tof_data.insert(0, rail_pos)
+
+                sn = globalVar.get_value('SN')
+                file_name = 'result/' + sn + '.csv'
+                if not os.path.exists(file_name):
+                    items_list = []
+                    items_list.append(self.win.ui.exTimeSpinBox.text())
+                    items_list.append(self.location_max)
+                    with open(file_name, mode='a', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(items_list)
+                        csvfile.close()
+                with open(file_name, 'a+', newline='') as file:
+                    times = datetime.datetime.now(tz=None)
+                    date_time = times.strftime("%H:%M:%S").strip()
+                    tof_data.insert(0, date_time)
+                    writer = csv.writer(file)
+                    writer.writerow(tof_data)
+            else:
+                print('TOF数据异常')
+            if self.motor_position >= self.location_max:
+                print('马达已走到远端限位')
+                break
+            self.win.rail_forward()
+
+    def work2_detailed_search6_1(self, dis):
+        exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+        ProjectorDev.pro_show_pattern(1)
+        sta = time.time()
+        # 先粗搜
+        self.mPositionList.clear()
+        self.mLaplaceList.clear()
+        # init_steps = Constants.DEV_LOCATION_STEPS
+        init_steps = self.dis_map_steps(dis)
+        motor_speed = 7.6 / 2589  # s/step
+        ProjectorDev.pro_motor_reset_steps(init_steps)
+        direction = 2
+        time_sleep = 0
+        time.sleep(exp_time * 8 + init_steps * motor_speed + time_sleep)
+        while True:
+            if self.mExit:
+                self.mExit = False
+                return
+            location_reset = False
+            location = ProjectorDev.pro_get_motor_position()
+            self.win.ui.posValueLabel.setText(str(location))
+            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mPositionList.append(int(location))
+            print('>>>>>>>>>> 位置 {} MTF {}'.format(location, self.win.cameraThread.mLaplace))
+            if len(self.mLaplaceList) > 1:
+                if self.mLaplaceList[1] - self.mLaplaceList[0] < 0:
+                    init_steps = init_steps - 100
+                    print('>>>>>>>>>> 起始位置后退，重新开始：', init_steps, len(self.mPositionList),
+                          len(self.mLaplaceList), self.mPositionList, self.mLaplaceList)
+                    ProjectorDev.pro_motor_reset_steps(init_steps)
+                    self.mPositionList.clear()
+                    self.mLaplaceList.clear()
+                    time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+                    location_reset = True
+            if len(self.mLaplaceList) > 1:
+                if self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2] < 0:
+                    print('>>>>>>>>>>> 对焦完成')
+                    break
+            if not location_reset:
+                time.sleep(1)
+                ProjectorDev.pro_motor_forward(direction, 50)
+                time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+
+        # self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+        #
+        # location = self.motor_position - 25
+        # ProjectorDev.pro_motor_reset_steps(location)
+        # time.sleep(exp_time * 8 + location * motor_speed + time_sleep)
+        # self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+        # self.mPositionList.append(int(location))
+        #
+        # location = self.motor_position + 25
+        # ProjectorDev.pro_motor_reset_steps(location)
+        # time.sleep(exp_time * 8 + location * motor_speed + time_sleep)
+        # self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+        # self.mPositionList.append(int(location))
+
+        self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+
+        for i in range(len(self.mPositionList)):
+            print(str(self.mPositionList[i]) + ':' + str(self.mLaplaceList[i]))
+        ProjectorDev.pro_show_pattern(0)
+        print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
+
+    def work2_detailed_search6_2(self, dis):
+        exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+        ProjectorDev.pro_show_pattern(1)
+        sta = time.time()
+        # 先粗搜
+        self.mPositionList.clear()
+        self.mLaplaceList.clear()
+        # init_steps = Constants.DEV_LOCATION_STEPS
+        create_dir_file()
+        init_steps = self.dis_map_steps(dis)
+        motor_speed = 7.6 / 2589  # s/step
+        ProjectorDev.pro_motor_reset_steps(init_steps)
+        direction = 2
+        time_sleep = 0
+        step_size = 50
+        time.sleep(exp_time * 8 + init_steps * motor_speed + time_sleep)
+        motor_far_limit = False
+        while True:
+            if self.mExit:
+                self.mExit = False
+                return
+            location_reset = False
+            location = ProjectorDev.pro_get_motor_position()
+            self.win.ui.posValueLabel.setText(str(location))
+            self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+            self.mPositionList.append(int(location))
+            print('>>>>>>>>>> 位置 {} MTF {}'.format(location, self.win.cameraThread.mLaplace))
+            if motor_far_limit:
+                print('马达移到最远距离')
+                break
+            if len(self.mLaplaceList) > 1:
+                if self.mLaplaceList[1] - self.mLaplaceList[0] < 0:
+                    init_steps = init_steps - 100
+                    print('>>>>>>>>>> 起始位置后退，重新开始：', init_steps, len(self.mPositionList),
+                          len(self.mLaplaceList), self.mPositionList, self.mLaplaceList)
+                    ProjectorDev.pro_motor_reset_steps(init_steps)
+                    self.mPositionList.clear()
+                    self.mLaplaceList.clear()
+                    time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+                    location_reset = True
+            if len(self.mLaplaceList) > 1:
+                if self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2] < 0:
+                    print('>>>>>>>>>>> 对焦完成')
+                    break
+            if not location_reset:
+                time.sleep(1)
+                init_steps += 50
+                if init_steps >= self.location_max:
+                    step_size = self.location_max - (init_steps - 50)
+                    motor_far_limit = True
+                ProjectorDev.pro_motor_forward(direction, step_size)
+                time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+
+        # self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+        # if not motor_far_limit:
+        #     location = self.motor_position - 25
+        #     ProjectorDev.pro_motor_reset_steps(location)
+        #     time.sleep(exp_time * 8 + location * motor_speed + time_sleep)
+        #     self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+        #     self.mPositionList.append(int(location))
+        #
+        #     location = self.motor_position + 25
+        #     ProjectorDev.pro_motor_reset_steps(location)
+        #     time.sleep(exp_time * 8 + location * motor_speed + time_sleep)
+        #     self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+        #     self.mPositionList.append(int(location))
+
+        self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+
+        for i in range(len(self.mPositionList)):
+            print(str(self.mPositionList[i]) + ':' + str(self.mLaplaceList[i]))
+        ProjectorDev.pro_show_pattern(0)
+        print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
+        print('耗时：', time.time() - sta)
+        return self.motor_position
+
+    # def work2_detailed_search6_2(self):
+    #     exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+    #     ProjectorDev.pro_show_pattern(1)
+    #     sta = time.time()
+    #     # 先粗搜
+    #     mPositionList1 = []
+    #     mLaplaceList1 = []
+    #     interval = [0, -10, 10]
+    #     for i in range(3):
+    #         self.mPositionList.clear()
+    #         self.mLaplaceList.clear()
+    #         # init_steps = Constants.DEV_LOCATION_STEPS
+    #         create_dir_file()
+    #         init_steps = self.dis_map_steps(self.win.autofocus_cal_thread.read_para()[0])
+    #         init_steps = init_steps + interval[i]
+    #         print('>>>>>>>>>>>>>>>> ', init_steps)
+    #         motor_speed = 7.6 / 2589  # s/step
+    #         ProjectorDev.pro_motor_reset_steps(init_steps)
+    #         direction = 2
+    #         time_sleep = 0
+    #         time.sleep(exp_time * 8 + init_steps * motor_speed + time_sleep)
+    #         while True:
+    #             if self.mExit:
+    #                 self.mExit = False
+    #                 return
+    #             location_reset = False
+    #             location = ProjectorDev.pro_get_motor_position()
+    #             self.win.ui.posValueLabel.setText(str(location))
+    #             self.mLaplaceList.append(self.win.cameraThread.mLaplace)
+    #             self.mPositionList.append(int(location))
+    #             print('>>>>>>>>>> 位置 {} MTF {}'.format(location, self.win.cameraThread.mLaplace))
+    #             if len(self.mLaplaceList) > 1:
+    #                 if self.mLaplaceList[1] - self.mLaplaceList[0] < 0:
+    #                     init_steps = init_steps - 100
+    #                     print('>>>>>>>>>> 起始位置后退，重新开始：', init_steps, len(self.mPositionList), len(self.mLaplaceList), self.mPositionList, self.mLaplaceList)
+    #                     ProjectorDev.pro_motor_reset_steps(init_steps)
+    #                     self.mPositionList.clear()
+    #                     self.mLaplaceList.clear()
+    #                     time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+    #                     location_reset = True
+    #             if len(self.mLaplaceList) > 1:
+    #                 if self.mLaplaceList[len(self.mLaplaceList)-1] - self.mLaplaceList[len(self.mLaplaceList)-2] < 0:
+    #                     mLaplaceList1 += self.mLaplaceList
+    #                     mPositionList1 += self.mPositionList
+    #                     self.mPositionList.clear()
+    #                     self.mLaplaceList.clear()
+    #                     print('>>>>>>>>>>> 对焦完成')
+    #                     break
+    #             if not location_reset:
+    #                 time.sleep(1)
+    #                 ProjectorDev.pro_motor_forward(direction, 50)
+    #                 time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+    #     self.motor_position = mPositionList1[mLaplaceList1.index(max(mLaplaceList1))]
+    #     for i in range(len(mPositionList1)):
+    #         print(str(mPositionList1[i]) + ':' + str(mLaplaceList1[i]))
+    #     ProjectorDev.pro_show_pattern(0)
+    #     print('已找到最清晰的马达位置:', self.motor_position, max(mLaplaceList1))
+    #     print('耗时：', time.time() - sta)
+    #     # self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
+    #     # for i in range(len(self.mPositionList)):
+    #     #     print(str(self.mPositionList[i]) + ':' + str(self.mLaplaceList[i]))
+    #     # ProjectorDev.pro_show_pattern(0)
+    #     # print('已找到最清晰的马达位置:', self.motor_position, max(self.mLaplaceList))
+    #     # print('耗时：', time.time() - sta)
+
     def work2_detailed_search3(self):
         ProjectorDev.pro_show_pattern(1)
         sta = time.time()
@@ -344,12 +602,12 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         # 再细搜
         steps = 50
         steps_range = 200
-        count = steps_range/steps*2
+        count = steps_range / steps * 2
         print('后退%d步' % steps_range)
         motor_speed = 7.6 / 2589  # s/step
         # ProjectorDev.pro_motor_forward(5, steps_range-150)
         direction = 2
-        time.sleep(200*motor_speed)
+        time.sleep(200 * motor_speed)
         print('后退%d步完成' % steps_range)
 
         while count > 0:
@@ -364,7 +622,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
 
             exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
             # time.sleep(exp_time * 2)
-            #ProjectorDev.pro_motor_forward(direction, steps)
+            # ProjectorDev.pro_motor_forward(direction, steps)
 
             ProjectorDev.pro_motor_reset_steps(pri_steps + steps)
             time.sleep(exp_time * 2)
@@ -372,7 +630,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             time.sleep(1.6)
             count -= 1
             steps = steps + 50
-        if len(self.mPositionList) > (count-1):
+        if len(self.mPositionList) > (count - 1):
             self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
             print('耗时：', time.time() - sta)
             ProjectorDev.pro_motor_reset_steps(self.motor_position)
@@ -385,6 +643,24 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         for i in range(len(self.result)):
             print(self.result[i])
 
+    def dis_map_steps(self, dis):
+        motor_speed = 7.6 / 2589  # s/step
+        # a = 6.47681438841663e-07
+        # b = -0.00449064062802631
+        # c = 11.0460386267558
+        # d = -7278.83032890080
+        a = 4.0721e-07
+        b = -0.00302
+        c = 7.9745
+        d = -5345.0431
+        distance = dis
+        steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
+        steps = int(steps)
+        motor_init_pos = ProjectorDev.pro_motor_reset_steps(steps)
+        print('TOF距离值:{},当前马达位置:{},{}'.format(dis, steps, motor_init_pos))
+        time.sleep(motor_speed * steps)
+        return steps
+
     def dis_to_steps(self):
         motor_speed = 7.6 / 2589  # s/step
         # a = 6.47681438841663e-07
@@ -396,13 +672,13 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         c = 7.9745
         d = -5345.0431
         distance = 1626
-        #distance = 1769
+        # distance = 1769
         steps = a * (distance ** 3) + b * (distance ** 2) + c * distance + d
         steps = int(steps)
         print('投影仪当前距离:', distance, '马达初始化位置:', steps)
         motor_init_pos = ProjectorDev.pro_motor_reset_steps(steps)
         print('移动马达到初始位置, motor_init_pos', motor_init_pos)
-        time.sleep(motor_speed*steps)
+        time.sleep(motor_speed * steps)
         return steps
 
     def work_test(self):

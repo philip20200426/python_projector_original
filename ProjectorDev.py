@@ -1,11 +1,13 @@
+import json
 import os
 import re
 import time
 
 import Constants
 import globalVar
-from pro_correct_wrapper import get_sn
+from pro_correct_wrapper import get_sn, create_dir_file
 import ProjectorDev
+from utils.logUtil import print_debug
 
 PRO_SYS_APP = True
 MOTOR_ABNORMAL = -9999
@@ -26,12 +28,14 @@ PLATFORM_HW = PLATFORM_HISI
 # PLATFORM_HW = PLATFORM_AMLOGIC
 PRO_MOTOR_RES = True
 
+
 def pro_set_ip(ser, ip_addr):
     pass
-    # print('串口测试:')
+    # print_debug('串口测试:')
     # if ser is not None:
     #     ser.write('xu 7411\n\r'.encode())
     #     ser.write('ifconfig eth0 192.168.8.223 up\n\r'.encode())
+
 
 def pro_start_factory_test_activity():
     os.system('adb shell am start -n com.asu.projecttest/com.asu.projecttest.MainActivity')
@@ -54,8 +58,13 @@ def pro_close_ai_feature():
     os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
     os.system('adb shell settings put global tv_auto_focus_poweron 0')
     os.system('adb shell settings put system tv_screen_saver 0')
-    print('关闭所有智能开关')
+    print_debug('关闭所有智能开关')
 
+def switch_algo_vendor(mode=0):
+    cmd = 'adb shell setprop persist.sys.keystone.type {}'.format(mode)
+    os.system(cmd)
+    os.system('adb shell getprop persist.sys.keystone.type')
+    print_debug(cmd)
 
 def pro_restore_ai_feature():
     # 算法切换到ASU
@@ -69,7 +78,7 @@ def pro_restore_ai_feature():
     # 开机相关
     os.system('adb shell settings put global tv_image_auto_keystone_poweron 0')
     os.system('adb shell settings put global tv_auto_focus_poweron 1')
-    print('恢复所有开关到默认状态')
+    print_debug('恢复所有开关到默认状态')
 
 
 def pro_clear_data():
@@ -81,10 +90,12 @@ def pro_clear_data():
 
 def pro_pull_data():
     localSN = get_sn()
-    dir_pro_path = globalVar.get_value('DIR_NAME')
-    distDirName = dir_pro_path + '/' + localSN
+    create_dir_file()
+    dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
+    distDirName = 'asuFiles/' + localSN
+    print('测试：', distDirName)
     cmd = 'adb pull /sdcard/DCIM/projectionFiles ' + distDirName
-    print('Pull files from PC : ', cmd)
+    print_debug('Pull files from PC : ', cmd)
     os.system(cmd)
 
 
@@ -99,9 +110,16 @@ def pro_save_pos_data(flag=0, pos=0, rois="0a15a15a12,0a15a3a0,12a15a15a0,0a3a15
     # cmd5 = str(rois)
     # cmd6 = '"'
     # cmd = cmd0 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6
+    if Constants.TOF_TIME != -1:
+        timing_budget = Constants.TOF_TIME
+    if Constants.TOF_MODE != -1:
+        mode = Constants.TOF_MODE
+    if Constants.TOF_LOOP != -1:
+        loop = Constants.TOF_LOOP
     cmd = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a ' \
           'com.nbd.autofocus.TofService --ei type 2 --ei flag {} --ei pos {}  --ei mode {} --ei loop {} --es rois {} ' \
           '--el time {}'.format(flag, pos, mode, loop, rois, timing_budget)
+    print(cmd)
     os.system(cmd)
     # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
     # cmd1 = '11'
@@ -116,14 +134,14 @@ def pro_mtf_test_activity():
 
 def pro_show_pattern_af():
     # os.system('adb shell am broadcast -a asu.intent.action.ShowBlankPattern')
-    os.system('adb push show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
+    os.system('adb push res/show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
     os.system(
         'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a '
         '"com.nbd.autofocus.TofService" --ei type 7 --ei flag 1')
 
 
 def pro_show_pattern(mode=1):
-    os.system('adb push show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
+    os.system('adb push res/show_pattern_af.png sdcard/DCIM/show_pattern_af.png')
     cmd0 = 'adb shell am startservice -n com.nbd.autofocus/com.nbd.autofocus.TofService -a com.nbd.autofocus.TofService" --ei type 7 --ei flag '
     cmd1 = str(mode)
     os.system(cmd0 + cmd1)
@@ -138,14 +156,19 @@ def pro_tof_cal():
 
 def pro_get_motor_position():
     location = os.popen('adb shell cat sys/devices/platform/customer-AFmotor/location').read()
-    # print('Read projector motor location:', location)
+    # print_debug('Read projector motor location:', location)
     if location != '':
         location = int(location[9:-1])
     else:
         location = MOTOR_ABNORMAL
-        print('马达异常！！！！！！！！！！！！！！！！！！')
-    # print('Read projector motor location:', location)
+        print_debug('马达异常！！！！！！！！！！！！！！！！！！')
+    # print_debug('Read projector motor location:', location)
     return location
+
+
+def pro_get_motor_max_position():
+    location_max = pro_motor_reset_steps(3000)
+    return location_max
 
 
 # 这个函数一定会让马达走到指定位置，除非马达坏了
@@ -159,12 +182,12 @@ def pro_motor_forward2(direction, steps):
         ret_steps = pro_motor_forward(direction, steps)
         while abs(ret_steps - steps) > STEPS_GAP:
             if pro_motor_forward(direction, steps) < STEPS_GAP * 2:
-                print('>>>>>>>>>>>>>>>>>>>> 马达到头了,当前位置:' + str(
+                print_debug('>>>>>>>>>>>>>>>>>>>> 马达到头了,当前位置:' + str(
                     pro_get_motor_position()) + ',实际执行步数:' + str(
                     ret_steps))
                 break
             else:
-                print('!!!!!!!!!!!!!!!!!!!! 马达丢步了，需要重新复位')
+                print_debug('!!!!!!!!!!!!!!!!!!!! 马达丢步了，需要重新复位')
                 if direction == MOTOR_BACKUP:
                     location -= steps
                     if location < 0:
@@ -172,7 +195,7 @@ def pro_motor_forward2(direction, steps):
                 elif direction == MOTOR_FORWARD:
                     location += steps
                 ret_steps = abs(pro_motor_reset_steps(location) - location)
-                print('>>>>>>>>>>>>>>>>>>>> 当前位置:' + str(pro_get_motor_position()) + ',实际执行步数:' + str(
+                print_debug('>>>>>>>>>>>>>>>>>>>> 当前位置:' + str(pro_get_motor_position()) + ',实际执行步数:' + str(
                     ret_steps))
         return ret_steps
 
@@ -180,7 +203,7 @@ def pro_motor_forward2(direction, steps):
 def pro_motor_forward(direction, steps):
     global motor_steps_pos
     # if steps > 2800:
-    #     print('!!!!!!!!!! 调用当前接口会有问题，请调用其他接口', steps)
+    #     print_debug('!!!!!!!!!! 调用当前接口会有问题，请调用其他接口', steps)
     #     return MOTOR_ABNORMAL
     time_out = motor_speed * steps
     if time_out < MIN_MOTOR_TIME:
@@ -200,15 +223,15 @@ def pro_motor_forward(direction, steps):
             cur_location = pro_get_motor_position()
             ret_steps = abs(cur_location - location)
             if cur_location == 0 or abs(ret_steps - steps) < STEPS_GAP:
-                print('马达执行' + str(ret_steps) + '步' + ',当前位置:' + str(cur_location))
+                print_debug('马达执行' + str(ret_steps) + '步' + ',当前位置:' + str(cur_location))
                 time.sleep(0.2)
                 break
             if abs(cur - sta) > time_out:
-                print('马达故障或到头！！！，马达执行' + str(steps) + '步失败' + '超时：' + str(cur - sta) + ',' + str(
+                print_debug('马达故障或到头！！！，马达执行' + str(steps) + '步失败' + '超时：' + str(cur - sta) + ',' + str(
                     time_out) + ',实际步数:' + str(ret_steps))
                 break
     else:
-        print('马达异常，需要立刻复位 !!!!!!!!!!, location:', location)
+        print_debug('马达异常，需要立刻复位 !!!!!!!!!!, location:', location)
     return ret_steps
 
 
@@ -222,13 +245,13 @@ def pro_motor_reset_steps(steps):
         while True:
             cur = time.time()
             if abs(cur - start) > TIME_OUT:
-                print('马达复位超时')
+                print_debug('马达复位超时')
                 count += 1
                 if count == 3:
                     return MOTOR_ABNORMAL
             cur_location = pro_get_motor_position()
             if (int(cur_location)) == 0:
-                print('马达复位完成', location)
+                print_debug('马达复位完成', location)
                 motor_steps_pos = 0
                 count = 3
                 break
@@ -236,10 +259,46 @@ def pro_motor_reset_steps(steps):
     motor_steps_pos += steps
     motor_steps = pro_motor_forward(MOTOR_FORWARD, steps)
     if abs(motor_steps - steps) < STEPS_GAP:
-        print('马达运行到位置:', steps, motor_steps, motor_steps_pos)
+        print_debug('马达运行到位置:', steps, motor_steps, motor_steps_pos)
     else:
-        print('马达运行到位置:' + str(steps) + '时,发生错误')
+        print_debug('马达运行到位置:' + str(steps) + '时,发生错误')
     return motor_steps
+
+
+def pro_motor_max_steps():
+    global motor_steps_pos
+    count = 0
+    location = 0
+    while count < 3:
+        motor_reset()
+        start = time.time()
+        while True:
+            cur = time.time()
+            if abs(cur - start) > TIME_OUT:
+                print_debug('马达复位超时')
+                count += 1
+                if count == 3:
+                    return MOTOR_ABNORMAL
+            cur_location = pro_get_motor_position()
+            if (int(cur_location)) == 0:
+                print_debug('马达复位完成', location)
+                motor_steps_pos = 0
+                count = 3
+                break
+    time.sleep(0.3)
+    pri_cur_location = 0
+    motor_forward(MOTOR_FORWARD, 3000)
+    time.sleep(0.3)
+    sta = time.time()
+    while True:
+        cur = time.time()
+        cur_location = pro_get_motor_position()
+        print(cur_location)
+        if cur_location == pri_cur_location:
+            break
+        pri_cur_location = cur_location
+        time.sleep(0.3)
+    return cur_location
 
 
 def motor_reset():
@@ -262,7 +321,7 @@ def motor_forward(dir, steps):
         cmd2 = ' --ei value '
         cmd3 = str(int(steps))
         cmd = cmd0 + cmd1 + cmd2 + cmd3
-        # print(cmd)
+        # print_debug(cmd)
     else:
         cmd1 = "adb shell "
         cmd2 = 'echo 5 '
@@ -291,15 +350,15 @@ def pro_trigger_auto_ai():
     # 触发全向
     # adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0
     # adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a "com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0
-    os.system(
-        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
-        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 2 flag 0')
-    print('延时：', Constants.ARM_KST_DELAY_AF)
+    cmd = 'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a com.asu.projector.focus.AUTO_FOCUS --ei type 2 flag 0'
+    os.system(cmd)
+    print_debug(cmd)
+    print_debug('延时：', Constants.ARM_KST_DELAY_AF)
     time.sleep(Constants.ARM_KST_DELAY_AF)
     # 触发对焦
-    os.system(
-        'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a '
-        '"com.asu.projector.focus.AUTO_FOCUS" --ei type 0 flag 0')
+    cmd = 'adb shell am startservice -n com.asu.asuautofunction/com.asu.asuautofunction.AsuSessionService -a com.asu.projector.focus.AUTO_FOCUS --ei type 0 flag 0'
+    os.system(cmd)
+    print_debug(cmd)
     # # 触发自动梯形和自动对焦
     # # 触发全向
     # os.system(
@@ -322,13 +381,13 @@ def pro_auto_af_kst_cal(mode):
         time.sleep(0.8)
         count0 += 1
         cur_pos = pro_get_motor_position()
-        print(cur_pos)
+        print_debug(cur_pos)
         if cur_pos > Constants.AF_CAL_MOTOR_THRESHOLD and cur_pos == lst_pos:
-            print('投影设备内部自动对焦结束')
+            print_debug('投影设备内部自动对焦结束')
             return 0
         lst_pos = cur_pos
         if count0 > 10:
-            print('投影设备内部自动对焦异常，再次触发')
+            print_debug('投影设备内部自动对焦异常，再次触发')
             if mode == 2:
                 pro_trigger_auto_ai()
             elif mode == 1:
@@ -342,33 +401,37 @@ def pro_auto_af_kst_cal(mode):
 
 def connect_dev(ip_addr):
     count = 0
+    ip_addr = ip_addr + ':5555'
+    print(ip_addr)
     cmd = 'adb disconnect {}:5555'.format(ip_addr)
     os.popen(cmd)
     # time.sleep(1)
+    print('Finding dev ', end='')
     while True:
         count += 1
-        cmd = 'adb connect {}:5555'.format(ip_addr)
+        cmd = 'adb connect {}'.format(ip_addr)
         po = os.popen(cmd)
         devices = po.buffer.read().decode('utf-8')
-        # print(devices)
-        ret = re.findall('connected to 192.168.8.223:5555', devices)
-        if len(ret) > 0 and ret[0] == 'connected to 192.168.8.223:5555':
-            print(ret[0])
+        # print_debug(devices)
+        ret = re.findall('connected to ' + ip_addr, devices)
+        if len(ret) > 0 and ret[0] == 'connected to ' + ip_addr:
+            # print_debug(ret[0])
             devices = os.popen('adb devices').read()
             ret = re.findall('device', devices)
-            # print(ret[0])
-            print(devices)
-            ret0 = re.findall('192.168.8.223:5555', devices)
-            # print(ret0[0])
-            if len(ret) > 0 and len(ret0) > 0 and ret[0] == 'device' and ret0[0] == '192.168.8.223:5555':
-                print('adb devices 识别成功:', ret0[0] + ret[0])
+            # print_debug(devices)
+            ret0 = re.findall(ip_addr, devices)
+            # print_debug(ret0[0])
+            if len(ret) > 0 and len(ret0) > 0 and ret[0] == 'device' and ret0[0] == ip_addr:
+                print_debug('adb devices 识别成功: {} {}'.format(ret0[0], ret[0]))
                 # os.system('adb root')
                 # time.sleep(1.8)
                 # os.system('adb remount')
                 break
-        print('未识别到投影设备, retry:', count)
-        # time.sleep(1.6)
+        # print_debug('未识别到投影设备, retry:', count)
+        print('.', end='', flush=True)
+        time.sleep(1.8)
         if count > 6:
+            print(end='\n', flush=True)
             print('未识别到投影设备, retry: {} 次失败！！！'.format(count))
             return -1
 
@@ -386,8 +449,8 @@ def pro_get_kst_point():
             rt = list(rt.split(','))
             lt = list(lt.split(','))
             points = list(map(float, lb + rb + rt + lt))
-            # print(lb, rb, rt, lt)
-            print('ori:', points)
+            # print_debug(lb, rb, rt, lt)
+            print_debug('ori:', points)
     elif PLATFORM_HW == PLATFORM_AMLOGIC:
         points = os.popen("adb shell getprop persist.vendor.hwc.keystone").read()
         if len(points) > 0:
@@ -395,9 +458,9 @@ def pro_get_kst_point():
             source_points = list(map(float, source_points))
             source_points = list(map(int, source_points))
         else:
-            print('>>>>>>>>>>>>>>>>>>>> 未获取到投影仪的原始坐标')
+            print_debug('>>>>>>>>>>>>>>>>>>>> 未获取到投影仪的原始坐标')
             source_points = [0, 0, 1920, 0, 1920, 1080, 0, 1080]
-        print('原始坐标 ', source_points)
+        print_debug('原始坐标 ', source_points)
 
     return points
 
@@ -413,53 +476,81 @@ def pro_set_kst_point(point):
             if point[i] > 1080:
                 point[i] = 1080
     pro_get_kst_point()
-    print('set point : ', point)
+    print_debug('set point : ', point)
     if PLATFORM_HW == 0:
         N = 2
         dst = ['lb ', 'rb ', 'rt ', 'lt ']
         sub_list = [point[i:i + N] for i in range(0, len(point), N)]
-        print(sub_list)
+        print_debug(sub_list)
         for i in range(4):
             cmd0 = 'adb shell setprop persist.hisi.keystone.'
             cmd1 = dst[i]
             cmd2 = ','.join(map(str, sub_list[i]))
             cmd = cmd0 + cmd1 + cmd2
-            print(cmd)
+            print_debug(cmd)
             os.system(cmd)
 
             cmd0 = 'adb shell setprop persist.sys.keystone.'
             cmd1 = dst[i]
             cmd2 = ','.join(map(str, sub_list[i]))
             cmd = cmd0 + cmd1 + cmd2
-            print(cmd)
+            print_debug(cmd)
             os.system(cmd)
         cmd = 'adb shell setprop persist.sys.keystone.update true'
-        print(cmd)
+        print_debug(cmd)
         os.system(cmd)
 
         # cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
         # cmd1 = '0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,1080.0'
         # cmd = cmd0 + cmd1
-        # print(cmd)
+        # print_debug(cmd)
         # os.system(cmd)
 
     elif PLATFORM_HW == 1:
         # int列表转字符串列表
         point = ','.join(map(str, point))
-        print('set point : ', point)
+        print_debug('set point : ', point)
         # cmd = "adb shell setprop persist.vendor.hwc.keystone 0,0,1920,0,1920.1080,0,1080"
         cmd = "adb shell setprop persist.vendor.hwc.keystone "
         cmd = cmd + point
-        print('set point : ', cmd)
+        print_debug('set point : ', cmd)
         # os.system(cmd)
         # time.sleep(1)
 
         cmd0 = 'adb shell am broadcast -a asu.intent.action.SetKstPoint --es point '
         cmd1 = '0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,1000.0'
         cmd = cmd0 + cmd1
-        print(cmd)
+        print_debug(cmd)
         os.system(cmd)
     os.system("adb shell service call SurfaceFlinger 1006")
     os.system("adb shell service call SurfaceFlinger 1006")
 
+
+def get_tof_data(pos, rois):
+    ProjectorDev.pro_save_pos_data(6, pos, rois)
+    pos = 'POS' + str(pos)
+    print(pos)
+    time.sleep(4.6)
+    pro_pull_data()
+    dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
+    file_pro_path = dir_pro_path + "AsuProData.json"
+    tof_data = []
+    if os.path.isfile(file_pro_path):
+        file = open(file_pro_path, )
+        dic = json.load(file)
+        if len(dic) > 0 and pos in dic.keys() and 'tof' in dic[pos].keys():
+            if dic[pos]['tof'] != '':
+                tof_data = list(map(int, dic[pos]['tof'].split(',')))
+                print(tof_data)
+        # if len(dic) > 0 and 'POS21' in dic.keys() and 'location' in dic['POS21'].keys():
+        #     if dic['POS21']['location'] != '':
+        #         # print_debug(dic['POS11']['location'])
+        #         dis_steps[1] = dic['POS21']['location']
+        file.close()
+    # location = ProjectorDev.pro_get_motor_position()
+    # dis_steps[1] = int(location)
+    # para = 'TOF: ' + str(dis_steps[0]) + '  马达: ' + str(dis_steps[1])
+    # print_debug(
+    #     'TOF:' + str(dis_steps[0]) + ',马达位置:' + str(dis_steps[1]) + ',马达location:' + str(location))
+    return tof_data
 # adb shell settings put global asu_keystone_point 0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,600.0
