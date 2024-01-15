@@ -54,10 +54,12 @@ class AutoCalThread(QThread):
 
     def run(self, mode=0):
         print_debug('>>>>>>>>>>>>>>>>>> AutoCalThread Run, mode:', mode)
+        self.mRunning = True
         if self.mode == 0:
             self.work0()
         elif self.mode == 1:
             self.estimate_test()
+        self.mRunning = False
 
     def parse_projector_data(self):
         # self.parse_projector_json()
@@ -97,7 +99,7 @@ class AutoCalThread(QThread):
             # print_debug(len(self.positionList)-1)
             if int("".join(list(filter(str.isdigit, name)))) > (len(self.positionList) - 1):
                 print_debug('！！！！！！只解析指定位置范围以内的数据：', int("".join(list(filter(str.isdigit, name)))),
-                      len(self.positionList) - 1)
+                            len(self.positionList) - 1)
                 break
 
             file_name = globalVar.get_value('DIR_NAME_PRO') + '/' + name + '.txt'
@@ -128,7 +130,7 @@ class AutoCalThread(QThread):
                             gap = abs(abs(imu_data[3]) - abs(self.angle_list[i][1]))
                             if gap > 5:
                                 print_debug('!!!!!!!!!!!!!!!!!!!! IMU数据与转台角度差异超过限值：', imu_data[3],
-                                      self.angle_list[i][1], gap)
+                                            self.angle_list[i][1], gap)
                                 pos_error[i] = -1
                         else:
                             pos_error[i] = -1
@@ -233,7 +235,7 @@ class AutoCalThread(QThread):
                                 # print_debug(data, gap)
                                 if gap > Constants.IMU_GAP:
                                     print_debug('!!!!!!!!!!!!!!!!!!!! IMU数据异常：', data[3],
-                                          self.angle_list[i][1], gap)
+                                                self.angle_list[i][1], gap)
                                     pos_error[i] = -1
                                 imu_list += data
                             else:
@@ -315,8 +317,6 @@ class AutoCalThread(QThread):
         result2 = []
         print_debug('云台角度配置参数：', self.estimateAngelList, len(self.estimateAngelList))
         self.auto_cal_callback.emit('全向梯形标定结果评估中...')
-        print_debug('++++++++++++++++++++++++++++++++++')
-        # self.win.pv += Constants.CAL_PROGRESS_STEP
         ProjectorDev.pro_show_pattern(2)
 
         edge_res = []
@@ -336,15 +336,13 @@ class AutoCalThread(QThread):
                 result0 = []
                 result1 = []
                 ProjectorDev.pro_auto_af_kst_cal(2)
-                time.sleep(1.8)
+                time.sleep(0.6)
                 dst = self.evaluate_kst_correct()
-                print_debug(dst)
                 result0.append(round(dst[0] * 100, 1))
                 result0.append(round(dst[1] * 100, 1))
                 for j in range(2, 6):
                     result1.append(round(dst[j], 1))
                 print('测试记过：', result0, result1)
-
                 count += 1
                 edge_result = False
                 angle_result = False
@@ -356,7 +354,6 @@ class AutoCalThread(QThread):
                     angle_result = True
                 if edge_result and angle_result:
                     kst_result = True
-
                 # 浮点List转化成字符串列表
                 temp0 = [str(i) for i in result0]
                 temp0 = ' '.join(temp0)
@@ -371,6 +368,9 @@ class AutoCalThread(QThread):
             angle_res += result2
             angle_res2 += result1
         print('全向梯形标定结束：', edge_res, angle_res, angle_res2)
+        edge_result = False
+        angle_result = False
+        kst_result = False
         if self.win.auto_cal_flag:
             if max(edge_res) <= Constants.KST_EVAL_EDGE:
                 edge_result = True
@@ -384,7 +384,8 @@ class AutoCalThread(QThread):
             times = datetime.datetime.now(tz=None)
             file_name = 'result/kst/' + times.strftime("%Y-%m-%d").strip().replace(':', '_') + '.csv'
             if not os.path.exists(file_name):
-                items_list = ['时间', 'SN', '结果', '畸变', '角度', '边差', '边差', '边差', '边差', '角度', '角度', '角度', '角度', '角度', '角度', '角度', '角度']
+                items_list = ['时间', 'SN', '结果', '畸变', '角度', '边差', '边差', '角度', '角度', '角度', '角度',
+                              '边差', '边差', '角度', '角度', '角度', '角度']
                 with open(file_name, mode='a', newline='') as csvfile:
                     writer = csv.writer(csvfile)
                     writer.writerow(items_list)
@@ -401,10 +402,11 @@ class AutoCalThread(QThread):
                 writer.writerow(result)
             self.auto_cal_callback.emit('kst_est_finished')
         est_cur_time = time.time()
-        self.auto_cal_callback.emit('梯形评估耗时{}秒'.format(round(est_cur_time-est_lst_time, 1)))
+        self.auto_cal_callback.emit('梯形评估耗时{}秒'.format(round(est_cur_time - est_lst_time, 1)))
+
     def work0(self):
         # From kst_auto_calibrate
-        print_debug('>>>>>>>>>> work0 识别设备...')
+        print_debug('>>>>>>>>>> AutoCalThread work0 识别设备...')
         cal_start = time.time()
         if self.win.root_device():
             self.auto_cal_callback.emit('find dev error')
@@ -414,7 +416,7 @@ class AutoCalThread(QThread):
         ProjectorDev.pro_clear_data()
         ProjectorDev.pro_close_ai_feature()
         os.system('adb shell mkdir /sdcard/DCIM/projectionFiles')
-        os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
+        # os.system('adb push AsuKstPara.json /sdcard/DCIM/projectionFiles/AsuProPara.json')
 
         ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
         self.win.ui.calResultEdit.append('全向梯形标定开始...')
@@ -462,7 +464,6 @@ class AutoCalThread(QThread):
             if abs(ProjectorDev.pro_get_motor_position() - Constants.DEV_LOCATION_STEPS) > 100:
                 print_debug('马达位置不对，重新对焦！！！！！！')
                 ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
-            # self.pos_init_finished = True
         lst_time = time.time()
         while len(self.positionList) > 0:
             # 超时处理
@@ -471,7 +472,8 @@ class AutoCalThread(QThread):
                 # os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
                 self.position = 0
                 ProjectorDev.pro_show_pattern(0)
-                print_debug('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程 或者 运行时间超时:', now_time - lst_time, self.mExit)
+                print_debug('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程 或者 运行时间超时:', now_time - lst_time,
+                            self.mExit)
                 break
             if self.position >= len(self.positionList):
                 time.sleep(1.6)  # 2
@@ -513,11 +515,8 @@ class AutoCalThread(QThread):
                             cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
                             os.system(cmd)
                             os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-                            # self.win.pv += Constants.CAL_PROGRESS_STEP
                             print_debug('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
                             ProjectorDev.switch_algo_vendor(0)
-                            # ProjectorDev.pro_restore_ai_feature()
-                            # os.system('adb reboot')
                             self.win.ui.calResultEdit.append('标定算法处理完成')
                             self.auto_cal_callback.emit('kst_cal_finished')  # 任务线程发射信号,图像数据作为参数传递给主线程
                         else:
@@ -527,15 +526,13 @@ class AutoCalThread(QThread):
                     else:
                         print_debug('未使能算法')
                     break
-            print_debug('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 %d' % (self.positionList[self.position], self.position))
+            print_debug(
+                '>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 %d' % (self.positionList[self.position], self.position))
             self.win.ui.calResultEdit.append('控制转台到第{}个姿态'.format(self.positionList[self.position]))
             HuiYuanRotate.hy_control(self.ser, self.angle_list[int(self.positionList[self.position]) - 1][0],
                                      self.angle_list[int(self.positionList[self.position]) - 1][1])
             time.sleep(self.delay1)
             print_debug('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
-            # cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
-            # cmd1 = str(self.positionList[self.position] - 1)
-            # os.system(cmd0 + cmd1)
             ProjectorDev.pro_save_pos_data(6, str(self.positionList[self.position] - 1))
 
             time.sleep(self.delay2)
@@ -550,10 +547,8 @@ class AutoCalThread(QThread):
             print_debug('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
                 len(self.positionList), self.positionList[self.position]))
             self.position += 1
-            # self.win.pv += Constants.CAL_PROGRESS_STEP
 
         # 标定结束，转台归位
-        # self.win.pv = 100
         # HuiYuanRotate.hy_control(self.ser, 0, 0)
         self.win.ui.kstCalButton.setEnabled(True)
 
@@ -561,138 +556,3 @@ class AutoCalThread(QThread):
         self.mRunning = False
         cal_end = time.time()
         self.win.ui.calResultEdit.append('梯形标定耗时{}秒'.format(str(round(cal_end - cal_start, 1))))
-
-    #
-    # def work1(self):
-    #     print_debug('自动全向梯形标定 开始：', self.positionList)
-    #     # print_debug(self.parse_projector_json())
-    #     # return
-    #     self.win.showCheckerPattern()
-    #     start_time = time.time()
-    #     if self.position == 0 and self.positionList[self.position] == 1 and len(self.positionList) > 5:
-    #         # 直接到第一个位置，只有第一次在第一個位置時運行
-    #         cmdList = ['01', '06', '04', '87', '00', '01']
-    #         cmdChar = ' '.join(cmdList)
-    #         crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
-    #         cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
-    #         cmdHex = bytes.fromhex(cmdChar)
-    #         if self.ser is not None:
-    #             self.ser.write(cmdHex)
-    #         else:
-    #             print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
-    #         time.sleep(2.6)
-    #         # os.system('adb shell am startservice -n com.cvte.autoprojector/com.cvte.autoprojector.CameraService --ei type 0 flag 1')
-    #         # time.sleep(2)
-    #         # 只有自动标定会走到这里
-    #         # os.system('adb install -r app-debug.apk')
-    #         print_debug('启动投影仪校准服务')
-    #         os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-    #         # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
-    #         # time.sleep(1)
-    #         ProjectorDev.pro_kst_cal_service()
-    #         time.sleep(2.9)
-    #         os.system('adb shell am broadcast -a asu.intent.action.KstReset')
-    #         os.system('adb shell am broadcast -a asu.intent.action.TofCal')
-    #         # self.win.showWritePattern()
-    #         time.sleep(1.9)
-    #         self.win.showCheckerPattern()
-    #         self.pos_init_finished = True
-    #     while len(self.positionList) > 0:
-    #         if self.mExit:
-    #             os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-    #             self.position = 0
-    #             print_debug('>>>>>>>>>>>>>>>>>>> 紧急退出自动标定线程')
-    #             break
-    #         if self.enableAlgo:
-    #             if len(self.positionList) == 1 and self.positionList[0] == -1:
-    #                 self.position = 1
-    #                 print_debug('>>>>>>>>>>>>>>>>>>> 跳过数据采集，直接运行算法')
-    #         else:
-    #             print_debug(' >>>>>>>>>>>>>>>>>>> 算法未使能')
-    #         if self.position >= len(self.positionList):
-    #             time.sleep(1.5)  # 2
-    #             print_debug('>>>>>>>>>>>>>>>>>>> 开始解析数据')
-    #             proj_data = self.parse_projector_data()
-    #             print_debug(proj_data[0])
-    #             for pos in range(len(self.positionList)):
-    #                 if proj_data[0][pos] != -1:
-    #                     self.positionList[pos] = 0
-    #             print_debug(self.positionList)
-    #             self.positionList = list(set(self.positionList))
-    #             print_debug(self.positionList)
-    #             if 0 in self.positionList:
-    #                 self.positionList.remove(0)
-    #             self.win.pv -= len(self.positionList) * 10
-    #             print_debug('>>>>>>>>>>>>>>>>>>> %d个姿态有错误, ' % len(self.positionList))
-    #             print_debug(">>>>>>>>>>>>>>>>>>> ", self.positionList)
-    #             self.position = 0
-    #             if len(self.positionList) == 0:
-    #                 self.win.pv += 5
-    #                 os.system("adb shell am broadcast -a asu.intent.action.RemovePattern")
-    #                 end0_time = time.time()
-    #                 print_debug('数据抓取及解析耗时：' + str((end0_time - start_time)))
-    #                 print_debug(proj_data)
-    #                 if self.enableAlgo:
-    #                     if auto_keystone_calib2(proj_data):
-    #                         end1_ime = time.time()
-    #                         print_debug('算法运行耗时：' + str((end1_ime - end0_time)))
-    #                         cmd = 'adb push ' + globalVar.get_value('CALIB_DATA_PATH') + ' /sdcard/kst_cal_data.yml'
-    #                         os.system(cmd)
-    #                         # os.system("adb shell rm -rf sdcard/DCIM/projectionFiles/* ")
-    #                         # self.win.clean_data()
-    #                         os.system("adb shell am broadcast -a asu.intent.action.KstCalFinished")
-    #                         self.win.pv += 5
-    #                         print_debug('>>>>>>>>>>>>>>>>>>> 全向标定完成，总耗时：', str(end1_ime - start_time))
-    #                         self.win.restore_ai_feature()
-    #                         # os.system("adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService")
-    #                         # set_point(point)
-    #                     else:
-    #                         print_debug('>>>>>>>>>>>>>>>>>>> 全向标定失败')
-    #                 else:
-    #                     print_debug('未使能算法')
-    #                 break
-    #         print_debug('>>>>>>>>>>>>>>>>>>>>> 控制转台到第%d个姿态 %d' % (self.positionList[self.position], self.position))
-    #         cmdList = ['01', '06', '04', '87', '00', '0A']
-    #         cmdList[5] = '{:02X}'.format(self.positionList[self.position])
-    #         cmdChar = ' '.join(cmdList)
-    #         crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
-    #         cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
-    #         # print_debug(cmdChar)
-    #         cmdHex = bytes.fromhex(cmdChar)
-    #         if self.ser is not None:
-    #             self.ser.write(cmdHex)
-    #         else:
-    #             print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
-    #
-    #         time.sleep(self.delay1)
-    #
-    #         print_debug('>>>>>>>>>>>>>>>>>>>>> 开始保存第%d个姿态的数据 ' % self.positionList[self.position])
-    #         cmd0 = "adb shell am broadcast -a asu.intent.action.SaveData --ei position "
-    #         cmd1 = str(self.positionList[self.position] - 1)
-    #         os.system(cmd0 + cmd1)
-    #         time.sleep(self.delay2)
-    #         self.win.cal = True
-    #         self.win.external_take_picture(self.positionList[self.position] - 1)
-    #         time.sleep(self.delay3)
-    #         self.win.cal = False
-    #         print_debug('>>>>>>>>>>>>>>>>>>>>> 一共%d个姿态, 已完成第%d个, ' % (
-    #             len(self.positionList), self.positionList[self.position]))
-    #         self.position += 1
-    #         self.win.pv += 10
-    #     # 标定结束，转台归位
-    #     self.win.pv = 100
-    #     cmdList = ['01', '06', '04', '87', '00', '01']
-    #     cmdChar = ' '.join(cmdList)
-    #     crc, crc_H, crc_L = self.CRC.CRC16(cmdChar)
-    #     cmdChar = cmdChar + ' ' + crc_L + ' ' + crc_H
-    #     cmdHex = bytes.fromhex(cmdChar)
-    #     if self.ser is not None:
-    #         print_debug('云台回到第一个位置')
-    #         self.ser.write(cmdHex)
-    #     else:
-    #         print_debug('>>>>>>>>>>>>>>>>>>>> 串口异常')
-    #
-    #     # if not self.mExit:
-    #     #     os.system('adb reboot')
-    #     self.win.ui.kstCalButton.setEnabled(True)
-    #     self.mExit = False

@@ -29,6 +29,9 @@ PLATFORM_HW = PLATFORM_HISI
 PRO_MOTOR_RES = True
 
 
+# adb shell am start -n com.android.settings/com.asu.settings.TvMainActivity --es fragment com.asu.settings.TvBtRCPairFragment
+# adb shell am stopservice com.nbd.tofmodule/com.nbd.autofocus.TofService
+
 def pro_set_ip(ser, ip_addr):
     pass
     # print_debug('串口测试:')
@@ -60,11 +63,13 @@ def pro_close_ai_feature():
     os.system('adb shell settings put system tv_screen_saver 0')
     print_debug('关闭所有智能开关')
 
+
 def switch_algo_vendor(mode=0):
     cmd = 'adb shell setprop persist.sys.keystone.type {}'.format(mode)
     os.system(cmd)
     os.system('adb shell getprop persist.sys.keystone.type')
     print_debug(cmd)
+
 
 def pro_restore_ai_feature():
     # 算法切换到ASU
@@ -553,4 +558,24 @@ def get_tof_data(pos, rois):
     # print_debug(
     #     'TOF:' + str(dis_steps[0]) + ',马达位置:' + str(dis_steps[1]) + ',马达location:' + str(location))
     return tof_data
+
+
 # adb shell settings put global asu_keystone_point 0.0,0.0,1920.0,0.0,1920.0,1080.0,0.0,600.0
+
+def read_tof_full_zone():
+    ProjectorDev.pro_save_pos_data(6, 21, "0a15a15a0")
+    time.sleep(Constants.READ_TOF_ONLY_CENTER_DELAY)
+    pro_pull_data()
+
+    tof_dis = -1
+    dir_pro_path = globalVar.get_value('DIR_NAME_PRO')
+    file_pro_path = dir_pro_path + "AsuProData.json"
+    if os.path.isfile(file_pro_path):
+        file = open(file_pro_path, )
+        dic = json.load(file)
+        if len(dic) > 0 and 'POS21' in dic.keys() and 'tof' in dic['POS21'].keys():
+            if dic['POS21']['tof'] != '':
+                print_debug(dic['POS21']['tof'])
+                tof_dis = int(dic['POS21']['tof'])
+        file.close()
+    return tof_dis

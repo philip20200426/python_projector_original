@@ -59,6 +59,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             self.work2_detailed_search6()
         elif self.mode == 1:
             self.get_ex_af_cal_data()
+
         self.mRunning = False
         # self.work2()
 
@@ -302,7 +303,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             print(self.result[i])
 
     def work2_detailed_search6(self):
-        exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 2
+        exp_time = float(self.win.ui.exTimeSpinBox.text()) / 1000 / 1000 * 5
         ProjectorDev.pro_show_pattern(1)
         sta = time.time()
         # 先粗搜
@@ -313,7 +314,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
         ProjectorDev.pro_motor_reset_steps(init_steps)
         direction = 2
         time_sleep = 0
-        time.sleep(exp_time * 8 + init_steps * motor_speed + time_sleep)
+        time.sleep(exp_time + init_steps * motor_speed + time_sleep)
         while True:
             if self.mExit:
                 self.mExit = False
@@ -332,7 +333,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
                     ProjectorDev.pro_motor_reset_steps(init_steps)
                     self.mPositionList.clear()
                     self.mLaplaceList.clear()
-                    time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+                    time.sleep(exp_time + init_steps * motor_speed + time_sleep)
                     location_reset = True
             if len(self.mLaplaceList) > 1:
                 if self.mLaplaceList[len(self.mLaplaceList) - 1] - self.mLaplaceList[len(self.mLaplaceList) - 2] < 0:
@@ -341,7 +342,7 @@ class ExCamAfThread(QThread):  # 建立一个任务线程类
             if not location_reset:
                 time.sleep(1)
                 ProjectorDev.pro_motor_forward(direction, 50)
-                time.sleep(exp_time * 3 + init_steps * motor_speed + time_sleep)
+                time.sleep(exp_time + init_steps * motor_speed + time_sleep)
 
         self.motor_position = self.mPositionList[self.mLaplaceList.index(max(self.mLaplaceList))]
         for i in range(len(self.mPositionList)):

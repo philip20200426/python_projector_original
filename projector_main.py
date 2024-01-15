@@ -773,36 +773,41 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             else:
                 print('输入格式不对')
         file_path = globalVar.get_value('CALIB_DATA_PATH')
-        print_debug(file_path)
+        # print_debug(file_path)
+        if os.path.exists(file_path):
+            file_old = open(file_path, 'rb+')
+            file_old.seek(-30, os.SEEK_END)
+            # 2.从步骤1定位的位置开始读取接下来的每一行数据，若步骤1的代码删除，则会从文件头部开始读取所有行
+            lines = file_old.readlines()
+            if len(lines) > 0:
+                temp = ''.join(str(lines[-1]))
+                if 'FocusA' in temp:
+                    # 3.定位到最后一行的行首，若要删除后N行，将lines[-1]改为lines[-N:]即可
+                    print_debug('FocusA已经存在,重新替换', temp)
+                    file_old.seek(-len(lines[-1]), os.SEEK_END)
+                    file_old.truncate()  # 截断之后的数据
+                else:
+                    print_debug('FocusA不存在，直接写入')
+            file_old.close()
 
-        file_old = open(file_path, 'rb+')
-        file_old.seek(-30, os.SEEK_END)
-        # 2.从步骤1定位的位置开始读取接下来的每一行数据，若步骤1的代码删除，则会从文件头部开始读取所有行
-        lines = file_old.readlines()
-        if len(lines) > 0:
-            temp = ''.join(str(lines[-1]))
-            if 'FocusA' in temp:
-                # 3.定位到最后一行的行首，若要删除后N行，将lines[-1]改为lines[-N:]即可
-                print_debug('FocusA已经存在,重新替换', temp)
-                file_old.seek(-len(lines[-1]), os.SEEK_END)
-                file_old.truncate()  # 截断之后的数据
+            if len(self.autofocus_cal_thread.dis_steps) > 0 and max(self.autofocus_cal_thread.dis_steps) < 5000 and min(self.autofocus_cal_thread.dis_steps) > 600:
+                prefix = 'FocusA: [ '
+                suffix = ' ]\n'
+                da = prefix + ",".join(list(map(str, self.autofocus_cal_thread.dis_steps))) + suffix
+                with open(file_path, "a") as f1:
+                    f1.write(da)
+                f1.close()
+                with open(file_path, "r") as f1:
+                    print_debug(f1.read())
+                f1.close()
+                self.autofocus_cal_thread.dis_steps.clear()
+                return True
             else:
-                print_debug('FocusA不存在，直接写入')
-        file_old.close()
-
-        if len(self.autofocus_cal_thread.dis_steps) > 0 and max(self.autofocus_cal_thread.dis_steps) < 5000 and min(self.autofocus_cal_thread.dis_steps) > 600:
-            prefix = 'FocusA: [ '
-            suffix = ' ]\n'
-            da = prefix + ",".join(list(map(str, self.autofocus_cal_thread.dis_steps))) + suffix
-            with open(file_path, "a") as f1:
-                f1.write(da)
-            f1.close()
-            with open(file_path, "r") as f1:
-                print_debug(f1.read())
-            f1.close()
-            self.autofocus_cal_thread.dis_steps.clear()
+                print_debug('写入数据异常')
+                return False
         else:
-            print_debug('写入数据异常')
+            print_debug(file_path + '文件不存在')
+            return False
 
     def save_laplace(self):
         pass
@@ -842,6 +847,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 return
         self.open_external_camera()
         self.autofocus_cal_thread.ser = self.hui_yuan
+        self.autofocus_cal_thread.mode = 0
         self.autofocus_cal_thread.start()
 
     def evaluate_kst_correct(self):
@@ -864,46 +870,44 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.auto_cal_thread.start()
 
     def auto_cal_callback(self, callback):
-        # if callback == 'kst_cal_finished':
-        #     self.ui.calResultEdit.setText('耗时：' + str(time))
-        print_debug('auto_cal_callback ', callback)
+        print_debug( callback)
         self.ui.calResultEdit.append(callback)
         if callback == 'find dev error':
             self.auto_cal_thread.mAfCal = False
-            # if self.timer1.isActive():
-            #     self.timer1.stop()
-            # self.ui.autoCalProgressBar.setValue(0)
-            # self.pv = 0
             self.auto_cal_flag = False
             self.ui.startAutoCalButton.setEnabled(True)
         elif callback == 'kst_cal_data_ready':
-            print('>>>>>>>>>> 全向梯形标定数据抓取完成')
-            # if self.auto_cal_flag:
-            #     self.auto_focus_cal()
-        elif callback == 'kst_est_finished':
-            print('>>>>>>>>>> 全向梯形评估完成')
-            # self.ui.startAutoCalButton.setEnabled(True)
-            # self.auto_cal_flag = False
+            # 对焦标定
+            self.autofocus_cal_thread.mode = 0
             self.auto_focus_cal()
         elif callback == 'kst_cal_finished':
-            print('>>>>>>>>>> 全向梯形评估开始')
+            pass
+        elif callback == 'kst_est_finished':
+            # 对焦标定评估
+            self.autofocus_cal_thread.mode = 1
+            self.autofocus_cal_thread.start()
+        elif callback == 'af_cal_finished':
+            # 梯形评估
             self.auto_cal_thread.mode = 1
             self.auto_cal_thread.start()
-        elif callback == 'af_cal_finished':
-            ProjectorDev.pro_restore_ai_feature()
-            self.ui.snEdit.setFocus(True)
-            self.auto_cal_thread.mAfCal = False
+        elif callback == 'af_est_finished':
+            # 全部标定结束，运行下面代码
             os.system('adb shell getprop persist.sys.tof.offset.compensate')
+            self.ui.snEdit.setFocus(True)
             self.ui.snEdit.setText('')
-            # self.pv += 100
-            # self.ui.autoCalProgressBar.setValue(100)
-            # if self.timer1.isActive():
-            #     self.timer1.stop()
-            self.auto_cal_flag = False
+            ProjectorDev.pro_show_pattern(0)
+            ProjectorDev.pro_restore_ai_feature()
+            # HuiYuanRotate.hy_control(self.ser, 0, 0)
             self.ui.startAutoCalButton.setEnabled(True)
-            os.system("adb shell am stopservice com.nbd.autofocus/com.nbd.autofocus.TofService")
+            self.auto_cal_thread.mAfCal = False
+            self.auto_cal_flag = False
+
             self.end_time = time.time()
-            self.ui.calResultEdit.append('总耗时：' + str(round((self.end_time - self.start_time), 1)))
+            self.ui.calResultEdit.append('标定总耗时：' + str(round((self.end_time - self.start_time), 1)))
+        elif 'error' in callback:
+            print('!!!!!!!!!!!!!!!!!!', callback)
+            self.ui.snEdit.setFocus(True)
+            self.ui.startAutoCalButton.setEnabled(True)
 
     def sn_text_changed(self):
         if self.sn_changed():
@@ -940,15 +944,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         self.ui.startAutoCalButton.setEnabled(False)
         self.kst_auto_calibrate()
 
-        # if self.timer1.isActive():
-        #     print_debug('>>>>>>>>>> 进度条定时器已开启')
-        #     return
-        # else:
-        #     self.pv = 0
-        #     self.timer1.start(1000, self)  # ms
-        #     self.ui.autoCalProgressBar.setValue(0)
-        # self.auto_cal_thread.mAfCal = True
-
     # philip
     def kst_auto_calibrate(self):
         if not self.auto_cal_flag:
@@ -957,23 +952,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
                 return
         self.start_time = time.time()
         self.open_external_camera()
-        # if self.root_device():
-        #     return
-        # print_debug('>>>>>>>>>> 开始全向自动标定')
-        # ProjectorDev.pro_motor_reset_steps(Constants.DEV_LOCATION_STEPS)
-        # ProjectorDev.pro_auto_af()
-        # 先做自动对焦
-        # dis = self.autofocus_cal_thread.read_para()
-        # a = 4.0721e-07
-        # b = -0.00302
-        # c = 7.9745
-        # d = -5345.0431
-        # steps = a * (dis[0] ** 3) + b * (dis[0] ** 2) + c * dis[0] + d
-        # print_debug('TOF对焦：', dis, steps)
-        # if dis[0] > 1500:
-        #     ProjectorDev.pro_motor_reset_steps(steps)
-        # else:
-        #     print_debug('全向标定前的自动对焦失败！！！')
 
         self.ui.kstCalButton.setEnabled(False)
         cmd = self.ui.kstAutoCalCountEdit.text().strip()
