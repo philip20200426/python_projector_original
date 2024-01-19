@@ -50,7 +50,7 @@ from utils.logUtil import print_debug
 #             # self.win.save_data()
 #             print_debug('>>>>>>>>>>>>>>>>>>>>> AutoCalThread ')
 TOOL_NAME = '全向梯形标定'
-VERSION = 'V0.01 2024_0108_2346'
+VERSION = 'V0.01 2024_0119_1306'
 
 
 class SerialThread(QThread):
@@ -79,6 +79,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, hk_win):
         super().__init__()
         self.hk_win = hk_win
+        # self.udp_socket = HuiYuanRotate.udp_init()
         # self.hk_win.show()
         # self.hk_win.enum_devices()
         # self.hk_win.open_device()
@@ -930,7 +931,14 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return False
 
     def start_auto_cal(self):
-        self.auto_cal_flag = True
+        # self.udp_socket.sendto(bytes.fromhex('3102030425'), Constants.UDP_SERVER_ADDRESS)
+        # data, server_address = self.udp_socket.recvfrom(1024)
+        # print(data, server_address)
+        # print(str(data))
+        # print(data[0])
+        # print(type(data))
+        # print(data.hex())
+        # print(data.hex()[0])
         pix_white = QPixmap('res/fail.png')
         self.ui.calAfResultLabel.setPixmap(pix_white)
         self.ui.calKstResultLabel.setPixmap(pix_white)
@@ -939,6 +947,7 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
             return
         else:
             self.ui.calResultEdit.setText(self.ui.snEdit.text())
+        self.auto_cal_flag = True
         self.ui.calResultEdit.clear()
         self.ui.calResultEdit.setText('识别设备中...')
         self.ui.startAutoCalButton.setEnabled(False)

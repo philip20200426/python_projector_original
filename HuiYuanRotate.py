@@ -9,6 +9,11 @@ from math_utils import CRC
 from utils.logUtil import print_debug
 
 
+def udp_init():
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return udp_socket
+
+
 def open_hy_dev():
     # 创建一个 socket 对象
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -36,7 +41,7 @@ def hy_control(socket, degree0, degree1):
             print_debug('耗时：', round(cur - lst, 1), h_angle, v_angle)
             return h_angle, v_angle
         if cur - lst > 5:
-            print('!!!!!!!!!!转台角度异常,超时：', cur-lst, h_angle, v_angle)
+            print('!!!!!!!!!!转台角度异常,超时：', cur - lst, h_angle, v_angle)
             return h_angle, v_angle
 
 
@@ -80,12 +85,12 @@ def hy_rotate(socket, mode, degree):
     cmd_hex = bytes.fromhex(cmd_char)
     # print(mode, cmd_char)
     # print(mode, cmd_hex)
-    server_address = ('192.168.8.200', 6666)
-    socket.sendto(cmd_hex, server_address)
+    # server_address = ('192.168.8.200', 6666)
+    socket.sendto(cmd_hex, Constants.ROTATE_SERVER_ADDRESS)
 
     # 接收数据和地址
     data, server_address = socket.recvfrom(1024)
-    #print('9999999999999: ', data.hex())
+    # print('9999999999999: ', data.hex())
 
 
 def hy_get_rotate(socket):
@@ -125,9 +130,9 @@ def hy_get_rotate(socket):
     data, server_address = socket.recvfrom(1024)
     v_angle = int(data.hex()[8] + data.hex()[9] + data.hex()[10] + data.hex()[11], 16)
     if v_angle > 32768:
-        v_angle = (v_angle - 2**16)/100
+        v_angle = (v_angle - 2 ** 16) / 100
     else:
-        v_angle = v_angle/100
+        v_angle = v_angle / 100
     v_angle = round(v_angle, 1)
     # print(data.hex())
     # print('水平返回的角度数据: ', h_angle)

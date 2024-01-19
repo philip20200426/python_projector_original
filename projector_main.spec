@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['projector_main.py', 'projector_cal.py', 'serial_utils.py'],
+    ['projector_main.py', 'projector_cal.py'],
     pathex=['.\\MvImport'],
     binaries=[],
     datas=[],
