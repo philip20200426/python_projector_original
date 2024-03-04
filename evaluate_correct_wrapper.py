@@ -1,16 +1,21 @@
 import os
+import sys
 from ctypes import CDLL
 from ctypes import *
+
+from Constants import DIR_EVAL_ALGO
+
 CALIB_DATA_PATH = 'asuFiles/interRefFiles/ex_cam_correct.yml'
+sys.path.append("algo")
 dll = None
 try:
-    if os.path.exists("evaluate_correction.dll"):
-        dll = CDLL("evaluate_correction.dll", winmode=0)
+    if os.path.exists(DIR_EVAL_ALGO):
+        dll = CDLL(DIR_EVAL_ALGO, winmode=0)
         print('Load evaluate_correction.dll')
     else:
-        print('No found evaluate_correction.dll')
+        print('No found ', DIR_EVAL_ALGO)
 except OSError:
-    print('Load evaluate_correction.dll error.')
+    print('Load  error.', DIR_EVAL_ALGO)
 
 # //output
 # //  A|B

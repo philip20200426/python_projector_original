@@ -5,8 +5,8 @@ block_cipher = None
 
 
 a = Analysis(
-    ['projector_main.py', 'projector_cal.py'],
-    pathex=['.\\MvImport'],
+    ['projector_main.py'],
+    pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[],

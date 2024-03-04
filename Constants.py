@@ -3,6 +3,10 @@ import logging
 import os
 
 from utils.ParsePara import get_para
+DIR_ALGO = 'algo/pro_correction.dll'
+DIR_EVAL_ALGO = 'algo/evaluate_correction.dll'
+
+PROJECT = 'lite'
 KST_FILE_CSV_NAME = 'asuFiles/kst_cal_data.csv'
 AF_FILE_CSV_NAME = 'result/af_cal_data.csv'
 CAL_DATA = 'result/cal_data.csv'
@@ -41,6 +45,10 @@ if os.path.isfile(PRO_PARA_FILE):
     file = open(PRO_PARA_FILE, )
     dic = json.load(file)
     if len(dic) > 0:
+        if 'project' in dic.keys():
+            PROJECT = dic['project']
+        else:
+            PROJECT = 'lite'
         if 'img_mode' in dic.keys():
             IMG_MODE = dic['img_mode']
         else:

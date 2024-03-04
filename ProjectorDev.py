@@ -7,6 +7,7 @@ import Constants
 import globalVar
 from pro_correct_wrapper import get_sn, create_dir_file
 import ProjectorDev
+from utils.ParsePara import get_para
 from utils.logUtil import print_debug
 
 PRO_SYS_APP = True
@@ -405,40 +406,55 @@ def pro_auto_af_kst_cal(mode):
 
 
 def connect_dev(ip_addr):
-    count = 0
-    ip_addr = ip_addr + ':5555'
-    print(ip_addr)
-    cmd = 'adb disconnect {}:5555'.format(ip_addr)
-    os.popen(cmd)
-    # time.sleep(1)
-    print('Finding dev ', end='')
-    while True:
-        count += 1
-        cmd = 'adb connect {}'.format(ip_addr)
-        po = os.popen(cmd)
-        devices = po.buffer.read().decode('utf-8')
-        # print_debug(devices)
-        ret = re.findall('connected to ' + ip_addr, devices)
-        if len(ret) > 0 and ret[0] == 'connected to ' + ip_addr:
-            # print_debug(ret[0])
-            devices = os.popen('adb devices').read()
-            ret = re.findall('device', devices)
+    if Constants.PROJECT == 'lite':
+        count = 0
+        ip_addr = ip_addr + ':5555'
+        print(ip_addr)
+        cmd = 'adb disconnect {}:5555'.format(ip_addr)
+        os.popen(cmd)
+        # time.sleep(1)
+        print('Finding dev ', end='')
+        while True:
+            count += 1
+            cmd = 'adb connect {}'.format(ip_addr)
+            po = os.popen(cmd)
+            devices = po.buffer.read().decode('utf-8')
             # print_debug(devices)
-            ret0 = re.findall(ip_addr, devices)
-            # print_debug(ret0[0])
-            if len(ret) > 0 and len(ret0) > 0 and ret[0] == 'device' and ret0[0] == ip_addr:
-                print_debug('adb devices 识别成功: {} {}'.format(ret0[0], ret[0]))
-                # os.system('adb root')
-                # time.sleep(1.8)
-                # os.system('adb remount')
+            ret = re.findall('connected to ' + ip_addr, devices)
+            if len(ret) > 0 and ret[0] == 'connected to ' + ip_addr:
+                # print_debug(ret[0])
+                devices = os.popen('adb devices').read()
+                ret = re.findall('device', devices)
+                # print_debug(devices)
+                ret0 = re.findall(ip_addr, devices)
+                # print_debug(ret0[0])
+                if len(ret) > 0 and len(ret0) > 0 and ret[0] == 'device' and ret0[0] == ip_addr:
+                    print('adb devices 识别成功: {} {}'.format(ret0[0], ret[0]))
+                    # os.system('adb root')
+                    # time.sleep(1.8)
+                    # os.system('adb remount')
+                    break
+            # print_debug('未识别到投影设备, retry:', count)
+            print('.', end='', flush=True)
+            time.sleep(1.8)
+            if count > 6:
+                print(end='\n', flush=True)
+                print('未识别到投影设备, retry: {} 次失败！！！'.format(count))
+                return -1
+    elif Constants.PROJECT == '2pro':
+        count = 0
+        while True:
+            devices = os.popen('adb devices').read()
+            print(devices)
+            ret = re.findall(r'am\d{10,50}\w{1,10}|device', devices)
+            if len(ret[1]) > 20 and ret[0] == ret[2]:
+                print('adb devices 识别成功: {} {}'.format(ret[1], ret[2]))
+                return
+            if count > 3:
                 break
-        # print_debug('未识别到投影设备, retry:', count)
-        print('.', end='', flush=True)
-        time.sleep(1.8)
-        if count > 6:
-            print(end='\n', flush=True)
-            print('未识别到投影设备, retry: {} 次失败！！！'.format(count))
-            return -1
+            count += 1
+            time.sleep(0.6)
+        return -1
 
 
 def pro_get_kst_point():

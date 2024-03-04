@@ -2,6 +2,7 @@ import csv
 import datetime
 import json
 import os
+import sys
 import time
 from ctypes import *
 import cv2
@@ -11,15 +12,16 @@ import Constants
 import ProjectorDev
 import globalVar
 
+sys.path.append("algo")
 try:
-    if os.path.exists("pro_correction.dll"):
-        dll = CDLL("pro_correction.dll", winmode=0)
+    if os.path.exists(Constants.DIR_ALGO):
+        dll = CDLL(Constants.DIR_ALGO, winmode=0)
         print('load pro_correction.dll')
     else:
         dll = None
-        print('no found pro_correction.dll')
+        print('no found ', Constants.DIR_ALGO)
 except OSError:
-    print('Cannot find pro_correction.dll.')
+    print('Cannot find', Constants.DIR_ALGO)
 
 DIR_NAME = 'asuFiles'
 DIR_NAME_COPY = 'asuFiles/copy'

@@ -35,6 +35,7 @@ from serial_utils import get_ports, open_port, str2hex, asu_pdu_parse_one_frame,
 import os
 import shutil
 
+from utils.ParsePara import get_para
 from utils.logUtil import print_debug
 
 # class AutoCalThread(QThread):
@@ -211,15 +212,15 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
         # self.ex_cam_af_thread.camera_arrive_signal.connect(self.image_callback)  # 设置任务线程发射信号触发的函数
 
         self.auto_cal_flag = False
-        # self.ui.frame.hide()
-        # self.ui.frame_left_up.hide()
-        # self.ui.frame_2.hide()
-        # self.ui.frame_3.hide()
-        # self.ui.frame_4.hide()
-        # self.ui.frame_5.hide()
-        # self.ui.frame_6.hide()
-        # self.ui.frame_8.hide()
-        # self.ui.frame_10.hide()
+        self.ui.frame.hide()
+        self.ui.frame_left_up.hide()
+        self.ui.frame_2.hide()
+        self.ui.frame_3.hide()
+        self.ui.frame_4.hide()
+        self.ui.frame_5.hide()
+        self.ui.frame_6.hide()
+        self.ui.frame_8.hide()
+        self.ui.frame_10.hide()
 
         # self.update_data_timer = QTimer()
         # self.update_data_timer.timeout.connect(self.update_data)
@@ -1439,7 +1440,6 @@ class ProjectorWindow(QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
     whk = UiHkWindow()
     w = ProjectorWindow(whk)
     globalVar._init()
